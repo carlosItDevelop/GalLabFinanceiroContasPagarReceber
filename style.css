@@ -324,6 +324,267 @@ body {
     padding: 1.5rem;
 }
 
+/* === FASE 2: ANÁLISES AVANÇADAS === */
+.consolidados-analises-avancadas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.consolidados-sazonalidade {
+    margin-bottom: 2rem;
+}
+
+.consolidados-exportacao {
+    margin-bottom: 2rem;
+}
+
+/* Comparativo Anual */
+.comparativo-resumo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.comparativo-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+}
+
+.comparativo-card h4 {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.crescimento-valor {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.crescimento-valor.positivo {
+    color: var(--success-color);
+}
+
+.crescimento-valor.negativo {
+    color: var(--danger-color);
+}
+
+/* Tendências */
+.tendencias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.tendencia-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tendencia-icon {
+    font-size: 1.5rem;
+    opacity: 0.8;
+}
+
+.tendencia-info h4 {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.tendencia-status {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    display: inline-block;
+}
+
+.tendencia-status.crescente {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--success-color);
+}
+
+.tendencia-status.estavel {
+    background: rgba(23, 162, 184, 0.2);
+    color: var(--info-color);
+}
+
+.tendencia-valor {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.tendencia-previsao {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.tendencia-categoria-alta {
+    color: var(--success-color);
+    font-weight: 500;
+}
+
+.tendencia-categoria-baixa {
+    color: var(--warning-color);
+    font-weight: 500;
+}
+
+/* Sazonalidade */
+.sazonalidade-resumo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.sazonalidade-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.sazonalidade-card.melhor {
+    border-left: 4px solid var(--success-color);
+}
+
+.sazonalidade-card.pior {
+    border-left: 4px solid var(--warning-color);
+}
+
+.sazonalidade-card h4 {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.mes-nome {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.mes-valor {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-bottom: 0.5rem;
+}
+
+.mes-motivo {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.trimestres-performance {
+    margin-top: 1rem;
+}
+
+.trimestres-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.trimestre-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    text-align: center;
+}
+
+.trimestre-item h5 {
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.performance-nivel {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.performance-nivel.baixa {
+    background: rgba(220, 53, 69, 0.2);
+    color: var(--danger-color);
+}
+
+.performance-nivel.média {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--warning-color);
+}
+
+.performance-nivel.alta {
+    background: rgba(23, 162, 184, 0.2);
+    color: var(--info-color);
+}
+
+.performance-nivel.muito-alta {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--success-color);
+}
+
+.performance-valor {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Exportação */
+.exportacao-opcoes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.export-group {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+}
+
+.export-group h4 {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-export {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+}
+
 .consolidados-cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -410,9 +671,40 @@ body {
     font-weight: 500;
 }
 
+.ranking-detalhes {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.ranking-detalhes small {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.ranking-valor-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+
 .ranking-valor {
     color: var(--text-primary);
     font-weight: 600;
+}
+
+.ranking-crescimento {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.ranking-crescimento.positivo {
+    color: var(--success-color);
+}
+
+.ranking-crescimento.negativo {
+    color: var(--danger-color);
 }
 
 .ranking-categoria {
@@ -446,6 +738,11 @@ body {
         gap: 1rem;
     }
 
+    .consolidados-analises-avancadas {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
     .consolidados-cards {
         grid-template-columns: 1fr;
         gap: 1rem;
@@ -461,8 +758,38 @@ body {
         width: 100%;
     }
 
-    .ranking-valor {
+    .ranking-valor-info {
         align-self: flex-end;
+        align-items: flex-start;
+    }
+
+    .comparativo-resumo {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .sazonalidade-resumo {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .tendencias-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .trimestres-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+
+    .exportacao-opcoes {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .export-buttons {
+        justify-content: center;
     }
 }
 

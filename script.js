@@ -785,6 +785,12 @@ class SistemaContasApp {
             // Carregar rankings
             this.loadRankings();
             
+            // Carregar análises temporais (Fase 2)
+            this.loadAnaliseTemporais();
+            
+            // Configurar exportação (Fase 2)
+            this.setupExportacao();
+            
         } catch (error) {
             console.error('Erro ao carregar consolidados:', error);
             this.showError('Erro ao carregar dados consolidados');
@@ -1008,24 +1014,24 @@ class SistemaContasApp {
     }
 
     loadRankings() {
-        // Ranking de fornecedores
+        // Ranking de fornecedores com dados da Fase 2
         const fornecedores = [
-            { nome: 'ABC Materiais Ltda', valor: 8500.00, categoria: 'Fornecedores' },
-            { nome: 'Companhia Elétrica SP', valor: 6200.00, categoria: 'Utilidades' },
-            { nome: 'TechSolutions Corp', valor: 4800.00, categoria: 'Serviços' },
-            { nome: 'Office Supply Co', valor: 3200.00, categoria: 'Escritório' },
-            { nome: 'Clean Services Ltda', valor: 2800.00, categoria: 'Serviços' }
+            { nome: 'ABC Materiais Ltda', valor: 8500.00, categoria: 'Fornecedores', transacoes: 12, crescimento: 8.5 },
+            { nome: 'Companhia Elétrica SP', valor: 6200.00, categoria: 'Utilidades', transacoes: 8, crescimento: 2.1 },
+            { nome: 'TechSolutions Corp', valor: 4800.00, categoria: 'Serviços', transacoes: 6, crescimento: 15.3 },
+            { nome: 'Office Supply Co', valor: 3200.00, categoria: 'Escritório', transacoes: 15, crescimento: -8.2 },
+            { nome: 'Clean Services Ltda', valor: 2800.00, categoria: 'Serviços', transacoes: 4, crescimento: 5.7 }
         ];
 
         this.renderRanking('ranking-fornecedores', fornecedores);
 
-        // Ranking de clientes
+        // Ranking de clientes com dados da Fase 2
         const clientes = [
-            { nome: 'XYZ Consultoria Ltda', valor: 15000.00, categoria: 'Consultoria' },
-            { nome: 'Comércio ABC Ltda', valor: 12500.00, categoria: 'Vendas' },
-            { nome: 'Digital Solutions Inc', valor: 9800.00, categoria: 'Serviços' },
-            { nome: 'Retail Group SA', valor: 7500.00, categoria: 'Vendas' },
-            { nome: 'Startup Tech Ltda', valor: 5200.00, categoria: 'Consultoria' }
+            { nome: 'XYZ Consultoria Ltda', valor: 15000.00, categoria: 'Consultoria', transacoes: 6, crescimento: 12.4 },
+            { nome: 'Comércio ABC Ltda', valor: 12500.00, categoria: 'Vendas', transacoes: 10, crescimento: 6.8 },
+            { nome: 'Digital Solutions Inc', valor: 9800.00, categoria: 'Serviços', transacoes: 8, crescimento: 18.2 },
+            { nome: 'Retail Group SA', valor: 7500.00, categoria: 'Vendas', transacoes: 12, crescimento: -3.1 },
+            { nome: 'Startup Tech Ltda', valor: 5200.00, categoria: 'Consultoria', transacoes: 4, crescimento: 25.6 }
         ];
 
         this.renderRanking('ranking-clientes', clientes);
@@ -1042,11 +1048,314 @@ class SistemaContasApp {
                     <div>
                         <div class="ranking-nome">${item.nome}</div>
                         <div class="ranking-categoria">${item.categoria}</div>
+                        <div class="ranking-detalhes">
+                            <small>📊 ${item.transacoes || 0} transações</small>
+                            <small>📈 Ticket médio: ${this.formatCurrency((item.valor / (item.transacoes || 1)))}</small>
+                        </div>
                     </div>
                 </div>
-                <div class="ranking-valor">${this.formatCurrency(item.valor)}</div>
+                <div class="ranking-valor-info">
+                    <div class="ranking-valor">${this.formatCurrency(item.valor)}</div>
+                    <div class="ranking-crescimento ${item.crescimento >= 0 ? 'positivo' : 'negativo'}">
+                        ${item.crescimento >= 0 ? '↗️' : '↘️'} ${item.crescimento.toFixed(1)}%
+                    </div>
+                </div>
             </div>
         `).join('');
+    }
+
+    // === FASE 2: ANÁLISES TEMPORAIS ===
+    loadAnaliseTemporais() {
+        this.loadComparativoAnualMensal();
+        this.loadTendencias();
+        this.loadSazonalidade();
+    }
+
+    loadComparativoAnualMensal() {
+        // Dados simulados para comparativo ano vs ano
+        const dadosComparativos = {
+            anoAtual: {
+                meses: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                entradas: [35000, 42000, 38000, 45000, 41000, 47000, 52000, 48000, 51000, 46000, 49000, 55000],
+                saidas: [28000, 31000, 29000, 35000, 32000, 38000, 42000, 39000, 41000, 37000, 40000, 44000]
+            },
+            anoAnterior: {
+                entradas: [32000, 38000, 35000, 41000, 37000, 43000, 47000, 44000, 46000, 42000, 45000, 50000],
+                saidas: [30000, 33000, 31000, 37000, 34000, 40000, 44000, 41000, 43000, 39000, 42000, 46000]
+            }
+        };
+
+        this.renderComparativoAnual(dadosComparativos);
+    }
+
+    renderComparativoAnual(dados) {
+        const container = document.getElementById('analise-comparativo-anual');
+        if (!container) return;
+
+        // Calcular crescimento médio
+        const crescimentoEntradas = this.calcularCrescimentoMedio(dados.anoAtual.entradas, dados.anoAnterior.entradas);
+        const crescimentoSaidas = this.calcularCrescimentoMedio(dados.anoAtual.saidas, dados.anoAnterior.saidas);
+
+        container.innerHTML = `
+            <div class="comparativo-resumo">
+                <div class="comparativo-card">
+                    <h4>📈 Crescimento Entradas</h4>
+                    <div class="crescimento-valor ${crescimentoEntradas >= 0 ? 'positivo' : 'negativo'}">
+                        ${crescimentoEntradas >= 0 ? '+' : ''}${crescimentoEntradas.toFixed(1)}%
+                    </div>
+                </div>
+                <div class="comparativo-card">
+                    <h4>📉 Crescimento Saídas</h4>
+                    <div class="crescimento-valor ${crescimentoSaidas >= 0 ? 'negativo' : 'positivo'}">
+                        ${crescimentoSaidas >= 0 ? '+' : ''}${crescimentoSaidas.toFixed(1)}%
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    calcularCrescimentoMedio(atual, anterior) {
+        const totalAtual = atual.reduce((sum, val) => sum + val, 0);
+        const totalAnterior = anterior.reduce((sum, val) => sum + val, 0);
+        return ((totalAtual - totalAnterior) / totalAnterior) * 100;
+    }
+
+    loadTendencias() {
+        // Análise de tendências dos últimos 6 meses
+        const tendencias = {
+            entradas: { tendencia: 'crescente', percentual: 8.5, previsao: 58000 },
+            saidas: { tendencia: 'estavel', percentual: 2.1, previsao: 45000 },
+            categoriaEmAlta: 'Consultorias (+15%)',
+            categoriaEmBaixa: 'Escritório (-8%)'
+        };
+
+        this.renderTendencias(tendencias);
+    }
+
+    renderTendencias(tendencias) {
+        const container = document.getElementById('analise-tendencias');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="tendencias-grid">
+                <div class="tendencia-item">
+                    <div class="tendencia-icon">📈</div>
+                    <div class="tendencia-info">
+                        <h4>Entradas</h4>
+                        <p class="tendencia-status crescente">Tendência Crescente</p>
+                        <p class="tendencia-valor">+${tendencias.entradas.percentual}% nos últimos 6 meses</p>
+                        <p class="tendencia-previsao">Projeção próximo mês: ${this.formatCurrency(tendencias.entradas.previsao)}</p>
+                    </div>
+                </div>
+                
+                <div class="tendencia-item">
+                    <div class="tendencia-icon">📊</div>
+                    <div class="tendencia-info">
+                        <h4>Saídas</h4>
+                        <p class="tendencia-status estavel">Tendência Estável</p>
+                        <p class="tendencia-valor">+${tendencias.saidas.percentual}% nos últimos 6 meses</p>
+                        <p class="tendencia-previsao">Projeção próximo mês: ${this.formatCurrency(tendencias.saidas.previsao)}</p>
+                    </div>
+                </div>
+                
+                <div class="tendencia-item">
+                    <div class="tendencia-icon">🏆</div>
+                    <div class="tendencia-info">
+                        <h4>Categoria em Alta</h4>
+                        <p class="tendencia-categoria-alta">${tendencias.categoriaEmAlta}</p>
+                    </div>
+                </div>
+                
+                <div class="tendencia-item">
+                    <div class="tendencia-icon">⚠️</div>
+                    <div class="tendencia-info">
+                        <h4>Atenção</h4>
+                        <p class="tendencia-categoria-baixa">${tendencias.categoriaEmBaixa}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    loadSazonalidade() {
+        // Análise de sazonalidade baseada nos últimos 2 anos
+        const sazonalidade = {
+            melhorMes: { nome: 'Dezembro', valor: 55000, motivo: 'Vendas de fim de ano' },
+            piorMes: { nome: 'Fevereiro', valor: 35000, motivo: 'Pós-férias' },
+            trimestres: [
+                { nome: '1º Trimestre', performance: 'Baixa', valor: 38500 },
+                { nome: '2º Trimestre', performance: 'Média', valor: 44300 },
+                { nome: '3º Trimestre', performance: 'Alta', valor: 50300 },
+                { nome: '4º Trimestre', performance: 'Muito Alta', valor: 51600 }
+            ]
+        };
+
+        this.renderSazonalidade(sazonalidade);
+    }
+
+    renderSazonalidade(sazonalidade) {
+        const container = document.getElementById('analise-sazonalidade');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="sazonalidade-resumo">
+                <div class="sazonalidade-card melhor">
+                    <h4>🏅 Melhor Mês</h4>
+                    <p class="mes-nome">${sazonalidade.melhorMes.nome}</p>
+                    <p class="mes-valor">${this.formatCurrency(sazonalidade.melhorMes.valor)}</p>
+                    <p class="mes-motivo">${sazonalidade.melhorMes.motivo}</p>
+                </div>
+                
+                <div class="sazonalidade-card pior">
+                    <h4>📉 Menor Mês</h4>
+                    <p class="mes-nome">${sazonalidade.piorMes.nome}</p>
+                    <p class="mes-valor">${this.formatCurrency(sazonalidade.piorMes.valor)}</p>
+                    <p class="mes-motivo">${sazonalidade.piorMes.motivo}</p>
+                </div>
+            </div>
+            
+            <div class="trimestres-performance">
+                <h4>📊 Performance por Trimestre</h4>
+                <div class="trimestres-grid">
+                    ${sazonalidade.trimestres.map(trimestre => `
+                        <div class="trimestre-item">
+                            <h5>${trimestre.nome}</h5>
+                            <p class="performance-nivel ${trimestre.performance.toLowerCase().replace(' ', '-')}">${trimestre.performance}</p>
+                            <p class="performance-valor">${this.formatCurrency(trimestre.valor)}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // === FASE 2: EXPORTAÇÃO DE RELATÓRIOS ===
+    setupExportacao() {
+        const exportButtons = document.querySelectorAll('.btn-export');
+        exportButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const formato = e.target.dataset.formato;
+                const tipo = e.target.dataset.tipo;
+                this.exportarRelatorio(formato, tipo);
+            });
+        });
+    }
+
+    async exportarRelatorio(formato, tipo) {
+        try {
+            this.showInfo(`Gerando relatório ${tipo} em formato ${formato.toUpperCase()}...`);
+            
+            // Simular geração do relatório
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            if (formato === 'pdf') {
+                await this.exportarPDF(tipo);
+            } else if (formato === 'excel') {
+                await this.exportarExcel(tipo);
+            } else if (formato === 'csv') {
+                await this.exportarCSV(tipo);
+            }
+            
+            this.showSuccess(`Relatório ${tipo} exportado com sucesso!`);
+            
+        } catch (error) {
+            console.error('Erro ao exportar relatório:', error);
+            this.showError('Erro ao exportar relatório');
+        }
+    }
+
+    async exportarPDF(tipo) {
+        // Simular exportação PDF
+        const dadosRelatorio = await this.gerarDadosRelatorio(tipo);
+        
+        // Em implementação real, usaria jsPDF ou similar
+        console.log('Exportando PDF:', { tipo, dados: dadosRelatorio });
+        
+        // Simular download
+        this.downloadFile(`relatorio-${tipo}-${new Date().toISOString().split('T')[0]}.pdf`, 'application/pdf');
+    }
+
+    async exportarExcel(tipo) {
+        // Simular exportação Excel
+        const dadosRelatorio = await this.gerarDadosRelatorio(tipo);
+        
+        // Em implementação real, usaria SheetJS ou similar
+        console.log('Exportando Excel:', { tipo, dados: dadosRelatorio });
+        
+        // Simular download
+        this.downloadFile(`relatorio-${tipo}-${new Date().toISOString().split('T')[0]}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    async exportarCSV(tipo) {
+        // Simular exportação CSV
+        const dadosRelatorio = await this.gerarDadosRelatorio(tipo);
+        
+        // Converter dados para CSV
+        const csv = this.convertToCSV(dadosRelatorio);
+        
+        // Criar e baixar arquivo
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `relatorio-${tipo}-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    async gerarDadosRelatorio(tipo) {
+        // Simular geração de dados baseado no tipo
+        const dados = {
+            consolidado: {
+                periodo: 'Dezembro 2024',
+                totalEntradas: 45000.00,
+                totalSaidas: 28000.00,
+                saldoLiquido: 17000.00,
+                transacoes: [
+                    { data: '2024-12-01', descricao: 'Consultoria ABC', valor: 2500.00, tipo: 'entrada' },
+                    { data: '2024-12-02', descricao: 'Energia Elétrica', valor: -450.00, tipo: 'saida' },
+                    // ... mais dados
+                ]
+            },
+            fornecedores: {
+                ranking: [
+                    { nome: 'ABC Materiais Ltda', valor: 8500.00, transacoes: 12 },
+                    { nome: 'Companhia Elétrica SP', valor: 6200.00, transacoes: 8 }
+                ]
+            },
+            clientes: {
+                ranking: [
+                    { nome: 'XYZ Consultoria Ltda', valor: 15000.00, transacoes: 6 },
+                    { nome: 'Comércio ABC Ltda', valor: 12500.00, transacoes: 10 }
+                ]
+            }
+        };
+        
+        return dados[tipo] || dados.consolidado;
+    }
+
+    convertToCSV(data) {
+        if (!data || !data.transacoes) return '';
+        
+        const headers = ['Data', 'Descrição', 'Valor', 'Tipo'];
+        const csvContent = [
+            headers.join(','),
+            ...data.transacoes.map(row => [
+                row.data,
+                `"${row.descricao}"`,
+                row.valor,
+                row.tipo
+            ].join(','))
+        ].join('\n');
+        
+        return csvContent;
+    }
+
+    downloadFile(filename, mimeType) {
+        // Simular download de arquivo
+        console.log(`Baixando arquivo: ${filename} (${mimeType})`);
     }
 
     // === NOTIFICAÇÕES COM SWEETALERT2 ===
