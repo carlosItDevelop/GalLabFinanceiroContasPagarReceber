@@ -12,6 +12,7 @@ class SistemaContasApp {
         this.eventos = [];
         this.eventIdCounter = 1;
         this.notificationIdCounter = 1;
+        this.editingEventId = null; // Controle para edição de eventos
         
         this.init();
     }
@@ -767,6 +768,9 @@ class SistemaContasApp {
             modal.classList.remove('active');
             form.reset();
             recorrenciaOptions.style.display = 'none';
+            // Limpar controle de edição
+            this.editingEventId = null;
+            document.getElementById('modal-evento-title').textContent = 'Novo Evento';
         };
 
         closeBtn.addEventListener('click', closeModal);
@@ -957,12 +961,21 @@ class SistemaContasApp {
     }
 
     async loadEventos() {
-        // Em produção, carregaria do banco de dados
-        if (this.calendarAgenda) {
-            this.calendarAgenda.removeAllEvents();
-            this.eventos.forEach(evento => {
-                this.calendarAgenda.addEvent(evento);
-            });
+        // Carregar eventos do banco de dados ou localStorage para persistência
+        try {
+            const eventosStorage = localStorage.getItem('agenda_eventos');
+            if (eventosStorage) {
+                this.eventos = JSON.parse(eventosStorage);
+            }
+            
+            if (this.calendarAgenda) {
+                this.calendarAgenda.removeAllEvents();
+                this.eventos.forEach(evento => {
+                    this.calendarAgenda.addEvent(evento);
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao carregar eventos:', error);
         }
     }
 
@@ -990,25 +1003,56 @@ class SistemaContasApp {
                 return;
             }
 
-            const evento = this.createEventObject(formData);
+            // Verificar se é edição ou criação
+            const isEditing = this.editingEventId;
             
-            // Adicionar ao array de eventos
-            this.eventos.push(evento);
-            
-            // Adicionar ao calendário
-            if (this.calendarAgenda) {
-                this.calendarAgenda.addEvent(evento);
+            if (isEditing) {
+                // Atualizar evento existente
+                const eventoIndex = this.eventos.findIndex(e => e.id === this.editingEventId);
+                if (eventoIndex !== -1) {
+                    const evento = this.createEventObject(formData);
+                    evento.id = this.editingEventId; // Manter o ID original
+                    
+                    // Atualizar no array
+                    this.eventos[eventoIndex] = evento;
+                    
+                    // Atualizar no calendário
+                    if (this.calendarAgenda) {
+                        const calendarEvent = this.calendarAgenda.getEventById(this.editingEventId);
+                        if (calendarEvent) {
+                            calendarEvent.remove();
+                            this.calendarAgenda.addEvent(evento);
+                        }
+                    }
+                    
+                    this.showSuccess('Evento atualizado com sucesso!');
+                }
+                this.editingEventId = null;
+            } else {
+                // Criar novo evento
+                const evento = this.createEventObject(formData);
+                
+                // Adicionar ao array de eventos
+                this.eventos.push(evento);
+                
+                // Adicionar ao calendário
+                if (this.calendarAgenda) {
+                    this.calendarAgenda.addEvent(evento);
+                }
+                
+                this.showSuccess('Evento criado com sucesso!');
             }
+            
+            // Salvar no localStorage para persistência
+            this.saveEventosToStorage();
             
             // Atualizar estatísticas
             this.updateAgendaStats();
             this.loadProximosEventos();
             
-            this.showSuccess('Evento criado com sucesso!');
-            
         } catch (error) {
             console.error('Erro ao salvar evento:', error);
-            this.showError('Erro ao criar evento');
+            this.showError('Erro ao salvar evento');
         }
     }
 
@@ -1197,6 +1241,9 @@ class SistemaContasApp {
                 this.calendarAgenda.addEvent(evento);
             }
             
+            // Salvar no localStorage para persistência
+            this.saveEventosToStorage();
+            
             this.updateAgendaStats();
             this.loadProximosEventos();
             
@@ -1204,6 +1251,15 @@ class SistemaContasApp {
         } catch (error) {
             console.error('Erro ao criar evento do drop:', error);
             this.showError('Erro ao criar evento. Tente novamente.');
+        }
+    }
+
+    // Método para salvar eventos no localStorage
+    saveEventosToStorage() {
+        try {
+            localStorage.setItem('agenda_eventos', JSON.stringify(this.eventos));
+        } catch (error) {
+            console.error('Erro ao salvar eventos no storage:', error);
         }
     }
 
@@ -1253,14 +1309,19 @@ class SistemaContasApp {
         // Preencher modal com dados do evento
         const props = event.extendedProps;
         
+        // Definir que estamos editando um evento específico
+        this.editingEventId = event.id;
+        
         document.getElementById('evento-titulo').value = event.title.replace(/^[^\s]+\s/, ''); // Remove emoji
         document.getElementById('evento-tipo').value = props.tipo || '';
         document.getElementById('evento-data').value = event.start.toISOString().split('T')[0];
         document.getElementById('evento-hora').value = event.start.toTimeString().split(':').slice(0,2).join(':');
+        document.getElementById('evento-duracao').value = props.duracao || 60;
         document.getElementById('evento-prioridade').value = props.prioridade || 'media';
         document.getElementById('evento-participantes').value = props.participantes || '';
         document.getElementById('evento-local').value = props.local || '';
         document.getElementById('evento-valor').value = props.valor || '';
+        document.getElementById('evento-lembrete').value = props.lembrete || 15;
         document.getElementById('evento-descricao').value = props.descricao || '';
         
         // Abrir modal em modo edição
@@ -1286,6 +1347,9 @@ class SistemaContasApp {
                 
                 // Remover do array
                 this.eventos = this.eventos.filter(e => e.id !== event.id);
+                
+                // Salvar no localStorage após exclusão
+                this.saveEventosToStorage();
                 
                 this.updateAgendaStats();
                 this.loadProximosEventos();
