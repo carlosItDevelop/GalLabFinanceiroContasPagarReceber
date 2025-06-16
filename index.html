@@ -32,7 +32,7 @@
             <button class="tab-btn" data-tab="contas-pagar">💸 Contas a Pagar</button>
             <button class="tab-btn" data-tab="contas-receber">💰 Contas a Receber</button>
             <button class="tab-btn" data-tab="consolidados">📈 Consolidados</button>
-            <button class="tab-btn" data-tab="relatorios">📋 Relatórios</button>
+            <button class="tab-btn" data-tab="agenda">🗓️ Agenda</button>
             <button class="tab-btn" data-tab="logs">📝 Logs</button>
             <button class="tab-btn" data-tab="arquivos">📁 Arquivos</button> <!-- Nova aba -->
         </nav>
@@ -366,15 +366,176 @@
                 </div>
             </div>
 
-            <!-- Relatórios -->
-            <div id="relatorios" class="tab-panel">
+            <!-- Agenda -->
+            <div id="agenda" class="tab-panel">
                 <div class="panel-header">
-                    <h2>📋 Relatórios</h2>
-                    <p>Relatórios detalhados por período e categoria</p>
+                    <h2>🗓️ Agenda</h2>
+                    <p>Sistema completo de gestão de tempo e compromissos financeiros</p>
+                    <div class="panel-actions">
+                        <button class="btn btn-primary" id="novo-evento">+ Novo Evento</button>
+                        <button class="btn btn-secondary" id="sincronizar-vencimentos">🔄 Sincronizar Vencimentos</button>
+                    </div>
                 </div>
-                <div class="coming-soon">
-                    <h3>🚧 Em desenvolvimento</h3>
-                    <p>Esta funcionalidade será implementada em breve</p>
+
+                <div class="agenda-container">
+                    <!-- Painel Lateral Esquerdo -->
+                    <div class="agenda-sidebar">
+                        <div class="sidebar-section">
+                            <h4>📌 Predefinições</h4>
+                            <div class="predefinicoes-list">
+                                <div class="predefinicao-item" draggable="true" data-tipo="vencimento-pagar">
+                                    <div class="predefinicao-icon">💸</div>
+                                    <div class="predefinicao-info">
+                                        <strong>Vencimento a Pagar</strong>
+                                        <small>Arraste para agendar</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="predefinicao-item" draggable="true" data-tipo="vencimento-receber">
+                                    <div class="predefinicao-icon">💰</div>
+                                    <div class="predefinicao-info">
+                                        <strong>Vencimento a Receber</strong>
+                                        <small>Arraste para agendar</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="predefinicao-item" draggable="true" data-tipo="reuniao-cliente">
+                                    <div class="predefinicao-icon">🤝</div>
+                                    <div class="predefinicao-info">
+                                        <strong>Reunião com Cliente</strong>
+                                        <small>Arraste para agendar</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="predefinicao-item" draggable="true" data-tipo="cobranca">
+                                    <div class="predefinicao-icon">📞</div>
+                                    <div class="predefinicao-info">
+                                        <strong>Cobrança</strong>
+                                        <small>Arraste para agendar</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="predefinicao-item" draggable="true" data-tipo="revisao-fluxo">
+                                    <div class="predefinicao-icon">📊</div>
+                                    <div class="predefinicao-info">
+                                        <strong>Revisão de Fluxo</strong>
+                                        <small>Arraste para agendar</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="predefinicao-item" draggable="true" data-tipo="negociacao">
+                                    <div class="predefinicao-icon">🎯</div>
+                                    <div class="predefinicao-info">
+                                        <strong>Negociação</strong>
+                                        <small>Arraste para agendar</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="predefinicao-item" draggable="true" data-tipo="reuniao-interna">
+                                    <div class="predefinicao-icon">👥</div>
+                                    <div class="predefinicao-info">
+                                        <strong>Reunião Interna</strong>
+                                        <small>Arraste para agendar</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="predefinicao-item" draggable="true" data-tipo="lembrete">
+                                    <div class="predefinicao-icon">⏰</div>
+                                    <div class="predefinicao-info">
+                                        <strong>Lembrete</strong>
+                                        <small>Arraste para agendar</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <h4>📋 Ações Rápidas</h4>
+                            <div class="acoes-rapidas">
+                                <button class="btn btn-sm btn-primary" id="agendar-vencimentos-semana">
+                                    📅 Vencimentos da Semana
+                                </button>
+                                <button class="btn btn-sm btn-secondary" id="agendar-cobrancas-atraso">
+                                    📞 Cobranças em Atraso
+                                </button>
+                                <button class="btn btn-sm btn-success" id="agendar-followup-clientes">
+                                    🤝 Follow-up Clientes
+                                </button>
+                                <button class="btn btn-sm btn-warning" id="lembretes-importantes">
+                                    ⚡ Lembretes Importantes
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <h4>🎯 Próximos Eventos</h4>
+                            <div class="proximos-eventos" id="proximos-eventos-lista">
+                                <!-- Carregado dinamicamente -->
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <h4>📊 Estatísticas</h4>
+                            <div class="agenda-stats">
+                                <div class="stat-item">
+                                    <span>Hoje:</span>
+                                    <strong id="eventos-hoje">0</strong>
+                                </div>
+                                <div class="stat-item">
+                                    <span>Semana:</span>
+                                    <strong id="eventos-semana">0</strong>
+                                </div>
+                                <div class="stat-item">
+                                    <span>Vencimentos:</span>
+                                    <strong id="vencimentos-proximos">0</strong>
+                                </div>
+                                <div class="stat-item">
+                                    <span>Atrasados:</span>
+                                    <strong id="eventos-atrasados">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendário Principal -->
+                    <div class="agenda-calendar">
+                        <div class="calendar-toolbar">
+                            <div class="calendar-filters">
+                                <select id="filtro-tipo-evento">
+                                    <option value="">Todos os tipos</option>
+                                    <option value="vencimento">Vencimentos</option>
+                                    <option value="reuniao">Reuniões</option>
+                                    <option value="cobranca">Cobranças</option>
+                                    <option value="lembrete">Lembretes</option>
+                                </select>
+                                
+                                <select id="filtro-prioridade">
+                                    <option value="">Todas as prioridades</option>
+                                    <option value="alta">Alta Prioridade</option>
+                                    <option value="media">Média Prioridade</option>
+                                    <option value="baixa">Baixa Prioridade</option>
+                                </select>
+                                
+                                <button class="btn btn-sm btn-secondary" id="limpar-filtros">
+                                    🔄 Limpar Filtros
+                                </button>
+                            </div>
+                            
+                            <div class="calendar-views">
+                                <button class="btn btn-sm" data-view="dayGridMonth">Mês</button>
+                                <button class="btn btn-sm" data-view="timeGridWeek">Semana</button>
+                                <button class="btn btn-sm" data-view="timeGridDay">Dia</button>
+                                <button class="btn btn-sm" data-view="listWeek">Lista</button>
+                            </div>
+                        </div>
+                        
+                        <div id="calendar-agenda"></div>
+                    </div>
+                </div>
+
+                <!-- Notificações da Agenda -->
+                <div class="agenda-notifications" id="agenda-notifications">
+                    <!-- Notificações aparecerão aqui -->
                 </div>
             </div>
 
@@ -403,6 +564,128 @@
             </div>
         </div>
     </main>
+
+    <!-- Modal para novo evento -->
+    <div id="modal-novo-evento" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-evento-title">Novo Evento</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="form-novo-evento" class="modal-body">
+                <div class="form-group">
+                    <label for="evento-titulo">Título*</label>
+                    <input type="text" id="evento-titulo" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="evento-tipo">Tipo*</label>
+                    <select id="evento-tipo" required>
+                        <option value="">Selecione o tipo</option>
+                        <option value="vencimento-pagar">Vencimento a Pagar</option>
+                        <option value="vencimento-receber">Vencimento a Receber</option>
+                        <option value="reuniao-cliente">Reunião com Cliente</option>
+                        <option value="cobranca">Cobrança</option>
+                        <option value="revisao-fluxo">Revisão de Fluxo</option>
+                        <option value="negociacao">Negociação</option>
+                        <option value="reuniao-interna">Reunião Interna</option>
+                        <option value="lembrete">Lembrete</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="evento-data">Data*</label>
+                        <input type="date" id="evento-data" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="evento-hora">Hora*</label>
+                        <input type="time" id="evento-hora" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="evento-duracao">Duração (minutos)</label>
+                    <select id="evento-duracao">
+                        <option value="15">15 minutos</option>
+                        <option value="30" selected>30 minutos</option>
+                        <option value="60">1 hora</option>
+                        <option value="90">1h 30min</option>
+                        <option value="120">2 horas</option>
+                        <option value="180">3 horas</option>
+                        <option value="240">4 horas</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="evento-prioridade">Prioridade</label>
+                    <select id="evento-prioridade">
+                        <option value="baixa">Baixa</option>
+                        <option value="media" selected>Média</option>
+                        <option value="alta">Alta</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="evento-participantes">Participantes/Contatos</label>
+                    <input type="text" id="evento-participantes" placeholder="Ex: João Silva, Maria Santos">
+                </div>
+
+                <div class="form-group">
+                    <label for="evento-local">Local/Método</label>
+                    <input type="text" id="evento-local" placeholder="Ex: Presencial, Zoom, Telefone">
+                </div>
+
+                <div class="form-group">
+                    <label for="evento-valor">Valor Relacionado (opcional)</label>
+                    <input type="number" id="evento-valor" step="0.01" placeholder="0,00">
+                </div>
+
+                <div class="form-group">
+                    <label for="evento-lembrete">Lembrete</label>
+                    <select id="evento-lembrete">
+                        <option value="0">No momento</option>
+                        <option value="5">5 minutos antes</option>
+                        <option value="15" selected>15 minutos antes</option>
+                        <option value="30">30 minutos antes</option>
+                        <option value="60">1 hora antes</option>
+                        <option value="1440">1 dia antes</option>
+                        <option value="10080">1 semana antes</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="evento-descricao">Descrição/Observações</label>
+                    <textarea id="evento-descricao" rows="3" placeholder="Detalhes do evento, agenda da reunião, etc."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="evento-recorrente">
+                        Evento recorrente
+                    </label>
+                </div>
+
+                <div id="recorrencia-options" style="display: none;">
+                    <div class="form-group">
+                        <label for="evento-frequencia">Frequência</label>
+                        <select id="evento-frequencia">
+                            <option value="daily">Diário</option>
+                            <option value="weekly" selected>Semanal</option>
+                            <option value="monthly">Mensal</option>
+                            <option value="yearly">Anual</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Evento</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal para nova conta -->
     <div id="modal-nova-conta" class="modal">

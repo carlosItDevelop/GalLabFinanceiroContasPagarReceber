@@ -1482,12 +1482,213 @@ body {
     border: 2px dashed var(--border-color);
 }
 
-/* Calendário */
-#calendar {
+/* === AGENDA === */
+.agenda-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1.5rem;
+    min-height: 600px;
+}
+
+/* Sidebar da Agenda */
+.agenda-sidebar {
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     padding: 1rem;
+    overflow-y: auto;
+    max-height: 700px;
+}
+
+.sidebar-section {
+    margin-bottom: 2rem;
+}
+
+.sidebar-section h4 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+/* Predefinições Arrastáveis */
+.predefinicoes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.predefinicao-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    cursor: move;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.predefinicao-item:hover {
+    background: var(--bg-tertiary);
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px var(--shadow);
+}
+
+.predefinicao-item.dragging {
+    opacity: 0.7;
+    transform: rotate(2deg);
+    box-shadow: 0 4px 15px var(--shadow);
+}
+
+.predefinicao-icon {
+    font-size: 1.2rem;
+    width: 30px;
+    text-align: center;
+}
+
+.predefinicao-info {
+    flex: 1;
+}
+
+.predefinicao-info strong {
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 0.15rem;
+}
+
+.predefinicao-info small {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* Ações Rápidas */
+.acoes-rapidas {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.acoes-rapidas .btn {
+    justify-content: flex-start;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Próximos Eventos */
+.proximos-eventos {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.proximo-evento {
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-left: 3px solid var(--accent-color);
+}
+
+.proximo-evento.prioridade-alta {
+    border-left-color: var(--danger-color);
+}
+
+.proximo-evento.prioridade-media {
+    border-left-color: var(--warning-color);
+}
+
+.proximo-evento.prioridade-baixa {
+    border-left-color: var(--success-color);
+}
+
+.evento-titulo {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.evento-horario {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Estatísticas da Agenda */
+.agenda-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.stat-item span {
+    color: var(--text-secondary);
+}
+
+.stat-item strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Calendário Principal */
+.agenda-calendar {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.calendar-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.calendar-filters {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.calendar-filters select {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    min-width: 140px;
+}
+
+.calendar-views {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.calendar-views .btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+/* FullCalendar Customizado */
+#calendar-agenda {
+    background: transparent;
 }
 
 .fc {
@@ -1500,15 +1701,259 @@ body {
     --fc-event-bg-color: var(--accent-color);
     --fc-event-border-color: var(--accent-color);
     --fc-page-bg-color: transparent;
+    --fc-neutral-bg-color: var(--bg-secondary);
+    --fc-list-event-hover-bg-color: var(--bg-tertiary);
 }
 
-.fc-theme-standard td, .fc-theme-standard th {
+.fc-theme-standard td, 
+.fc-theme-standard th {
     border-color: var(--border-color);
 }
 
 .fc-col-header-cell-cushion,
-.fc-daygrid-day-number {
+.fc-daygrid-day-number,
+.fc-timegrid-slot-label-cushion,
+.fc-list-event-time,
+.fc-list-event-title {
     color: var(--text-primary);
+}
+
+.fc-button-primary {
+    background-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
+}
+
+.fc-button-primary:hover {
+    background-color: #0056b3 !important;
+    border-color: #0056b3 !important;
+}
+
+.fc-event {
+    cursor: pointer;
+}
+
+/* Eventos por Tipo */
+.fc-event.evento-vencimento-pagar {
+    background-color: var(--danger-color) !important;
+    border-color: var(--danger-color) !important;
+}
+
+.fc-event.evento-vencimento-receber {
+    background-color: var(--success-color) !important;
+    border-color: var(--success-color) !important;
+}
+
+.fc-event.evento-reuniao-cliente {
+    background-color: var(--info-color) !important;
+    border-color: var(--info-color) !important;
+}
+
+.fc-event.evento-cobranca {
+    background-color: var(--warning-color) !important;
+    border-color: var(--warning-color) !important;
+    color: #000 !important;
+}
+
+.fc-event.evento-revisao-fluxo {
+    background-color: #6f42c1 !important;
+    border-color: #6f42c1 !important;
+}
+
+.fc-event.evento-negociacao {
+    background-color: #fd7e14 !important;
+    border-color: #fd7e14 !important;
+}
+
+.fc-event.evento-reuniao-interna {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+.fc-event.evento-lembrete {
+    background-color: #20c997 !important;
+    border-color: #20c997 !important;
+}
+
+/* Prioridades */
+.fc-event.prioridade-alta::before {
+    content: '🔴';
+    margin-right: 0.25rem;
+}
+
+.fc-event.prioridade-media::before {
+    content: '🟡';
+    margin-right: 0.25rem;
+}
+
+.fc-event.prioridade-baixa::before {
+    content: '🟢';
+    margin-right: 0.25rem;
+}
+
+/* Drop Zone para Arrastar */
+.fc-day-droppable {
+    position: relative;
+}
+
+.fc-day.drag-over {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    outline: 2px dashed var(--accent-color);
+}
+
+/* Notificações da Agenda */
+.agenda-notifications {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 350px;
+}
+
+.agenda-notification {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 12px var(--shadow);
+    animation: slideInRight 0.5s ease;
+    cursor: pointer;
+}
+
+.agenda-notification.urgente {
+    border-left-color: var(--danger-color);
+}
+
+.agenda-notification.importante {
+    border-left-color: var(--warning-color);
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0;
+}
+
+.notification-content {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.notification-time {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+/* Modal de Eventos */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+#recorrencia-options {
+    background: var(--bg-tertiary);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    margin-top: 0.5rem;
+}
+
+/* Responsividade da Agenda */
+@media (max-width: 1024px) {
+    .agenda-container {
+        grid-template-columns: 250px 1fr;
+        gap: 1rem;
+    }
+    
+    .agenda-sidebar {
+        max-height: 500px;
+    }
+}
+
+@media (max-width: 768px) {
+    .agenda-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .agenda-sidebar {
+        max-height: 300px;
+        order: 2;
+    }
+    
+    .agenda-calendar {
+        order: 1;
+    }
+    
+    .calendar-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .calendar-filters {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .calendar-views {
+        justify-content: center;
+    }
+    
+    .predefinicoes-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+}
+
+/* Animações */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.predefinicao-item {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fc-event {
+    transition: all 0.2s ease;
+}
+
+.fc-event:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
 }
 
 /* Upload de Arquivos */

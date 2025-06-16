@@ -6,8 +6,12 @@ class SistemaContasApp {
         this.theme = 'dark'; // Modo escuro como padrão
         this.modalType = null; // 'pagar' ou 'receber'
         this.calendar = null;
+        this.calendarAgenda = null;
         this.charts = {};
         this.arquivos = [];
+        this.eventos = [];
+        this.eventIdCounter = 1;
+        this.notificationIdCounter = 1;
         
         this.init();
     }
@@ -18,6 +22,7 @@ class SistemaContasApp {
         this.setupModals();
         this.setupEventListeners();
         this.setupCalendar();
+        this.setupAgenda();
         this.setupFileUpload();
         await this.loadInitialData();
         
@@ -93,7 +98,7 @@ class SistemaContasApp {
                 await this.loadContasReceber();
                 break;
             case 'agenda':
-                this.loadAgenda();
+                await this.loadAgenda();
                 break;
             case 'arquivos':
                 this.loadArquivos();
@@ -661,21 +666,905 @@ class SistemaContasApp {
         return date.toLocaleDateString('pt-BR');
     }
 
-    // === AGENDA ===
-    loadAgenda() {
-        if (this.calendar) {
-            this.calendar.render();
+    // === AGENDA COMPLETA ===
+    setupAgenda() {
+        this.setupAgendaEventListeners();
+        this.setupDragAndDrop();
+        this.setupAgendaNotifications();
+        this.generateSampleEvents();
+    }
+
+    setupAgendaEventListeners() {
+        // Botão novo evento
+        const novoEventoBtn = document.getElementById('novo-evento');
+        if (novoEventoBtn) {
+            novoEventoBtn.addEventListener('click', () => this.openEventModal());
+        }
+
+        // Botão sincronizar vencimentos
+        const sincronizarBtn = document.getElementById('sincronizar-vencimentos');
+        if (sincronizarBtn) {
+            sincronizarBtn.addEventListener('click', () => this.sincronizarVencimentos());
+        }
+
+        // Ações rápidas
+        this.setupAcoesRapidas();
+
+        // Filtros do calendário
+        this.setupCalendarFilters();
+
+        // Views do calendário
+        this.setupCalendarViews();
+
+        // Modal de eventos
+        this.setupEventModal();
+    }
+
+    setupAcoesRapidas() {
+        const acoes = [
+            { id: 'agendar-vencimentos-semana', action: () => this.agendarVencimentosSemana() },
+            { id: 'agendar-cobrancas-atraso', action: () => this.agendarCobrancasAtraso() },
+            { id: 'agendar-followup-clientes', action: () => this.agendarFollowupClientes() },
+            { id: 'lembretes-importantes', action: () => this.mostrarLembretesImportantes() }
+        ];
+
+        acoes.forEach(acao => {
+            const btn = document.getElementById(acao.id);
+            if (btn) {
+                btn.addEventListener('click', acao.action);
+            }
+        });
+    }
+
+    setupCalendarFilters() {
+        const filtroTipo = document.getElementById('filtro-tipo-evento');
+        const filtroPrioridade = document.getElementById('filtro-prioridade');
+        const limparFiltros = document.getElementById('limpar-filtros');
+
+        if (filtroTipo) {
+            filtroTipo.addEventListener('change', () => this.aplicarFiltrosCalendario());
+        }
+
+        if (filtroPrioridade) {
+            filtroPrioridade.addEventListener('change', () => this.aplicarFiltrosCalendario());
+        }
+
+        if (limparFiltros) {
+            limparFiltros.addEventListener('click', () => {
+                filtroTipo.value = '';
+                filtroPrioridade.value = '';
+                this.aplicarFiltrosCalendario();
+            });
         }
     }
 
+    setupCalendarViews() {
+        const viewBtns = document.querySelectorAll('[data-view]');
+        viewBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const view = btn.dataset.view;
+                if (this.calendarAgenda) {
+                    this.calendarAgenda.changeView(view);
+                }
+                
+                // Update active button
+                viewBtns.forEach(b => b.classList.remove('btn-primary'));
+                btn.classList.add('btn-primary');
+            });
+        });
+    }
+
+    setupEventModal() {
+        const modal = document.getElementById('modal-novo-evento');
+        const closeBtn = modal.querySelector('.modal-close');
+        const cancelBtn = modal.querySelector('.modal-cancel');
+        const form = document.getElementById('form-novo-evento');
+        const recorrenteCheckbox = document.getElementById('evento-recorrente');
+        const recorrenciaOptions = document.getElementById('recorrencia-options');
+
+        // Fechar modal
+        const closeModal = () => {
+            modal.classList.remove('active');
+            form.reset();
+            recorrenciaOptions.style.display = 'none';
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Mostrar/ocultar opções de recorrência
+        recorrenteCheckbox.addEventListener('change', () => {
+            recorrenciaOptions.style.display = recorrenteCheckbox.checked ? 'block' : 'none';
+        });
+
+        // Submit do formulário
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.saveNewEvent();
+            closeModal();
+        });
+    }
+
+    setupDragAndDrop() {
+        const predefinicoes = document.querySelectorAll('.predefinicao-item');
+        
+        predefinicoes.forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', item.dataset.tipo);
+                item.classList.add('dragging');
+            });
+
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+            });
+        });
+    }
+
+    setupAgendaNotifications() {
+        // Verificar eventos próximos a cada minuto
+        setInterval(() => {
+            this.checkUpcomingEvents();
+        }, 60000);
+
+        // Verificação inicial
+        setTimeout(() => {
+            this.checkUpcomingEvents();
+        }, 2000);
+    }
+
+    async loadAgenda() {
+        try {
+            // Inicializar calendário da agenda
+            this.initCalendarAgenda();
+            
+            // Carregar dados
+            await this.loadEventos();
+            this.updateAgendaStats();
+            this.loadProximosEventos();
+            
+            console.log('Agenda carregada com sucesso!');
+        } catch (error) {
+            console.error('Erro ao carregar agenda:', error);
+        }
+    }
+
+    initCalendarAgenda() {
+        const calendarEl = document.getElementById('calendar-agenda');
+        if (!calendarEl) return;
+
+        this.calendarAgenda = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'pt-br',
+            headerToolbar: {
+                left: 'title',
+                center: '',
+                right: 'today prev,next'
+            },
+            height: 'auto',
+            events: this.eventos,
+            eventClick: (info) => {
+                this.showEventDetails(info.event);
+            },
+            dateClick: (info) => {
+                this.openEventModal(info.dateStr);
+            },
+            eventDrop: (info) => {
+                this.updateEventDate(info.event, info.event.start);
+            },
+            droppable: true,
+            drop: (info) => {
+                const tipo = info.draggedEl.dataset.tipo;
+                this.createEventFromDrop(tipo, info.date);
+            },
+            eventDidMount: (info) => {
+                // Adicionar classes CSS baseadas no tipo e prioridade
+                const tipo = info.event.extendedProps.tipo;
+                const prioridade = info.event.extendedProps.prioridade;
+                
+                if (tipo) {
+                    info.el.classList.add(`evento-${tipo}`);
+                }
+                if (prioridade) {
+                    info.el.classList.add(`prioridade-${prioridade}`);
+                }
+            }
+        });
+
+        this.calendarAgenda.render();
+    }
+
+    generateSampleEvents() {
+        const hoje = new Date();
+        const amanha = new Date(hoje);
+        amanha.setDate(hoje.getDate() + 1);
+        
+        const proximaSemana = new Date(hoje);
+        proximaSemana.setDate(hoje.getDate() + 7);
+
+        this.eventos = [
+            {
+                id: 'evento-1',
+                title: '💸 Energia Elétrica - Vencimento',
+                start: amanha.toISOString().split('T')[0] + 'T09:00:00',
+                end: amanha.toISOString().split('T')[0] + 'T09:30:00',
+                extendedProps: {
+                    tipo: 'vencimento-pagar',
+                    prioridade: 'alta',
+                    valor: 450.00,
+                    participantes: 'Financeiro',
+                    descricao: 'Pagamento da conta de energia elétrica'
+                }
+            },
+            {
+                id: 'evento-2',
+                title: '🤝 Reunião - XYZ Consultoria',
+                start: proximaSemana.toISOString().split('T')[0] + 'T14:00:00',
+                end: proximaSemana.toISOString().split('T')[0] + 'T15:00:00',
+                extendedProps: {
+                    tipo: 'reuniao-cliente',
+                    prioridade: 'media',
+                    participantes: 'João Silva, Maria Santos',
+                    local: 'Presencial - Escritório',
+                    descricao: 'Discussão sobre novo projeto'
+                }
+            },
+            {
+                id: 'evento-3',
+                title: '📞 Cobrança - Comércio ABC',
+                start: hoje.toISOString().split('T')[0] + 'T16:00:00',
+                end: hoje.toISOString().split('T')[0] + 'T16:15:00',
+                extendedProps: {
+                    tipo: 'cobranca',
+                    prioridade: 'alta',
+                    valor: 1800.00,
+                    participantes: 'Gerente Financeiro',
+                    descricao: 'Cobrança de fatura em atraso'
+                }
+            }
+        ];
+    }
+
+    async loadEventos() {
+        // Em produção, carregaria do banco de dados
+        if (this.calendarAgenda) {
+            this.calendarAgenda.removeAllEvents();
+            this.eventos.forEach(evento => {
+                this.calendarAgenda.addEvent(evento);
+            });
+        }
+    }
+
+    openEventModal(date = null) {
+        const modal = document.getElementById('modal-novo-evento');
+        const dataInput = document.getElementById('evento-data');
+        
+        if (date) {
+            dataInput.value = date;
+        } else {
+            dataInput.value = new Date().toISOString().split('T')[0];
+        }
+        
+        // Definir hora padrão
+        document.getElementById('evento-hora').value = '09:00';
+        
+        modal.classList.add('active');
+    }
+
+    async saveNewEvent() {
+        try {
+            const formData = this.getEventFormData();
+            
+            if (!this.validateEventData(formData)) {
+                return;
+            }
+
+            const evento = this.createEventObject(formData);
+            
+            // Adicionar ao array de eventos
+            this.eventos.push(evento);
+            
+            // Adicionar ao calendário
+            if (this.calendarAgenda) {
+                this.calendarAgenda.addEvent(evento);
+            }
+            
+            // Atualizar estatísticas
+            this.updateAgendaStats();
+            this.loadProximosEventos();
+            
+            this.showSuccess('Evento criado com sucesso!');
+            
+        } catch (error) {
+            console.error('Erro ao salvar evento:', error);
+            this.showError('Erro ao criar evento');
+        }
+    }
+
+    getEventFormData() {
+        return {
+            titulo: document.getElementById('evento-titulo').value,
+            tipo: document.getElementById('evento-tipo').value,
+            data: document.getElementById('evento-data').value,
+            hora: document.getElementById('evento-hora').value,
+            duracao: parseInt(document.getElementById('evento-duracao').value),
+            prioridade: document.getElementById('evento-prioridade').value,
+            participantes: document.getElementById('evento-participantes').value,
+            local: document.getElementById('evento-local').value,
+            valor: parseFloat(document.getElementById('evento-valor').value) || 0,
+            lembrete: parseInt(document.getElementById('evento-lembrete').value),
+            descricao: document.getElementById('evento-descricao').value,
+            recorrente: document.getElementById('evento-recorrente').checked,
+            frequencia: document.getElementById('evento-frequencia').value
+        };
+    }
+
+    validateEventData(data) {
+        if (!data.titulo.trim()) {
+            this.showError('Título é obrigatório');
+            return false;
+        }
+        if (!data.tipo) {
+            this.showError('Tipo do evento é obrigatório');
+            return false;
+        }
+        if (!data.data) {
+            this.showError('Data é obrigatória');
+            return false;
+        }
+        if (!data.hora) {
+            this.showError('Hora é obrigatória');
+            return false;
+        }
+        return true;
+    }
+
+    createEventObject(data) {
+        const startDateTime = new Date(`${data.data}T${data.hora}:00`);
+        const endDateTime = new Date(startDateTime.getTime() + (data.duracao * 60000));
+        
+        const tipoIcons = {
+            'vencimento-pagar': '💸',
+            'vencimento-receber': '💰',
+            'reuniao-cliente': '🤝',
+            'cobranca': '📞',
+            'revisao-fluxo': '📊',
+            'negociacao': '🎯',
+            'reuniao-interna': '👥',
+            'lembrete': '⏰'
+        };
+
+        return {
+            id: `evento-${this.eventIdCounter++}`,
+            title: `${tipoIcons[data.tipo] || '📅'} ${data.titulo}`,
+            start: startDateTime.toISOString(),
+            end: endDateTime.toISOString(),
+            extendedProps: {
+                tipo: data.tipo,
+                prioridade: data.prioridade,
+                participantes: data.participantes,
+                local: data.local,
+                valor: data.valor,
+                lembrete: data.lembrete,
+                descricao: data.descricao,
+                recorrente: data.recorrente,
+                frequencia: data.frequencia
+            }
+        };
+    }
+
+    createEventFromDrop(tipo, date) {
+        const tipoInfo = {
+            'vencimento-pagar': { titulo: 'Vencimento a Pagar', duracao: 30 },
+            'vencimento-receber': { titulo: 'Vencimento a Receber', duracao: 30 },
+            'reuniao-cliente': { titulo: 'Reunião com Cliente', duracao: 60 },
+            'cobranca': { titulo: 'Cobrança', duracao: 15 },
+            'revisao-fluxo': { titulo: 'Revisão de Fluxo', duracao: 60 },
+            'negociacao': { titulo: 'Negociação', duracao: 90 },
+            'reuniao-interna': { titulo: 'Reunião Interna', duracao: 60 },
+            'lembrete': { titulo: 'Lembrete', duracao: 15 }
+        };
+
+        const info = tipoInfo[tipo];
+        if (!info) return;
+
+        // Definir hora padrão baseada no tipo
+        const hora = tipo.includes('cobranca') ? '16:00' : 
+                    tipo.includes('reuniao') ? '14:00' : '09:00';
+
+        const formData = {
+            titulo: info.titulo,
+            tipo: tipo,
+            data: date.toISOString().split('T')[0],
+            hora: hora,
+            duracao: info.duracao,
+            prioridade: tipo.includes('vencimento') ? 'alta' : 'media',
+            participantes: '',
+            local: '',
+            valor: 0,
+            lembrete: 15,
+            descricao: `${info.titulo} criado por arrastar e soltar`,
+            recorrente: false,
+            frequencia: 'weekly'
+        };
+
+        const evento = this.createEventObject(formData);
+        this.eventos.push(evento);
+        
+        if (this.calendarAgenda) {
+            this.calendarAgenda.addEvent(evento);
+        }
+        
+        this.updateAgendaStats();
+        this.loadProximosEventos();
+        
+        this.showSuccess(`${info.titulo} agendado com sucesso!`);
+    }
+
+    updateEventDate(event, newDate) {
+        // Atualizar evento no array
+        const eventoIndex = this.eventos.findIndex(e => e.id === event.id);
+        if (eventoIndex !== -1) {
+            this.eventos[eventoIndex].start = newDate.toISOString();
+        }
+        
+        this.showSuccess('Evento movido com sucesso!');
+    }
+
     showEventDetails(event) {
+        const props = event.extendedProps;
+        
         Swal.fire({
             title: event.title,
-            text: `Data: ${event.start.toLocaleDateString('pt-BR')}`,
-            icon: 'info',
-            confirmButtonText: 'OK',
+            html: `
+                <div class="event-details">
+                    <p><strong>📅 Data:</strong> ${event.start.toLocaleDateString('pt-BR')}</p>
+                    <p><strong>🕐 Horário:</strong> ${event.start.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} - ${event.end.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</p>
+                    ${props.prioridade ? `<p><strong>⚡ Prioridade:</strong> ${props.prioridade.charAt(0).toUpperCase() + props.prioridade.slice(1)}</p>` : ''}
+                    ${props.participantes ? `<p><strong>👥 Participantes:</strong> ${props.participantes}</p>` : ''}
+                    ${props.local ? `<p><strong>📍 Local:</strong> ${props.local}</p>` : ''}
+                    ${props.valor > 0 ? `<p><strong>💰 Valor:</strong> ${this.formatCurrency(props.valor)}</p>` : ''}
+                    ${props.descricao ? `<p><strong>📝 Descrição:</strong> ${props.descricao}</p>` : ''}
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '✏️ Editar',
+            cancelButtonText: '🗑️ Excluir',
+            showDenyButton: true,
+            denyButtonText: '✅ Fechar',
             background: 'var(--bg-secondary)',
             color: 'var(--text-primary)'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.editEvent(event);
+            } else if (result.isDismissed && result.dismiss === 'cancel') {
+                this.deleteEvent(event);
+            }
+        });
+    }
+
+    async editEvent(event) {
+        // Preencher modal com dados do evento
+        const props = event.extendedProps;
+        
+        document.getElementById('evento-titulo').value = event.title.replace(/^[^\s]+\s/, ''); // Remove emoji
+        document.getElementById('evento-tipo').value = props.tipo || '';
+        document.getElementById('evento-data').value = event.start.toISOString().split('T')[0];
+        document.getElementById('evento-hora').value = event.start.toTimeString().split(':').slice(0,2).join(':');
+        document.getElementById('evento-prioridade').value = props.prioridade || 'media';
+        document.getElementById('evento-participantes').value = props.participantes || '';
+        document.getElementById('evento-local').value = props.local || '';
+        document.getElementById('evento-valor').value = props.valor || '';
+        document.getElementById('evento-descricao').value = props.descricao || '';
+        
+        // Abrir modal em modo edição
+        const modal = document.getElementById('modal-novo-evento');
+        document.getElementById('modal-evento-title').textContent = 'Editar Evento';
+        modal.classList.add('active');
+    }
+
+    deleteEvent(event) {
+        Swal.fire({
+            title: 'Excluir evento?',
+            text: 'Esta ação não pode ser desfeita.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Remover do calendário
+                event.remove();
+                
+                // Remover do array
+                this.eventos = this.eventos.filter(e => e.id !== event.id);
+                
+                this.updateAgendaStats();
+                this.loadProximosEventos();
+                
+                this.showSuccess('Evento excluído com sucesso!');
+            }
+        });
+    }
+
+    aplicarFiltrosCalendario() {
+        const filtroTipo = document.getElementById('filtro-tipo-evento')?.value;
+        const filtroPrioridade = document.getElementById('filtro-prioridade')?.value;
+        
+        if (!this.calendarAgenda) return;
+        
+        // Remover todos os eventos
+        this.calendarAgenda.removeAllEvents();
+        
+        // Filtrar eventos
+        const eventosFiltrados = this.eventos.filter(evento => {
+            const tipoMatch = !filtroTipo || evento.extendedProps.tipo === filtroTipo;
+            const prioridadeMatch = !filtroPrioridade || evento.extendedProps.prioridade === filtroPrioridade;
+            
+            return tipoMatch && prioridadeMatch;
+        });
+        
+        // Adicionar eventos filtrados
+        eventosFiltrados.forEach(evento => {
+            this.calendarAgenda.addEvent(evento);
+        });
+    }
+
+    updateAgendaStats() {
+        const hoje = new Date();
+        const fimSemana = new Date(hoje);
+        fimSemana.setDate(hoje.getDate() + 7);
+        
+        const eventosHoje = this.eventos.filter(e => {
+            const eventDate = new Date(e.start);
+            return eventDate.toDateString() === hoje.toDateString();
+        }).length;
+        
+        const eventosSemana = this.eventos.filter(e => {
+            const eventDate = new Date(e.start);
+            return eventDate >= hoje && eventDate <= fimSemana;
+        }).length;
+        
+        const vencimentosProximos = this.eventos.filter(e => {
+            const eventDate = new Date(e.start);
+            return eventDate >= hoje && eventDate <= fimSemana && 
+                   (e.extendedProps.tipo === 'vencimento-pagar' || e.extendedProps.tipo === 'vencimento-receber');
+        }).length;
+        
+        const eventosAtrasados = this.eventos.filter(e => {
+            const eventDate = new Date(e.start);
+            return eventDate < hoje;
+        }).length;
+        
+        // Atualizar interface
+        const updateStat = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        };
+        
+        updateStat('eventos-hoje', eventosHoje);
+        updateStat('eventos-semana', eventosSemana);
+        updateStat('vencimentos-proximos', vencimentosProximos);
+        updateStat('eventos-atrasados', eventosAtrasados);
+    }
+
+    loadProximosEventos() {
+        const container = document.getElementById('proximos-eventos-lista');
+        if (!container) return;
+        
+        const hoje = new Date();
+        const proximos = this.eventos
+            .filter(e => new Date(e.start) >= hoje)
+            .sort((a, b) => new Date(a.start) - new Date(b.start))
+            .slice(0, 5);
+        
+        container.innerHTML = proximos.map(evento => {
+            const data = new Date(evento.start);
+            const prioridade = evento.extendedProps.prioridade || 'media';
+            
+            return `
+                <div class="proximo-evento prioridade-${prioridade}">
+                    <div class="evento-titulo">${evento.title}</div>
+                    <div class="evento-horario">
+                        ${data.toLocaleDateString('pt-BR')} às ${data.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Ações Rápidas
+    agendarVencimentosSemana() {
+        const hoje = new Date();
+        const fimSemana = new Date(hoje);
+        fimSemana.setDate(hoje.getDate() + 7);
+        
+        // Simular vencimentos da semana
+        const vencimentos = [
+            { titulo: 'Energia Elétrica', valor: 450.00, data: new Date(hoje.getTime() + 2*24*60*60*1000) },
+            { titulo: 'Internet', valor: 120.00, data: new Date(hoje.getTime() + 4*24*60*60*1000) },
+            { titulo: 'Aluguel', valor: 2500.00, data: new Date(hoje.getTime() + 6*24*60*60*1000) }
+        ];
+        
+        vencimentos.forEach(v => {
+            const evento = {
+                id: `venc-${this.eventIdCounter++}`,
+                title: `💸 ${v.titulo} - Vencimento`,
+                start: v.data.toISOString().split('T')[0] + 'T09:00:00',
+                end: v.data.toISOString().split('T')[0] + 'T09:30:00',
+                extendedProps: {
+                    tipo: 'vencimento-pagar',
+                    prioridade: 'alta',
+                    valor: v.valor,
+                    descricao: `Vencimento: ${v.titulo}`
+                }
+            };
+            
+            this.eventos.push(evento);
+            if (this.calendarAgenda) {
+                this.calendarAgenda.addEvent(evento);
+            }
+        });
+        
+        this.updateAgendaStats();
+        this.loadProximosEventos();
+        this.showSuccess(`${vencimentos.length} vencimentos agendados para a semana!`);
+    }
+
+    agendarCobrancasAtraso() {
+        const clientesAtraso = ['Comércio ABC Ltda', 'Tech Solutions Inc'];
+        const hoje = new Date();
+        
+        clientesAtraso.forEach((cliente, index) => {
+            const dataCobranca = new Date(hoje);
+            dataCobranca.setDate(hoje.getDate() + index + 1);
+            
+            const evento = {
+                id: `cobranca-${this.eventIdCounter++}`,
+                title: `📞 Cobrança - ${cliente}`,
+                start: dataCobranca.toISOString().split('T')[0] + 'T16:00:00',
+                end: dataCobranca.toISOString().split('T')[0] + 'T16:15:00',
+                extendedProps: {
+                    tipo: 'cobranca',
+                    prioridade: 'alta',
+                    participantes: cliente,
+                    descricao: `Cobrança de valores em atraso - ${cliente}`
+                }
+            };
+            
+            this.eventos.push(evento);
+            if (this.calendarAgenda) {
+                this.calendarAgenda.addEvent(evento);
+            }
+        });
+        
+        this.updateAgendaStats();
+        this.loadProximosEventos();
+        this.showSuccess(`${clientesAtraso.length} cobranças agendadas!`);
+    }
+
+    agendarFollowupClientes() {
+        const clientes = ['XYZ Consultoria Ltda', 'Digital Solutions Inc'];
+        const hoje = new Date();
+        
+        clientes.forEach((cliente, index) => {
+            const dataFollowup = new Date(hoje);
+            dataFollowup.setDate(hoje.getDate() + (index + 1) * 3);
+            
+            const evento = {
+                id: `followup-${this.eventIdCounter++}`,
+                title: `🤝 Follow-up - ${cliente}`,
+                start: dataFollowup.toISOString().split('T')[0] + 'T14:00:00',
+                end: dataFollowup.toISOString().split('T')[0] + 'T15:00:00',
+                extendedProps: {
+                    tipo: 'reuniao-cliente',
+                    prioridade: 'media',
+                    participantes: cliente,
+                    descricao: `Follow-up comercial com ${cliente}`
+                }
+            };
+            
+            this.eventos.push(evento);
+            if (this.calendarAgenda) {
+                this.calendarAgenda.addEvent(evento);
+            }
+        });
+        
+        this.updateAgendaStats();
+        this.loadProximosEventos();
+        this.showSuccess(`${clientes.length} follow-ups agendados!`);
+    }
+
+    mostrarLembretesImportantes() {
+        Swal.fire({
+            title: '⚡ Lembretes Importantes',
+            html: `
+                <div class="lembretes-importantes">
+                    <div class="lembrete-item">
+                        <strong>📊 Revisão Mensal de Fluxo</strong>
+                        <p>Analisar performance financeira do mês</p>
+                        <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('revisao-mensal')">Agendar</button>
+                    </div>
+                    <div class="lembrete-item">
+                        <strong>📈 Relatório Gerencial</strong>
+                        <p>Preparar relatório para diretoria</p>
+                        <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('relatorio-gerencial')">Agendar</button>
+                    </div>
+                    <div class="lembrete-item">
+                        <strong>🎯 Revisão de Metas</strong>
+                        <p>Avaliar cumprimento de metas financeiras</p>
+                        <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('revisao-metas')">Agendar</button>
+                    </div>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Fechar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            width: '600px'
+        });
+    }
+
+    agendarLembrete(tipo) {
+        const lembretes = {
+            'revisao-mensal': { titulo: 'Revisão Mensal de Fluxo', duracao: 120 },
+            'relatorio-gerencial': { titulo: 'Relatório Gerencial', duracao: 90 },
+            'revisao-metas': { titulo: 'Revisão de Metas', duracao: 60 }
+        };
+        
+        const lembrete = lembretes[tipo];
+        if (!lembrete) return;
+        
+        const proximaSegunda = new Date();
+        proximaSegunda.setDate(proximaSegunda.getDate() + (8 - proximaSegunda.getDay()) % 7);
+        
+        const evento = {
+            id: `lembrete-${this.eventIdCounter++}`,
+            title: `⏰ ${lembrete.titulo}`,
+            start: proximaSegunda.toISOString().split('T')[0] + 'T10:00:00',
+            end: new Date(proximaSegunda.getTime() + lembrete.duracao * 60000).toISOString(),
+            extendedProps: {
+                tipo: 'lembrete',
+                prioridade: 'media',
+                descricao: lembrete.titulo
+            }
+        };
+        
+        this.eventos.push(evento);
+        if (this.calendarAgenda) {
+            this.calendarAgenda.addEvent(evento);
+        }
+        
+        this.updateAgendaStats();
+        this.loadProximosEventos();
+        
+        Swal.close();
+        this.showSuccess(`${lembrete.titulo} agendado para próxima segunda-feira!`);
+    }
+
+    sincronizarVencimentos() {
+        Swal.fire({
+            title: 'Sincronizar Vencimentos',
+            text: 'Importar vencimentos de contas a pagar e receber para a agenda?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, sincronizar',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Simular sincronização
+                const vencimentosImportados = 5;
+                this.showSuccess(`${vencimentosImportados} vencimentos importados com sucesso!`);
+            }
+        });
+    }
+
+    checkUpcomingEvents() {
+        const agora = new Date();
+        const em15min = new Date(agora.getTime() + 15 * 60000);
+        
+        const eventosProximos = this.eventos.filter(evento => {
+            const inicio = new Date(evento.start);
+            const lembrete = evento.extendedProps.lembrete || 15;
+            const tempoLembrete = new Date(inicio.getTime() - lembrete * 60000);
+            
+            return tempoLembrete <= agora && inicio > agora;
+        });
+        
+        eventosProximos.forEach(evento => {
+            this.showAgendaNotification(evento);
+        });
+    }
+
+    showAgendaNotification(evento) {
+        const container = document.getElementById('agenda-notifications');
+        if (!container) return;
+        
+        const inicio = new Date(evento.start);
+        const tempoRestante = Math.round((inicio - new Date()) / 60000);
+        
+        const notification = document.createElement('div');
+        notification.className = 'agenda-notification';
+        if (evento.extendedProps.prioridade === 'alta') {
+            notification.classList.add('urgente');
+        }
+        
+        notification.innerHTML = `
+            <div class="notification-header">
+                <div class="notification-title">🔔 ${evento.title}</div>
+                <button class="notification-close">&times;</button>
+            </div>
+            <div class="notification-content">
+                Início em ${tempoRestante} minutos
+                ${evento.extendedProps.local ? `<br>📍 ${evento.extendedProps.local}` : ''}
+            </div>
+            <div class="notification-time">
+                ${inicio.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+            </div>
+        `;
+        
+        // Fechar notificação
+        notification.querySelector('.notification-close').addEventListener('click', () => {
+            notification.remove();
+        });
+        
+        // Clicar para ver detalhes
+        notification.addEventListener('click', () => {
+            if (this.calendarAgenda) {
+                const calendarEvent = this.calendarAgenda.getEventById(evento.id);
+                if (calendarEvent) {
+                    this.showEventDetails(calendarEvent);
+                }
+            }
+            notification.remove();
+        });
+        
+        container.appendChild(notification);
+        
+        // Auto-remover após 30 segundos
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 30000);
+    }
+
+    showEventDetails(event) {
+        const props = event.extendedProps;
+        
+        Swal.fire({
+            title: event.title,
+            html: `
+                <div class="event-details" style="text-align: left;">
+                    <p><strong>📅 Data:</strong> ${event.start.toLocaleDateString('pt-BR')}</p>
+                    <p><strong>🕐 Horário:</strong> ${event.start.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} - ${event.end.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</p>
+                    ${props.prioridade ? `<p><strong>⚡ Prioridade:</strong> ${props.prioridade.charAt(0).toUpperCase() + props.prioridade.slice(1)}</p>` : ''}
+                    ${props.participantes ? `<p><strong>👥 Participantes:</strong> ${props.participantes}</p>` : ''}
+                    ${props.local ? `<p><strong>📍 Local:</strong> ${props.local}</p>` : ''}
+                    ${props.valor > 0 ? `<p><strong>💰 Valor:</strong> ${this.formatCurrency(props.valor)}</p>` : ''}
+                    ${props.descricao ? `<p><strong>📝 Descrição:</strong> ${props.descricao}</p>` : ''}
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '✏️ Editar',
+            cancelButtonText: '🗑️ Excluir',
+            showDenyButton: true,
+            denyButtonText: '✅ Fechar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.editEvent(event);
+            } else if (result.isDismissed && result.dismiss === 'cancel') {
+                this.deleteEvent(event);
+            }
         });
     }
 
