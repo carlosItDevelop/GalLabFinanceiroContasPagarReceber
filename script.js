@@ -533,21 +533,96 @@ class SistemaContasApp {
     // === AÇÕES ===
     async pagarReceber(id, tipo) {
         const acao = tipo === 'pagar' ? 'pagar' : 'receber';
-        const valor = prompt(`Valor a ${acao}:`);
+        const titulo = tipo === 'pagar' ? 'Registrar Pagamento' : 'Registrar Recebimento';
+        const labelValor = tipo === 'pagar' ? 'Valor pago:' : 'Valor recebido:';
+        const confirmButtonText = tipo === 'pagar' ? 'Confirmar Pagamento' : 'Confirmar Recebimento';
         
-        if (valor && !isNaN(valor)) {
-            try {
-                console.log(`${acao.charAt(0).toUpperCase() + acao.slice(1)} conta ID:`, id, 'Valor:', valor);
-                this.showSuccess(`Conta ${acao === 'pagar' ? 'paga' : 'recebida'} com sucesso!`);
+        const { value: formValues } = await Swal.fire({
+            title: titulo,
+            html: `
+                <div class="swal-form">
+                    <div class="swal-form-group">
+                        <label for="swal-valor">${labelValor}</label>
+                        <input id="swal-valor" type="number" step="0.01" min="0" class="swal2-input" placeholder="0,00" required>
+                    </div>
+                    <div class="swal-form-group">
+                        <label for="swal-data">Data do ${acao}:</label>
+                        <input id="swal-data" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}" required>
+                    </div>
+                    <div class="swal-form-group">
+                        <label for="swal-observacoes">Observações (opcional):</label>
+                        <textarea id="swal-observacoes" class="swal2-textarea" placeholder="Adicione observações sobre este ${acao}..."></textarea>
+                    </div>
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: confirmButtonText,
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            confirmButtonColor: tipo === 'pagar' ? '#dc3545' : '#28a745',
+            preConfirm: () => {
+                const valor = document.getElementById('swal-valor').value;
+                const data = document.getElementById('swal-data').value;
+                const observacoes = document.getElementById('swal-observacoes').value;
                 
-                // Recarregar dados
-                if (tipo === 'pagar') {
-                    await this.loadContasPagar();
-                } else {
-                    await this.loadContasReceber();
+                if (!valor || isNaN(valor) || parseFloat(valor) <= 0) {
+                    Swal.showValidationMessage('Por favor, informe um valor válido');
+                    return false;
                 }
                 
-                await this.loadDashboard();
+                if (!data) {
+                    Swal.showValidationMessage('Por favor, informe a data');
+                    return false;
+                }
+                
+                return {
+                    valor: parseFloat(valor),
+                    data: data,
+                    observacoes: observacoes
+                };
+            }
+        });
+
+        if (formValues) {
+            try {
+                console.log(`${acao.charAt(0).toUpperCase() + acao.slice(1)} conta ID:`, id, 'Dados:', formValues);
+                
+                // Mostrar modal de confirmação
+                const confirmResult = await Swal.fire({
+                    title: 'Confirmar operação?',
+                    html: `
+                        <div class="swal-confirm-details">
+                            <p><strong>Valor:</strong> ${this.formatCurrency(formValues.valor)}</p>
+                            <p><strong>Data:</strong> ${this.formatDate(formValues.data)}</p>
+                            ${formValues.observacoes ? `<p><strong>Observações:</strong> ${formValues.observacoes}</p>` : ''}
+                        </div>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim, confirmar',
+                    cancelButtonText: 'Cancelar',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    confirmButtonColor: tipo === 'pagar' ? '#dc3545' : '#28a745'
+                });
+
+                if (confirmResult.isConfirmed) {
+                    // Aqui seria feita a chamada para a API
+                    // await this.database.pagarConta(id, formValues.valor, formValues.data) ou receberConta()
+                    
+                    this.showSuccess(`Conta ${acao === 'pagar' ? 'paga' : 'recebida'} com sucesso!`);
+                    
+                    // Recarregar dados
+                    if (tipo === 'pagar') {
+                        await this.loadContasPagar();
+                    } else {
+                        await this.loadContasReceber();
+                    }
+                    
+                    await this.loadDashboard();
+                }
                 
             } catch (error) {
                 console.error(`Erro ao ${acao} conta:`, error);
