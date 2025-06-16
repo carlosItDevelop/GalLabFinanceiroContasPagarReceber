@@ -5,6 +5,9 @@ class SistemaContasApp {
         this.currentTab = 'dashboard';
         this.theme = 'dark'; // Modo escuro como padrão
         this.modalType = null; // 'pagar' ou 'receber'
+        this.calendar = null;
+        this.charts = {};
+        this.arquivos = [];
         
         this.init();
     }
@@ -14,6 +17,8 @@ class SistemaContasApp {
         this.setupTabs();
         this.setupModals();
         this.setupEventListeners();
+        this.setupCalendar();
+        this.setupFileUpload();
         await this.loadInitialData();
         
         console.log('Sistema inicializado com sucesso!');
@@ -87,6 +92,78 @@ class SistemaContasApp {
             case 'contas-receber':
                 await this.loadContasReceber();
                 break;
+            case 'agenda':
+                this.loadAgenda();
+                break;
+            case 'arquivos':
+                this.loadArquivos();
+                break;
+            case 'consolidados':
+                await this.loadConsolidados();
+                break;
+        }
+    }
+
+    // === SETUP CALENDÁRIO ===
+    setupCalendar() {
+        const calendarEl = document.getElementById('calendar');
+        if (calendarEl) {
+            this.calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'pt-br',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                events: [
+                    {
+                        title: 'Energia Elétrica',
+                        date: '2024-01-15',
+                        color: '#dc3545'
+                    },
+                    {
+                        title: 'Consultoria - Receber',
+                        date: '2024-01-10',
+                        color: '#28a745'
+                    }
+                ],
+                eventClick: (info) => {
+                    this.showEventDetails(info.event);
+                }
+            });
+        }
+    }
+
+    // === SETUP UPLOAD DE ARQUIVOS ===
+    setupFileUpload() {
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-arquivo');
+
+        if (uploadArea && fileInput) {
+            // Drag and drop
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                this.handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                this.handleFiles(e.target.files);
+            });
+        }
+
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', () => fileInput.click());
         }
     }
 
@@ -188,9 +265,78 @@ class SistemaContasApp {
             document.getElementById('vencidas-receber').textContent = `${dashboardData.vencidasReceber} vencidas`;
             document.getElementById('total-alertas').textContent = dashboardData.alertas;
 
+            // Carregar gráficos
+            this.loadCharts();
+
         } catch (error) {
             console.error('Erro ao carregar dashboard:', error);
         }
+    }
+
+    // === GRÁFICOS ===
+    loadCharts() {
+        // Gráfico de Fluxo de Caixa
+        const fluxoOptions = {
+            series: [{
+                name: 'A Receber',
+                data: [31000, 28000, 35000, 42000, 38000, 45000]
+            }, {
+                name: 'A Pagar',
+                data: [22000, 25000, 28000, 31000, 29000, 35000]
+            }],
+            chart: {
+                type: 'area',
+                height: 350,
+                background: 'transparent',
+                toolbar: { show: false }
+            },
+            colors: ['#28a745', '#dc3545'],
+            xaxis: {
+                categories: ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                labels: { style: { colors: 'var(--text-secondary)' } }
+            },
+            yaxis: {
+                labels: { 
+                    style: { colors: 'var(--text-secondary)' },
+                    formatter: (val) => this.formatCurrency(val)
+                }
+            },
+            legend: {
+                labels: { colors: 'var(--text-primary)' }
+            },
+            grid: {
+                borderColor: 'var(--border-color)'
+            },
+            theme: {
+                mode: this.theme
+            }
+        };
+
+        if (this.charts.fluxo) this.charts.fluxo.destroy();
+        this.charts.fluxo = new ApexCharts(document.querySelector("#chart-fluxo-caixa"), fluxoOptions);
+        this.charts.fluxo.render();
+
+        // Gráfico de Categorias
+        const categoriaOptions = {
+            series: [44, 35, 21],
+            chart: {
+                type: 'donut',
+                height: 350,
+                background: 'transparent'
+            },
+            labels: ['Fornecedores', 'Utilidades', 'Escritório'],
+            colors: ['#007bff', '#ffc107', '#28a745'],
+            legend: {
+                labels: { colors: 'var(--text-primary)' }
+            },
+            theme: {
+                mode: this.theme
+            }
+        };
+
+        if (this.charts.categorias) this.charts.categorias.destroy();
+        this.charts.categorias = new ApexCharts(document.querySelector("#chart-categorias"), categoriaOptions);
+        this.charts.categorias.render();
     }
 
     async loadContasPagar() {
@@ -440,17 +586,184 @@ class SistemaContasApp {
         return date.toLocaleDateString('pt-BR');
     }
 
-    // === NOTIFICAÇÕES ===
+    // === AGENDA ===
+    loadAgenda() {
+        if (this.calendar) {
+            this.calendar.render();
+        }
+    }
+
+    showEventDetails(event) {
+        Swal.fire({
+            title: event.title,
+            text: `Data: ${event.start.toLocaleDateString('pt-BR')}`,
+            icon: 'info',
+            confirmButtonText: 'OK',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
+    }
+
+    // === ARQUIVOS ===
+    loadArquivos() {
+        this.renderArquivos();
+    }
+
+    handleFiles(files) {
+        Array.from(files).forEach(file => {
+            if (file.size > 10 * 1024 * 1024) { // 10MB
+                this.showError('Arquivo muito grande (máx. 10MB)');
+                return;
+            }
+
+            const arquivo = {
+                id: Date.now() + Math.random(),
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                uploadDate: new Date()
+            };
+
+            this.arquivos.push(arquivo);
+            this.showSuccess(`Arquivo "${file.name}" adicionado!`);
+        });
+
+        this.renderArquivos();
+    }
+
+    renderArquivos() {
+        const grid = document.getElementById('arquivos-grid');
+        if (!grid) return;
+
+        grid.innerHTML = this.arquivos.map(arquivo => `
+            <div class="arquivo-item">
+                <div class="arquivo-icon">${this.getFileIcon(arquivo.type)}</div>
+                <div class="arquivo-name">${arquivo.name}</div>
+                <div class="arquivo-info">
+                    ${this.formatFileSize(arquivo.size)} • ${this.formatDate(arquivo.uploadDate)}
+                </div>
+                <div class="arquivo-actions">
+                    <button class="btn btn-sm btn-primary" onclick="app.downloadFile('${arquivo.id}')">
+                        📥 Download
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="app.deleteFile('${arquivo.id}')">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    getFileIcon(type) {
+        if (type.includes('pdf')) return '📄';
+        if (type.includes('image')) return '🖼️';
+        if (type.includes('word')) return '📝';
+        if (type.includes('excel')) return '📊';
+        return '📎';
+    }
+
+    formatFileSize(size) {
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let unitIndex = 0;
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        return `${size.toFixed(1)} ${units[unitIndex]}`;
+    }
+
+    downloadFile(id) {
+        this.showInfo('Download iniciado!');
+    }
+
+    deleteFile(id) {
+        Swal.fire({
+            title: 'Excluir arquivo?',
+            text: 'Esta ação não pode ser desfeita.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.arquivos = this.arquivos.filter(arquivo => arquivo.id !== id);
+                this.renderArquivos();
+                this.showSuccess('Arquivo excluído!');
+            }
+        });
+    }
+
+    // === CONSOLIDADOS ===
+    async loadConsolidados() {
+        // Gráfico de evolução
+        const evolucaoOptions = {
+            series: [{
+                name: 'Saldo',
+                data: [9000, 3000, 7000, 11000, 9000, 10000]
+            }],
+            chart: {
+                type: 'line',
+                height: 350,
+                background: 'transparent',
+                toolbar: { show: false }
+            },
+            colors: ['#007bff'],
+            xaxis: {
+                categories: ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                labels: { style: { colors: 'var(--text-secondary)' } }
+            },
+            yaxis: {
+                labels: { 
+                    style: { colors: 'var(--text-secondary)' },
+                    formatter: (val) => this.formatCurrency(val)
+                }
+            },
+            grid: {
+                borderColor: 'var(--border-color)'
+            },
+            theme: {
+                mode: this.theme
+            }
+        };
+
+        if (this.charts.evolucao) this.charts.evolucao.destroy();
+        this.charts.evolucao = new ApexCharts(document.querySelector("#chart-evolucao"), evolucaoOptions);
+        this.charts.evolucao.render();
+    }
+
+    // === NOTIFICAÇÕES COM SWEETALERT2 ===
     showSuccess(message) {
-        this.showNotification(message, 'success');
+        Swal.fire({
+            icon: 'success',
+            title: 'Sucesso!',
+            text: message,
+            timer: 3000,
+            showConfirmButton: false,
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
     }
 
     showError(message) {
-        this.showNotification(message, 'error');
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: message,
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
     }
 
     showInfo(message) {
-        this.showNotification(message, 'info');
+        Swal.fire({
+            icon: 'info',
+            title: 'Informação',
+            text: message,
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
     }
 
     showNotification(message, type) {

@@ -311,6 +311,13 @@ body {
 /* Gráficos */
 .dashboard-charts {
     margin-top: 2rem;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+}
+
+.consolidados-content {
+    margin-top: 1rem;
 }
 
 .chart-container {
@@ -323,6 +330,7 @@ body {
 .chart-container h3 {
     margin-bottom: 1rem;
     color: var(--text-primary);
+    font-size: 1.1rem;
 }
 
 .chart-placeholder {
@@ -334,6 +342,125 @@ body {
     justify-content: center;
     color: var(--text-muted);
     border: 2px dashed var(--border-color);
+}
+
+/* Calendário */
+#calendar {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.fc {
+    --fc-border-color: var(--border-color);
+    --fc-button-bg-color: var(--accent-color);
+    --fc-button-border-color: var(--accent-color);
+    --fc-button-hover-bg-color: #0056b3;
+    --fc-button-active-bg-color: #004085;
+    --fc-today-bg-color: rgba(0, 123, 255, 0.1);
+    --fc-event-bg-color: var(--accent-color);
+    --fc-event-border-color: var(--accent-color);
+    --fc-page-bg-color: transparent;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+    border-color: var(--border-color);
+}
+
+.fc-col-header-cell-cushion,
+.fc-daygrid-day-number {
+    color: var(--text-primary);
+}
+
+/* Upload de Arquivos */
+.upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 0.75rem;
+    padding: 3rem 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    background: var(--bg-primary);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    border-color: var(--accent-color);
+    background: rgba(0, 123, 255, 0.05);
+}
+
+.upload-content {
+    pointer-events: none;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.upload-area h3 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.upload-area p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.upload-area small {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Grid de Arquivos */
+.arquivos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.arquivo-item {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.arquivo-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.arquivo-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.7;
+}
+
+.arquivo-name {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    word-break: break-all;
+}
+
+.arquivo-info {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.arquivo-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
 }
 
 /* Filtros */
