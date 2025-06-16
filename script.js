@@ -791,6 +791,23 @@ class SistemaContasApp {
             // Configurar exportação (Fase 2)
             this.setupExportacao();
             
+            // === FASE 1 REVISITADA ===
+            // Carregar drill-down interativo nos gráficos
+            this.setupInteractiveCharts();
+            
+            // Carregar alertas personalizados
+            this.loadAlertasPersonalizados();
+            
+            // === FASE 3: FUNCIONALIDADES AVANÇADAS ===
+            // Orçamento vs Realizado
+            this.loadOrcamentoRealizado();
+            
+            // Fluxo de caixa projetado inteligente
+            this.loadFluxoCaixaInteligente();
+            
+            // Análise preditiva de inadimplência
+            this.loadAnalisePreditivaInadimplencia();
+            
         } catch (error) {
             console.error('Erro ao carregar consolidados:', error);
             this.showError('Erro ao carregar dados consolidados');
@@ -1356,6 +1373,980 @@ class SistemaContasApp {
     downloadFile(filename, mimeType) {
         // Simular download de arquivo
         console.log(`Baixando arquivo: ${filename} (${mimeType})`);
+    }
+
+    // === FASE 1 REVISITADA: GRÁFICOS INTERATIVOS ===
+    setupInteractiveCharts() {
+        // Configurar drill-down nos gráficos existentes
+        if (this.charts.fluxoConsolidado) {
+            this.charts.fluxoConsolidado.updateOptions({
+                chart: {
+                    events: {
+                        dataPointSelection: (event, chartContext, config) => {
+                            this.handleChartDrillDown(config.dataPointIndex, 'fluxo');
+                        }
+                    }
+                }
+            });
+        }
+
+        if (this.charts.categoriasConsolidado) {
+            this.charts.categoriasConsolidado.updateOptions({
+                chart: {
+                    events: {
+                        dataPointSelection: (event, chartContext, config) => {
+                            this.handleChartDrillDown(config.dataPointIndex, 'categoria');
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    async handleChartDrillDown(index, type) {
+        let drillDownData = {};
+        
+        if (type === 'fluxo') {
+            const meses = ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            const mesSelecionado = meses[index];
+            
+            drillDownData = {
+                titulo: `Detalhamento de ${mesSelecionado}`,
+                transacoes: [
+                    { data: `2024-${index + 7}-05`, descricao: 'Consultoria ABC Ltda', valor: 2500.00, tipo: 'entrada' },
+                    { data: `2024-${index + 7}-10`, descricao: 'Material Escritório', valor: -450.00, tipo: 'saida' },
+                    { data: `2024-${index + 7}-15`, descricao: 'Energia Elétrica', valor: -380.00, tipo: 'saida' },
+                    { data: `2024-${index + 7}-20`, descricao: 'Venda Produtos', valor: 1800.00, tipo: 'entrada' }
+                ]
+            };
+        } else if (type === 'categoria') {
+            const categorias = ['Fornecedores', 'Utilidades', 'Escritório', 'Serviços', 'Outros'];
+            const categoriaSelecionada = categorias[index];
+            
+            drillDownData = {
+                titulo: `Detalhamento - ${categoriaSelecionada}`,
+                transacoes: [
+                    { data: '2024-12-01', descricao: `Item 1 - ${categoriaSelecionada}`, valor: -1200.00, tipo: 'saida' },
+                    { data: '2024-12-05', descricao: `Item 2 - ${categoriaSelecionada}`, valor: -850.00, tipo: 'saida' },
+                    { data: '2024-12-10', descricao: `Item 3 - ${categoriaSelecionada}`, valor: -650.00, tipo: 'saida' }
+                ]
+            };
+        }
+
+        // Mostrar modal com detalhamento
+        await Swal.fire({
+            title: drillDownData.titulo,
+            html: `
+                <div class="drill-down-content">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--bg-tertiary);">
+                                <th style="padding: 8px; border: 1px solid var(--border-color);">Data</th>
+                                <th style="padding: 8px; border: 1px solid var(--border-color);">Descrição</th>
+                                <th style="padding: 8px; border: 1px solid var(--border-color);">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${drillDownData.transacoes.map(t => `
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--border-color);">${this.formatDate(t.data)}</td>
+                                    <td style="padding: 8px; border: 1px solid var(--border-color);">${t.descricao}</td>
+                                    <td style="padding: 8px; border: 1px solid var(--border-color); color: ${t.valor > 0 ? 'var(--success-color)' : 'var(--danger-color)'};">
+                                        ${this.formatCurrency(Math.abs(t.valor))}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `,
+            width: '80%',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            confirmButtonText: 'Fechar'
+        });
+    }
+
+    // === FASE 1 REVISITADA: ALERTAS PERSONALIZADOS ===
+    loadAlertasPersonalizados() {
+        const alertas = [
+            {
+                id: 1,
+                tipo: 'vencimento',
+                titulo: 'Contas vencendo hoje',
+                mensagem: '3 contas a pagar vencem hoje',
+                prioridade: 'alta',
+                acao: () => this.showTab('contas-pagar')
+            },
+            {
+                id: 2,
+                tipo: 'fluxo',
+                titulo: 'Fluxo negativo projetado',
+                mensagem: 'Próxima semana com saldo negativo de R$ 2.500',
+                prioridade: 'media',
+                acao: () => this.loadFluxoCaixaInteligente()
+            },
+            {
+                id: 3,
+                tipo: 'limite',
+                titulo: 'Limite de categoria atingido',
+                mensagem: 'Gastos com "Escritório" atingiram 95% do orçamento',
+                prioridade: 'alta',
+                acao: () => this.loadOrcamentoRealizado()
+            }
+        ];
+
+        this.renderAlertasPersonalizados(alertas);
+    }
+
+    renderAlertasPersonalizados(alertas) {
+        // Adicionar notificação visual na interface
+        const alertContainer = document.createElement('div');
+        alertContainer.className = 'alertas-container';
+        alertContainer.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 350px;
+        `;
+
+        alertas.forEach((alerta, index) => {
+            setTimeout(() => {
+                const alertElement = document.createElement('div');
+                alertElement.className = `alerta-item alerta-${alerta.prioridade}`;
+                alertElement.style.cssText = `
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-color);
+                    border-left: 4px solid ${alerta.prioridade === 'alta' ? 'var(--danger-color)' : 'var(--warning-color)'};
+                    border-radius: 8px;
+                    padding: 12px;
+                    margin-bottom: 10px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 4px 12px var(--shadow);
+                `;
+
+                alertElement.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <strong style="color: var(--text-primary);">${alerta.titulo}</strong>
+                            <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">
+                                ${alerta.mensagem}
+                            </p>
+                        </div>
+                        <button style="background: none; border: none; color: var(--text-muted); cursor: pointer;">&times;</button>
+                    </div>
+                `;
+
+                alertElement.addEventListener('click', () => {
+                    alerta.acao();
+                    alertElement.remove();
+                });
+
+                alertElement.querySelector('button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    alertElement.remove();
+                });
+
+                alertContainer.appendChild(alertElement);
+
+                // Auto-remover após 10 segundos
+                setTimeout(() => {
+                    if (alertElement.parentNode) {
+                        alertElement.remove();
+                    }
+                }, 10000);
+
+            }, index * 1000); // Mostrar alertas com delay
+        });
+
+        document.body.appendChild(alertContainer);
+    }
+
+    // === FASE 3: ORÇAMENTO VS REALIZADO ===
+    loadOrcamentoRealizado() {
+        const orcamentoData = {
+            categorias: [
+                {
+                    nome: 'Escritório',
+                    orcado: 2000.00,
+                    realizado: 1900.00,
+                    percentual: 95.0,
+                    status: 'atencao',
+                    meta: 'Manter gastos abaixo de R$ 2.000'
+                },
+                {
+                    nome: 'Utilidades',
+                    orcado: 1500.00,
+                    realizado: 1200.00,
+                    percentual: 80.0,
+                    status: 'ok',
+                    meta: 'Reduzir 10% vs mês anterior'
+                },
+                {
+                    nome: 'Fornecedores',
+                    orcado: 8000.00,
+                    realizado: 8500.00,
+                    percentual: 106.25,
+                    status: 'ultrapassado',
+                    meta: 'Negociar melhores preços'
+                },
+                {
+                    nome: 'Serviços',
+                    orcado: 3000.00,
+                    realizado: 2400.00,
+                    percentual: 80.0,
+                    status: 'ok',
+                    meta: 'Manter nível atual'
+                }
+            ],
+            resumo: {
+                totalOrcado: 14500.00,
+                totalRealizado: 14000.00,
+                percentualGeral: 96.55,
+                economia: 500.00
+            }
+        };
+
+        this.renderOrcamentoRealizado(orcamentoData);
+    }
+
+    renderOrcamentoRealizado(data) {
+        const container = document.getElementById('orcamento-realizado') || this.createOrcamentoContainer();
+        
+        container.innerHTML = `
+            <div class="orcamento-resumo">
+                <div class="orcamento-card ${data.resumo.percentualGeral > 100 ? 'ultrapassado' : data.resumo.percentualGeral > 90 ? 'atencao' : 'ok'}">
+                    <h4>📊 Resumo Geral do Orçamento</h4>
+                    <div class="orcamento-valores">
+                        <p><strong>Orçado:</strong> ${this.formatCurrency(data.resumo.totalOrcado)}</p>
+                        <p><strong>Realizado:</strong> ${this.formatCurrency(data.resumo.totalRealizado)}</p>
+                        <p><strong>Performance:</strong> ${data.resumo.percentualGeral.toFixed(1)}%</p>
+                        <p class="${data.resumo.economia > 0 ? 'economia' : 'excesso'}">
+                            <strong>${data.resumo.economia > 0 ? 'Economia' : 'Excesso'}:</strong> 
+                            ${this.formatCurrency(Math.abs(data.resumo.economia))}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="orcamento-categorias">
+                ${data.categorias.map(categoria => `
+                    <div class="categoria-orcamento ${categoria.status}">
+                        <div class="categoria-header">
+                            <h5>${categoria.nome}</h5>
+                            <span class="categoria-percentual">${categoria.percentual.toFixed(1)}%</span>
+                        </div>
+                        
+                        <div class="categoria-valores">
+                            <div class="valor-item">
+                                <span>Orçado:</span>
+                                <span>${this.formatCurrency(categoria.orcado)}</span>
+                            </div>
+                            <div class="valor-item">
+                                <span>Realizado:</span>
+                                <span>${this.formatCurrency(categoria.realizado)}</span>
+                            </div>
+                            <div class="valor-item diferenca">
+                                <span>Diferença:</span>
+                                <span class="${categoria.realizado > categoria.orcado ? 'negativo' : 'positivo'}">
+                                    ${categoria.realizado > categoria.orcado ? '+' : ''}${this.formatCurrency(categoria.realizado - categoria.orcado)}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="progresso-bar">
+                            <div class="progresso-fill" style="width: ${Math.min(categoria.percentual, 100)}%; background-color: ${categoria.status === 'ok' ? 'var(--success-color)' : categoria.status === 'atencao' ? 'var(--warning-color)' : 'var(--danger-color)'}"></div>
+                        </div>
+                        
+                        <div class="categoria-meta">
+                            <small>🎯 Meta: ${categoria.meta}</small>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div class="orcamento-acoes">
+                <button class="btn btn-primary" onclick="app.editarOrcamento()">
+                    ✏️ Editar Orçamento
+                </button>
+                <button class="btn btn-secondary" onclick="app.projetarOrcamento()">
+                    📈 Projetar Próximo Mês
+                </button>
+            </div>
+        `;
+    }
+
+    createOrcamentoContainer() {
+        const container = document.createElement('div');
+        container.id = 'orcamento-realizado';
+        container.className = 'analise-container';
+        
+        // Adicionar após análises avançadas
+        const analiseAvancada = document.querySelector('.consolidados-analises-avancadas');
+        if (analiseAvancada && analiseAvancada.parentNode) {
+            analiseAvancada.parentNode.insertBefore(container, analiseAvancada.nextSibling);
+        }
+        
+        return container;
+    }
+
+    // === FASE 3: FLUXO DE CAIXA INTELIGENTE ===
+    loadFluxoCaixaInteligente() {
+        const fluxoInteligente = this.calcularFluxoCaixaInteligente();
+        this.renderFluxoCaixaInteligente(fluxoInteligente);
+    }
+
+    calcularFluxoCaixaInteligente() {
+        // Simulação de algoritmo inteligente baseado em:
+        // - Histórico de entradas/saídas
+        // - Sazonalidade
+        // - Contas já cadastradas
+        // - Tendências identificadas
+
+        const hoje = new Date();
+        const proximosDias = [];
+        
+        for (let i = 1; i <= 30; i++) {
+            const data = new Date(hoje);
+            data.setDate(hoje.getDate() + i);
+            
+            // Calcular projeção baseada em padrões históricos
+            const diaCategoria = this.categorizarDia(data);
+            const entradaBase = this.calcularEntradaBase(diaCategoria);
+            const saidaBase = this.calcularSaidaBase(diaCategoria);
+            
+            // Aplicar fatores de ajuste
+            const fatorSazonalidade = this.getFatorSazonalidade(data);
+            const fatorTendencia = this.getFatorTendencia();
+            
+            const entradaProjetada = entradaBase * fatorSazonalidade * fatorTendencia;
+            const saidaProjetada = saidaBase * fatorSazonalidade;
+            
+            proximosDias.push({
+                data: data,
+                entradaProjetada: entradaProjetada,
+                saidaProjetada: saidaProjetada,
+                saldoProjetado: entradaProjetada - saidaProjetada,
+                confianca: this.calcularConfianca(i)
+            });
+        }
+
+        // Calcular saldo acumulado
+        let saldoAcumulado = 17000; // Saldo atual simulado
+        proximosDias.forEach(dia => {
+            saldoAcumulado += dia.saldoProjetado;
+            dia.saldoAcumulado = saldoAcumulado;
+        });
+
+        return {
+            saldoAtual: 17000,
+            proximosDias: proximosDias,
+            alertas: this.identificarAlertasFluxo(proximosDias),
+            recomendacoes: this.gerarRecomendacoesFluxo(proximosDias)
+        };
+    }
+
+    categorizarDia(data) {
+        const diaSemana = data.getDay(); // 0 = domingo, 6 = sábado
+        const diaMs = data.getDate();
+        
+        if (diaSemana === 0 || diaSemana === 6) return 'fimSemana';
+        if (diaMs <= 5) return 'inicioMes';
+        if (diaMs >= 25) return 'fimMes';
+        return 'meioMes';
+    }
+
+    calcularEntradaBase(categoria) {
+        const baseEntradas = {
+            'inicioMes': 3500,
+            'meioMes': 1800,
+            'fimMes': 2200,
+            'fimSemana': 500
+        };
+        return baseEntradas[categoria] || 1500;
+    }
+
+    calcularSaidaBase(categoria) {
+        const baseSaidas = {
+            'inicioMes': 1200,
+            'meioMes': 900,
+            'fimMes': 1500,
+            'fimSemana': 300
+        };
+        return baseSaidas[categoria] || 800;
+    }
+
+    getFatorSazonalidade(data) {
+        const mes = data.getMonth();
+        // Janeiro: pós-férias (0.8), Dezembro: alta temporada (1.3)
+        const fatoresSazonais = [0.8, 0.9, 1.0, 1.1, 1.0, 0.9, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3];
+        return fatoresSazonais[mes];
+    }
+
+    getFatorTendencia() {
+        // Baseado na análise de tendências: +8.5% nas entradas
+        return 1.085;
+    }
+
+    calcularConfianca(dias) {
+        // Confiança decresce com o tempo
+        if (dias <= 7) return 95;
+        if (dias <= 15) return 85;
+        if (dias <= 22) return 75;
+        return 65;
+    }
+
+    identificarAlertasFluxo(proximosDias) {
+        const alertas = [];
+        
+        proximosDias.forEach((dia, index) => {
+            if (dia.saldoAcumulado < 0) {
+                alertas.push({
+                    tipo: 'saldo_negativo',
+                    data: dia.data,
+                    valor: dia.saldoAcumulado,
+                    message: `Saldo negativo previsto: ${this.formatCurrency(dia.saldoAcumulado)}`
+                });
+            }
+            
+            if (dia.saldoAcumulado < 5000 && dia.saldoAcumulado > 0) {
+                alertas.push({
+                    tipo: 'saldo_baixo',
+                    data: dia.data,
+                    valor: dia.saldoAcumulado,
+                    message: `Saldo baixo previsto: ${this.formatCurrency(dia.saldoAcumulado)}`
+                });
+            }
+        });
+        
+        return alertas.slice(0, 3); // Máximo 3 alertas
+    }
+
+    gerarRecomendacoesFluxo(proximosDias) {
+        const recomendacoes = [];
+        
+        const menorSaldo = Math.min(...proximosDias.map(d => d.saldoAcumulado));
+        if (menorSaldo < 0) {
+            recomendacoes.push({
+                tipo: 'urgente',
+                titulo: 'Ação Necessária',
+                descricao: 'Antecipar recebimentos ou postergar pagamentos não críticos',
+                impacto: Math.abs(menorSaldo)
+            });
+        }
+        
+        const mediaEntradas = proximosDias.reduce((acc, d) => acc + d.entradaProjetada, 0) / proximosDias.length;
+        if (mediaEntradas > 2000) {
+            recomendacoes.push({
+                tipo: 'oportunidade',
+                titulo: 'Momento de Investimento',
+                descricao: 'Período favorável para investimentos em crescimento',
+                impacto: mediaEntradas
+            });
+        }
+        
+        return recomendacoes;
+    }
+
+    renderFluxoCaixaInteligente(fluxoData) {
+        const container = document.getElementById('fluxo-caixa-inteligente') || this.createFluxoInteligenteContainer();
+        
+        container.innerHTML = `
+            <div class="fluxo-inteligente-resumo">
+                <div class="resumo-card">
+                    <h4>💰 Saldo Atual</h4>
+                    <div class="valor-destaque">${this.formatCurrency(fluxoData.saldoAtual)}</div>
+                </div>
+                
+                <div class="resumo-card">
+                    <h4>📈 Projeção 30 dias</h4>
+                    <div class="valor-destaque ${fluxoData.proximosDias[29].saldoAcumulado > fluxoData.saldoAtual ? 'positivo' : 'negativo'}">
+                        ${this.formatCurrency(fluxoData.proximosDias[29].saldoAcumulado)}
+                    </div>
+                </div>
+                
+                <div class="resumo-card">
+                    <h4>🎯 Menor Saldo Previsto</h4>
+                    <div class="valor-destaque ${Math.min(...fluxoData.proximosDias.map(d => d.saldoAcumulado)) > 0 ? 'ok' : 'negativo'}">
+                        ${this.formatCurrency(Math.min(...fluxoData.proximosDias.map(d => d.saldoAcumulado)))}
+                    </div>
+                </div>
+            </div>
+            
+            ${fluxoData.alertas.length > 0 ? `
+                <div class="fluxo-alertas">
+                    <h4>⚠️ Alertas de Fluxo de Caixa</h4>
+                    <div class="alertas-list">
+                        ${fluxoData.alertas.map(alerta => `
+                            <div class="alerta-fluxo ${alerta.tipo}">
+                                <span class="alerta-data">${this.formatDate(alerta.data)}</span>
+                                <span class="alerta-message">${alerta.message}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            ${fluxoData.recomendacoes.length > 0 ? `
+                <div class="fluxo-recomendacoes">
+                    <h4>💡 Recomendações Inteligentes</h4>
+                    <div class="recomendacoes-list">
+                        ${fluxoData.recomendacoes.map(rec => `
+                            <div class="recomendacao-item ${rec.tipo}">
+                                <h5>${rec.titulo}</h5>
+                                <p>${rec.descricao}</p>
+                                <small>Impacto estimado: ${this.formatCurrency(rec.impacto)}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="fluxo-chart-container">
+                <h4>📊 Projeção Inteligente - Próximos 30 Dias</h4>
+                <div id="chart-fluxo-inteligente"></div>
+            </div>
+        `;
+        
+        this.renderFluxoInteligenteChart(fluxoData);
+    }
+
+    createFluxoInteligenteContainer() {
+        const container = document.createElement('div');
+        container.id = 'fluxo-caixa-inteligente';
+        container.className = 'analise-container';
+        
+        // Adicionar após orçamento vs realizado
+        const orcamentoContainer = document.getElementById('orcamento-realizado');
+        if (orcamentoContainer && orcamentoContainer.parentNode) {
+            orcamentoContainer.parentNode.insertBefore(container, orcamentoContainer.nextSibling);
+        }
+        
+        return container;
+    }
+
+    renderFluxoInteligenteChart(fluxoData) {
+        const options = {
+            series: [{
+                name: 'Saldo Projetado',
+                data: fluxoData.proximosDias.map(d => ({
+                    x: d.data.getTime(),
+                    y: d.saldoAcumulado
+                }))
+            }, {
+                name: 'Confiança (%)',
+                data: fluxoData.proximosDias.map(d => ({
+                    x: d.data.getTime(),
+                    y: d.confianca
+                })),
+                yAxis: 1
+            }],
+            chart: {
+                type: 'line',
+                height: 400,
+                background: 'transparent',
+                toolbar: { show: false }
+            },
+            colors: ['#007bff', '#28a745'],
+            xaxis: {
+                type: 'datetime',
+                labels: { 
+                    style: { colors: 'var(--text-secondary)' },
+                    format: 'dd/MM'
+                }
+            },
+            yaxis: [{
+                title: {
+                    text: 'Saldo (R$)',
+                    style: { color: 'var(--text-secondary)' }
+                },
+                labels: { 
+                    style: { colors: 'var(--text-secondary)' },
+                    formatter: (val) => this.formatCurrency(val)
+                }
+            }, {
+                opposite: true,
+                title: {
+                    text: 'Confiança (%)',
+                    style: { color: 'var(--text-secondary)' }
+                },
+                labels: { 
+                    style: { colors: 'var(--text-secondary)' },
+                    formatter: (val) => `${val.toFixed(0)}%`
+                }
+            }],
+            stroke: {
+                width: [3, 2],
+                curve: 'smooth'
+            },
+            legend: {
+                labels: { colors: 'var(--text-primary)' }
+            },
+            grid: {
+                borderColor: 'var(--border-color)'
+            },
+            theme: {
+                mode: this.theme
+            },
+            tooltip: {
+                theme: this.theme
+            }
+        };
+
+        if (this.charts.fluxoInteligente) this.charts.fluxoInteligente.destroy();
+        this.charts.fluxoInteligente = new ApexCharts(document.querySelector("#chart-fluxo-inteligente"), options);
+        this.charts.fluxoInteligente.render();
+    }
+
+    // === FASE 3: ANÁLISE PREDITIVA DE INADIMPLÊNCIA ===
+    loadAnalisePreditivaInadimplencia() {
+        const analiseInadimplencia = this.calcularRiscoInadimplencia();
+        this.renderAnaliseInadimplencia(analiseInadimplencia);
+    }
+
+    calcularRiscoInadimplencia() {
+        // Simulação de algoritmo de machine learning para prever inadimplência
+        const clientes = [
+            {
+                nome: 'XYZ Consultoria Ltda',
+                contasAbertas: 2,
+                valorTotal: 15000.00,
+                diasAtraso: 0,
+                historicoPagamentos: 95, // % pontualidade
+                scorePreditivo: 85,
+                risco: 'baixo',
+                probabilidadeInadimplencia: 15,
+                fatoresRisco: ['Histórico excelente', 'Cliente antigo'],
+                recomendacoes: ['Manter relacionamento atual']
+            },
+            {
+                nome: 'Comércio ABC Ltda',
+                contasAbertas: 3,
+                valorTotal: 8500.00,
+                diasAtraso: 5,
+                historicoPagamentos: 78,
+                scorePreditivo: 65,
+                risco: 'medio',
+                probabilidadeInadimplencia: 35,
+                fatoresRisco: ['Atraso recente', 'Histórico irregular'],
+                recomendacoes: ['Monitorar de perto', 'Contato preventivo']
+            },
+            {
+                nome: 'Startup Tech Ltda',
+                contasAbertas: 1,
+                valorTotal: 5200.00,
+                diasAtraso: 12,
+                historicoPagamentos: 60,
+                scorePreditivo: 40,
+                risco: 'alto',
+                probabilidadeInadimplencia: 65,
+                fatoresRisco: ['Atraso significativo', 'Empresa jovem', 'Pagamentos irregulares'],
+                recomendacoes: ['Ação imediata', 'Renegociar condições', 'Considerar cobrança']
+            },
+            {
+                nome: 'Digital Solutions Inc',
+                contasAbertas: 2,
+                valorTotal: 12000.00,
+                diasAtraso: 0,
+                historicoPagamentos: 88,
+                scorePreditivo: 75,
+                risco: 'baixo',
+                probabilidadeInadimplencia: 22,
+                fatoresRisco: ['Bom histórico', 'Empresa sólida'],
+                recomendacoes: ['Cliente confiável']
+            }
+        ];
+
+        const resumoRisco = {
+            totalExposicao: clientes.reduce((acc, c) => acc + c.valorTotal, 0),
+            riscoAlto: clientes.filter(c => c.risco === 'alto').length,
+            riscoMedio: clientes.filter(c => c.risco === 'medio').length,
+            riscoBaixo: clientes.filter(c => c.risco === 'baixo').length,
+            valorRiscoAlto: clientes.filter(c => c.risco === 'alto').reduce((acc, c) => acc + c.valorTotal, 0),
+            probabilidadeMedia: clientes.reduce((acc, c) => acc + c.probabilidadeInadimplencia, 0) / clientes.length
+        };
+
+        return {
+            clientes: clientes,
+            resumo: resumoRisco,
+            alertasCriticos: this.identificarAlertasCriticos(clientes),
+            acoesSugeridas: this.gerarAcoesPrevencao(clientes)
+        };
+    }
+
+    identificarAlertasCriticos(clientes) {
+        const alertas = [];
+        
+        clientes.forEach(cliente => {
+            if (cliente.risco === 'alto') {
+                alertas.push({
+                    tipo: 'critico',
+                    cliente: cliente.nome,
+                    valor: cliente.valorTotal,
+                    message: `Alto risco: ${cliente.probabilidadeInadimplencia}% chance de inadimplência`
+                });
+            }
+            
+            if (cliente.diasAtraso > 7) {
+                alertas.push({
+                    tipo: 'atraso',
+                    cliente: cliente.nome,
+                    dias: cliente.diasAtraso,
+                    message: `${cliente.diasAtraso} dias de atraso`
+                });
+            }
+        });
+        
+        return alertas;
+    }
+
+    gerarAcoesPrevencao(clientes) {
+        const acoes = [];
+        
+        // Ações baseadas no perfil de risco
+        const clientesAltoRisco = clientes.filter(c => c.risco === 'alto');
+        if (clientesAltoRisco.length > 0) {
+            acoes.push({
+                prioridade: 'alta',
+                titulo: 'Revisão de Clientes Alto Risco',
+                descricao: `${clientesAltoRisco.length} cliente(s) necessitam atenção imediata`,
+                valorImpacto: clientesAltoRisco.reduce((acc, c) => acc + c.valorTotal, 0)
+            });
+        }
+        
+        const clientesAtraso = clientes.filter(c => c.diasAtraso > 0);
+        if (clientesAtraso.length > 0) {
+            acoes.push({
+                prioridade: 'media',
+                titulo: 'Contato Preventivo',
+                descricao: `${clientesAtraso.length} cliente(s) com atraso precisam de contato`,
+                valorImpacto: clientesAtraso.reduce((acc, c) => acc + c.valorTotal, 0)
+            });
+        }
+        
+        return acoes;
+    }
+
+    renderAnaliseInadimplencia(analiseData) {
+        const container = document.getElementById('analise-inadimplencia') || this.createInadimplenciaContainer();
+        
+        container.innerHTML = `
+            <div class="inadimplencia-resumo">
+                <div class="resumo-risco">
+                    <div class="risco-card total">
+                        <h5>💰 Exposição Total</h5>
+                        <div class="valor-risco">${this.formatCurrency(analiseData.resumo.totalExposicao)}</div>
+                    </div>
+                    
+                    <div class="risco-card alto">
+                        <h5>🔴 Alto Risco</h5>
+                        <div class="quantidade-risco">${analiseData.resumo.riscoAlto} clientes</div>
+                        <div class="valor-risco">${this.formatCurrency(analiseData.resumo.valorRiscoAlto)}</div>
+                    </div>
+                    
+                    <div class="risco-card medio">
+                        <h5>🟡 Médio Risco</h5>
+                        <div class="quantidade-risco">${analiseData.resumo.riscoMedio} clientes</div>
+                    </div>
+                    
+                    <div class="risco-card baixo">
+                        <h5>🟢 Baixo Risco</h5>
+                        <div class="quantidade-risco">${analiseData.resumo.riscoBaixo} clientes</div>
+                    </div>
+                </div>
+            </div>
+            
+            ${analiseData.alertasCriticos.length > 0 ? `
+                <div class="inadimplencia-alertas">
+                    <h4>🚨 Alertas Críticos</h4>
+                    <div class="alertas-criticos-list">
+                        ${analiseData.alertasCriticos.map(alerta => `
+                            <div class="alerta-critico ${alerta.tipo}">
+                                <strong>${alerta.cliente}</strong>
+                                <span>${alerta.message}</span>
+                                ${alerta.valor ? `<span class="valor-risco">${this.formatCurrency(alerta.valor)}</span>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="clientes-analise">
+                <h4>👥 Análise Detalhada por Cliente</h4>
+                <div class="clientes-grid">
+                    ${analiseData.clientes.map(cliente => `
+                        <div class="cliente-card risco-${cliente.risco}">
+                            <div class="cliente-header">
+                                <h5>${cliente.nome}</h5>
+                                <span class="risco-badge risco-${cliente.risco}">${cliente.risco.toUpperCase()}</span>
+                            </div>
+                            
+                            <div class="cliente-metricas">
+                                <div class="metrica">
+                                    <span>Valor em Aberto:</span>
+                                    <strong>${this.formatCurrency(cliente.valorTotal)}</strong>
+                                </div>
+                                <div class="metrica">
+                                    <span>Score Preditivo:</span>
+                                    <strong>${cliente.scorePreditivo}/100</strong>
+                                </div>
+                                <div class="metrica">
+                                    <span>Prob. Inadimplência:</span>
+                                    <strong class="prob-${cliente.risco}">${cliente.probabilidadeInadimplencia}%</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="fatores-risco">
+                                <h6>Fatores de Risco:</h6>
+                                <ul>
+                                    ${cliente.fatoresRisco.map(fator => `<li>${fator}</li>`).join('')}
+                                </ul>
+                            </div>
+                            
+                            <div class="recomendacoes">
+                                <h6>Recomendações:</h6>
+                                <ul>
+                                    ${cliente.recomendacoes.map(rec => `<li>${rec}</li>`).join('')}
+                                </ul>
+                            </div>
+                            
+                            <div class="cliente-acoes">
+                                <button class="btn btn-sm btn-primary" onclick="app.contatarCliente('${cliente.nome}')">
+                                    📞 Contatar
+                                </button>
+                                <button class="btn btn-sm btn-secondary" onclick="app.verHistoricoCliente('${cliente.nome}')">
+                                    📊 Histórico
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            ${analiseData.acoesSugeridas.length > 0 ? `
+                <div class="acoes-prevencao">
+                    <h4>💡 Ações Preventivas Sugeridas</h4>
+                    <div class="acoes-list">
+                        ${analiseData.acoesSugeridas.map(acao => `
+                            <div class="acao-item prioridade-${acao.prioridade}">
+                                <h5>${acao.titulo}</h5>
+                                <p>${acao.descricao}</p>
+                                <small>Impacto: ${this.formatCurrency(acao.valorImpacto)}</small>
+                                <button class="btn btn-sm btn-primary" onclick="app.executarAcao('${acao.titulo}')">
+                                    ⚡ Executar
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+        `;
+    }
+
+    createInadimplenciaContainer() {
+        const container = document.createElement('div');
+        container.id = 'analise-inadimplencia';
+        container.className = 'analise-container';
+        
+        // Adicionar após fluxo de caixa inteligente
+        const fluxoContainer = document.getElementById('fluxo-caixa-inteligente');
+        if (fluxoContainer && fluxoContainer.parentNode) {
+            fluxoContainer.parentNode.insertBefore(container, fluxoContainer.nextSibling);
+        }
+        
+        return container;
+    }
+
+    // === MÉTODOS DE AÇÃO PARA AS NOVAS FUNCIONALIDADES ===
+    showTab(tabId) {
+        document.querySelector(`[data-tab="${tabId}"]`).click();
+    }
+
+    async editarOrcamento() {
+        this.showInfo('Funcionalidade de edição de orçamento será implementada em breve');
+    }
+
+    async projetarOrcamento() {
+        this.showInfo('Projeção automática de orçamento será implementada em breve');
+    }
+
+    async contatarCliente(nomeCliente) {
+        const result = await Swal.fire({
+            title: `Contatar ${nomeCliente}`,
+            html: `
+                <div class="swal-form">
+                    <div class="swal-form-group">
+                        <label>Tipo de contato:</label>
+                        <select id="tipo-contato" class="swal2-input">
+                            <option value="preventivo">Contato Preventivo</option>
+                            <option value="cobranca">Cobrança Amigável</option>
+                            <option value="renegociacao">Renegociação</option>
+                        </select>
+                    </div>
+                    <div class="swal-form-group">
+                        <label>Observações:</label>
+                        <textarea id="obs-contato" class="swal2-textarea" placeholder="Adicione observações sobre o contato..."></textarea>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Registrar Contato',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
+
+        if (result.isConfirmed) {
+            this.showSuccess(`Contato com ${nomeCliente} registrado com sucesso!`);
+        }
+    }
+
+    async verHistoricoCliente(nomeCliente) {
+        // Simular histórico do cliente
+        const historico = [
+            { data: '2024-11-15', evento: 'Pagamento realizado', valor: 2500.00 },
+            { data: '2024-10-20', evento: 'Fatura emitida', valor: -2500.00 },
+            { data: '2024-10-18', evento: 'Contato preventivo', valor: 0 },
+            { data: '2024-09-25', evento: 'Pagamento com atraso', valor: 1800.00 }
+        ];
+
+        await Swal.fire({
+            title: `Histórico - ${nomeCliente}`,
+            html: `
+                <div class="historico-cliente">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--bg-tertiary);">
+                                <th style="padding: 8px; border: 1px solid var(--border-color);">Data</th>
+                                <th style="padding: 8px; border: 1px solid var(--border-color);">Evento</th>
+                                <th style="padding: 8px; border: 1px solid var(--border-color);">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${historico.map(h => `
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid var(--border-color);">${this.formatDate(h.data)}</td>
+                                    <td style="padding: 8px; border: 1px solid var(--border-color);">${h.evento}</td>
+                                    <td style="padding: 8px; border: 1px solid var(--border-color); color: ${h.valor > 0 ? 'var(--success-color)' : h.valor < 0 ? 'var(--danger-color)' : 'var(--text-primary)'};">
+                                        ${h.valor !== 0 ? this.formatCurrency(Math.abs(h.valor)) : '-'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `,
+            width: '80%',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            confirmButtonText: 'Fechar'
+        });
+    }
+
+    async executarAcao(tituloAcao) {
+        this.showInfo(`Executando ação: ${tituloAcao}`);
     }
 
     // === NOTIFICAÇÕES COM SWEETALERT2 ===
