@@ -1,300 +1,433 @@
 
-// script.js - Funcionalidades principais do sistema
-
-class SistemaContas {
+// Classe principal do sistema
+class SistemaContasApp {
     constructor() {
-        this.theme = 'dark'; // Tema padrão
-        this.activeTab = 'dashboard';
-        this.db = null; // Será inicializado quando implementarmos a conexão
+        this.currentTab = 'dashboard';
+        this.theme = 'dark'; // Modo escuro como padrão
+        this.modalType = null; // 'pagar' ou 'receber'
         
         this.init();
     }
 
-    init() {
-        this.setupThemeToggle();
+    async init() {
+        this.setupTheme();
         this.setupTabs();
-        this.loadDashboard();
+        this.setupModals();
+        this.setupEventListeners();
+        await this.loadInitialData();
         
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', () => {
-            this.loadInitialData();
+        console.log('Sistema inicializado com sucesso!');
+    }
+
+    // === SISTEMA DE TEMAS ===
+    setupTheme() {
+        const themeBtn = document.getElementById('theme-toggle');
+        const themeIcon = themeBtn.querySelector('.theme-icon');
+        const themeText = themeBtn.querySelector('.theme-text');
+        
+        // Aplicar tema padrão (escuro)
+        this.applyTheme();
+        
+        themeBtn.addEventListener('click', () => {
+            this.theme = this.theme === 'dark' ? 'light' : 'dark';
+            this.applyTheme();
+            
+            // Atualizar botão
+            if (this.theme === 'dark') {
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Escuro';
+            } else {
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'Claro';
+            }
         });
     }
 
-    // === CONTROLE DE TEMA ===
-    setupThemeToggle() {
-        const themeToggle = document.getElementById('theme-toggle');
-        const body = document.body;
-
-        // Definir tema inicial (dark como padrão)
-        body.classList.add('dark-theme');
-        themeToggle.checked = true;
-
-        themeToggle.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                // Modo escuro
-                body.classList.remove('light-theme');
-                body.classList.add('dark-theme');
-                this.theme = 'dark';
-            } else {
-                // Modo claro
-                body.classList.remove('dark-theme');
-                body.classList.add('light-theme');
-                this.theme = 'light';
-            }
-            
-            // Salvar preferência no localStorage
-            localStorage.setItem('theme', this.theme);
-        });
-
-        // Carregar tema salvo
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            this.theme = savedTheme;
-            if (savedTheme === 'light') {
-                themeToggle.checked = false;
-                body.classList.remove('dark-theme');
-                body.classList.add('light-theme');
-            }
+    applyTheme() {
+        if (this.theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
         }
     }
 
-    // === CONTROLE DE TABS ===
+    // === SISTEMA DE TABS ===
     setupTabs() {
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabContents = document.querySelectorAll('.tab-content');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
 
-        tabButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                const targetTab = e.target.getAttribute('data-tab');
-                this.switchTab(targetTab);
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                
+                // Remover classe active de todos
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabPanels.forEach(p => p.classList.remove('active'));
+                
+                // Adicionar classe active aos selecionados
+                btn.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+                
+                this.currentTab = tabId;
+                
+                // Carregar dados específicos da tab
+                this.loadTabData(tabId);
             });
         });
     }
 
-    switchTab(tabName) {
-        // Remover classe active de todos os botões e conteúdos
-        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
-        // Adicionar classe active ao botão e conteúdo selecionados
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-        document.getElementById(tabName).classList.add('active');
-
-        this.activeTab = tabName;
-
-        // Carregar dados específicos da tab se necessário
-        this.loadTabData(tabName);
-    }
-
-    loadTabData(tabName) {
-        switch (tabName) {
+    async loadTabData(tabId) {
+        switch (tabId) {
             case 'dashboard':
-                this.loadDashboard();
+                await this.loadDashboard();
                 break;
             case 'contas-pagar':
-                this.loadContasPagar();
+                await this.loadContasPagar();
                 break;
             case 'contas-receber':
-                this.loadContasReceber();
-                break;
-            case 'consolidados':
-                this.loadConsolidados();
-                break;
-            case 'relatorios':
-                this.loadRelatorios();
-                break;
-            case 'logs':
-                this.loadLogs();
+                await this.loadContasReceber();
                 break;
         }
     }
 
-    // === DASHBOARD ===
-    loadDashboard() {
-        // Simular carregamento de dados
-        this.updateDashboardCards({
-            totalPagar: 'R$ 15.450,00',
-            totalReceber: 'R$ 28.750,00',
-            vencidasPagar: 3,
-            vencidasReceber: 1
+    // === MODAIS ===
+    setupModals() {
+        const modal = document.getElementById('modal-nova-conta');
+        const closeBtn = modal.querySelector('.modal-close');
+        const cancelBtn = modal.querySelector('.modal-cancel');
+        const form = document.getElementById('form-nova-conta');
+
+        // Botões para abrir modal
+        document.getElementById('nova-conta-pagar').addEventListener('click', () => {
+            this.openModal('pagar');
+        });
+
+        document.getElementById('nova-conta-receber').addEventListener('click', () => {
+            this.openModal('receber');
+        });
+
+        // Fechar modal
+        const closeModal = () => {
+            modal.classList.remove('active');
+            form.reset();
+            this.modalType = null;
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Submit do formulário
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.saveNewConta();
+            closeModal();
         });
     }
 
-    updateDashboardCards(data) {
-        document.getElementById('total-pagar').textContent = data.totalPagar;
-        document.getElementById('total-receber').textContent = data.totalReceber;
-        document.getElementById('vencidas-pagar').textContent = data.vencidasPagar;
-        document.getElementById('vencidas-receber').textContent = data.vencidasReceber;
+    async openModal(tipo) {
+        this.modalType = tipo;
+        const modal = document.getElementById('modal-nova-conta');
+        const title = document.getElementById('modal-title');
+        const labelFornecedorCliente = document.querySelector('label[for="conta-fornecedor-cliente"]');
+        
+        title.textContent = tipo === 'pagar' ? 'Nova Conta a Pagar' : 'Nova Conta a Receber';
+        labelFornecedorCliente.textContent = tipo === 'pagar' ? 'Fornecedor' : 'Cliente';
+        
+        // Carregar categorias e fornecedores/clientes
+        await this.loadModalData(tipo);
+        
+        modal.classList.add('active');
     }
 
-    atualizarDashboard() {
-        // Mostrar loading
-        const cards = document.querySelectorAll('.card-value');
-        cards.forEach(card => {
-            card.textContent = 'Carregando...';
+    // === EVENT LISTENERS ===
+    setupEventListeners() {
+        // Filtros das tabelas
+        const setupFilter = (inputId, tableId) => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.addEventListener('input', () => {
+                    this.filterTable(tableId, input.value);
+                });
+            }
+        };
+
+        setupFilter('filtro-pagar', 'tabela-contas-pagar');
+        setupFilter('filtro-receber', 'tabela-contas-receber');
+    }
+
+    // === CARREGAMENTO DE DADOS ===
+    async loadInitialData() {
+        try {
+            await this.loadDashboard();
+        } catch (error) {
+            console.error('Erro ao carregar dados iniciais:', error);
+            this.showError('Erro ao carregar dados do sistema');
+        }
+    }
+
+    async loadDashboard() {
+        try {
+            // Simular dados do dashboard (será conectado com API)
+            const dashboardData = {
+                totalPagar: 15000.00,
+                totalReceber: 25000.00,
+                vencidasPagar: 3,
+                vencidasReceber: 1,
+                alertas: 4
+            };
+
+            // Atualizar cards
+            document.getElementById('total-pagar').textContent = this.formatCurrency(dashboardData.totalPagar);
+            document.getElementById('total-receber').textContent = this.formatCurrency(dashboardData.totalReceber);
+            document.getElementById('saldo-projetado').textContent = this.formatCurrency(dashboardData.totalReceber - dashboardData.totalPagar);
+            document.getElementById('vencidas-pagar').textContent = `${dashboardData.vencidasPagar} vencidas`;
+            document.getElementById('vencidas-receber').textContent = `${dashboardData.vencidasReceber} vencidas`;
+            document.getElementById('total-alertas').textContent = dashboardData.alertas;
+
+        } catch (error) {
+            console.error('Erro ao carregar dashboard:', error);
+        }
+    }
+
+    async loadContasPagar() {
+        try {
+            // Simular dados (será conectado com API)
+            const contas = [
+                {
+                    id: 1,
+                    descricao: 'Energia Elétrica - Janeiro',
+                    fornecedor: 'Companhia Elétrica SP',
+                    categoria: 'Utilidades',
+                    valor: 450.00,
+                    vencimento: '2024-01-15',
+                    status: 'pendente'
+                },
+                {
+                    id: 2,
+                    descricao: 'Material de Escritório',
+                    fornecedor: 'ABC Materiais Ltda',
+                    categoria: 'Escritório',
+                    valor: 230.50,
+                    vencimento: '2024-01-20',
+                    status: 'pago'
+                }
+            ];
+
+            this.renderContasTable('tabela-contas-pagar', contas, 'pagar');
+
+        } catch (error) {
+            console.error('Erro ao carregar contas a pagar:', error);
+        }
+    }
+
+    async loadContasReceber() {
+        try {
+            // Simular dados (será conectado com API)
+            const contas = [
+                {
+                    id: 1,
+                    descricao: 'Consultoria - Janeiro',
+                    cliente: 'XYZ Consultoria Ltda',
+                    categoria: 'Consultoria',
+                    valor: 2500.00,
+                    vencimento: '2024-01-10',
+                    status: 'recebido'
+                },
+                {
+                    id: 2,
+                    descricao: 'Venda de Produtos',
+                    cliente: 'Comércio ABC Ltda',
+                    categoria: 'Vendas',
+                    valor: 1800.00,
+                    vencimento: '2024-01-25',
+                    status: 'pendente'
+                }
+            ];
+
+            this.renderContasTable('tabela-contas-receber', contas, 'receber');
+
+        } catch (error) {
+            console.error('Erro ao carregar contas a receber:', error);
+        }
+    }
+
+    async loadModalData(tipo) {
+        try {
+            // Carregar categorias
+            const categorias = await this.getCategorias(tipo);
+            const selectCategoria = document.getElementById('conta-categoria');
+            selectCategoria.innerHTML = '<option value="">Selecione uma categoria</option>';
+            
+            categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.nome;
+                selectCategoria.appendChild(option);
+            });
+
+            // Carregar fornecedores/clientes
+            const fornecedoresClientes = tipo === 'pagar' 
+                ? await this.getFornecedores() 
+                : await this.getClientes();
+            
+            const selectFornecedorCliente = document.getElementById('conta-fornecedor-cliente');
+            selectFornecedorCliente.innerHTML = '<option value="">Selecione</option>';
+            
+            fornecedoresClientes.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = item.nome;
+                selectFornecedorCliente.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Erro ao carregar dados do modal:', error);
+        }
+    }
+
+    // === MÉTODOS DA API (simulados) ===
+    async getCategorias(tipo) {
+        // Simular categorias
+        const todasCategorias = [
+            { id: 1, nome: 'Escritório', tipo: 'pagar' },
+            { id: 2, nome: 'Utilidades', tipo: 'pagar' },
+            { id: 3, nome: 'Fornecedores', tipo: 'pagar' },
+            { id: 4, nome: 'Serviços', tipo: 'receber' },
+            { id: 5, nome: 'Vendas', tipo: 'receber' },
+            { id: 6, nome: 'Consultoria', tipo: 'receber' }
+        ];
+        
+        return todasCategorias.filter(cat => cat.tipo === tipo);
+    }
+
+    async getFornecedores() {
+        // Simular fornecedores
+        return [
+            { id: 1, nome: 'ABC Materiais Ltda' },
+            { id: 2, nome: 'Companhia Elétrica SP' }
+        ];
+    }
+
+    async getClientes() {
+        // Simular clientes
+        return [
+            { id: 1, nome: 'XYZ Consultoria Ltda' },
+            { id: 2, nome: 'Comércio ABC Ltda' }
+        ];
+    }
+
+    async saveNewConta() {
+        try {
+            const formData = new FormData(document.getElementById('form-nova-conta'));
+            const dados = {
+                descricao: document.getElementById('conta-descricao').value,
+                valor: parseFloat(document.getElementById('conta-valor').value),
+                vencimento: document.getElementById('conta-vencimento').value,
+                categoria_id: document.getElementById('conta-categoria').value,
+                fornecedor_cliente_id: document.getElementById('conta-fornecedor-cliente').value,
+                observacoes: document.getElementById('conta-observacoes').value,
+                tipo: this.modalType
+            };
+
+            console.log('Salvando conta:', dados);
+            
+            // Aqui será implementada a chamada para a API
+            this.showSuccess('Conta cadastrada com sucesso!');
+            
+            // Recarregar dados da tab atual
+            if (this.modalType === 'pagar') {
+                await this.loadContasPagar();
+            } else {
+                await this.loadContasReceber();
+            }
+
+        } catch (error) {
+            console.error('Erro ao salvar conta:', error);
+            this.showError('Erro ao salvar conta');
+        }
+    }
+
+    // === RENDERIZAÇÃO ===
+    renderContasTable(tableId, contas, tipo) {
+        const table = document.getElementById(tableId);
+        const tbody = table.querySelector('tbody');
+        
+        tbody.innerHTML = '';
+
+        contas.forEach(conta => {
+            const row = document.createElement('tr');
+            
+            const fornecedorClienteNome = tipo === 'pagar' ? conta.fornecedor : conta.cliente;
+            
+            row.innerHTML = `
+                <td>${conta.descricao}</td>
+                <td>${fornecedorClienteNome || '-'}</td>
+                <td>${conta.categoria || '-'}</td>
+                <td>${this.formatCurrency(conta.valor)}</td>
+                <td>${this.formatDate(conta.vencimento)}</td>
+                <td><span class="status-badge status-${conta.status}">${conta.status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-success" onclick="app.pagarReceber(${conta.id}, '${tipo}')">
+                        ${tipo === 'pagar' ? 'Pagar' : 'Receber'}
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="app.editarConta(${conta.id}, '${tipo}')">
+                        Editar
+                    </button>
+                </td>
+            `;
+            
+            tbody.appendChild(row);
         });
-
-        // Simular requisição
-        setTimeout(() => {
-            this.loadDashboard();
-            this.showNotification('Dashboard atualizado com sucesso!', 'success');
-        }, 1000);
-    }
-
-    // === CONTAS A PAGAR ===
-    loadContasPagar() {
-        const tbody = document.getElementById('tabela-contas-pagar');
-        
-        // Dados simulados
-        const contasPagar = [
-            {
-                id: '1',
-                descricao: 'Fornecedor ABC - Material de escritório',
-                fornecedor: 'ABC Materiais Ltda',
-                categoria: 'Escritório',
-                valor: 'R$ 1.250,00',
-                vencimento: '2024-01-15',
-                status: 'pendente'
-            },
-            {
-                id: '2',
-                descricao: 'Energia elétrica - Janeiro',
-                fornecedor: 'Companhia Elétrica',
-                categoria: 'Utilidades',
-                valor: 'R$ 850,00',
-                vencimento: '2024-01-20',
-                status: 'atrasado'
-            }
-        ];
-
-        tbody.innerHTML = contasPagar.map(conta => `
-            <tr>
-                <td>${conta.descricao}</td>
-                <td>${conta.fornecedor}</td>
-                <td>${conta.categoria}</td>
-                <td class="font-weight-bold">${conta.valor}</td>
-                <td>${this.formatDate(conta.vencimento)}</td>
-                <td><span class="status-badge status-${conta.status}">${this.getStatusText(conta.status)}</span></td>
-                <td>
-                    <button class="btn btn-sm btn-success" onclick="sistema.pagarConta('${conta.id}')">💰 Pagar</button>
-                    <button class="btn btn-sm btn-secondary" onclick="sistema.editarConta('${conta.id}', 'pagar')">✏️ Editar</button>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    // === CONTAS A RECEBER ===
-    loadContasReceber() {
-        const tbody = document.getElementById('tabela-contas-receber');
-        
-        // Dados simulados
-        const contasReceber = [
-            {
-                id: '1',
-                descricao: 'Serviços de consultoria - Cliente XYZ',
-                cliente: 'XYZ Consultoria',
-                categoria: 'Serviços',
-                valor: 'R$ 5.500,00',
-                vencimento: '2024-01-25',
-                status: 'pendente'
-            },
-            {
-                id: '2',
-                descricao: 'Venda de produtos - Cliente ABC',
-                cliente: 'ABC Comércio',
-                categoria: 'Vendas',
-                valor: 'R$ 3.200,00',
-                vencimento: '2024-01-30',
-                status: 'pendente'
-            }
-        ];
-
-        tbody.innerHTML = contasReceber.map(conta => `
-            <tr>
-                <td>${conta.descricao}</td>
-                <td>${conta.cliente}</td>
-                <td>${conta.categoria}</td>
-                <td class="font-weight-bold">${conta.valor}</td>
-                <td>${this.formatDate(conta.vencimento)}</td>
-                <td><span class="status-badge status-${conta.status}">${this.getStatusText(conta.status)}</span></td>
-                <td>
-                    <button class="btn btn-sm btn-success" onclick="sistema.receberConta('${conta.id}')">💰 Receber</button>
-                    <button class="btn btn-sm btn-secondary" onclick="sistema.editarConta('${conta.id}', 'receber')">✏️ Editar</button>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    // === OUTRAS SEÇÕES ===
-    loadConsolidados() {
-        console.log('Carregando consolidados...');
-    }
-
-    loadRelatorios() {
-        console.log('Carregando relatórios...');
-    }
-
-    loadLogs() {
-        console.log('Carregando logs...');
     }
 
     // === AÇÕES ===
-    novaContaPagar() {
-        this.showNotification('Modal de nova conta a pagar será implementado', 'info');
-    }
-
-    novaContaReceber() {
-        this.showNotification('Modal de nova conta a receber será implementado', 'info');
-    }
-
-    pagarConta(id) {
-        this.showNotification(`Pagamento da conta ${id} será implementado`, 'info');
-    }
-
-    receberConta(id) {
-        this.showNotification(`Recebimento da conta ${id} será implementado`, 'info');
-    }
-
-    editarConta(id, tipo) {
-        this.showNotification(`Edição da conta ${tipo} ${id} será implementada`, 'info');
-    }
-
-    filtrarContasPagar() {
-        const status = document.getElementById('filtro-status-pagar').value;
-        const dataInicio = document.getElementById('filtro-data-inicio-pagar').value;
-        const dataFim = document.getElementById('filtro-data-fim-pagar').value;
+    async pagarReceber(id, tipo) {
+        const acao = tipo === 'pagar' ? 'pagar' : 'receber';
+        const valor = prompt(`Valor a ${acao}:`);
         
-        console.log('Filtros aplicados:', { status, dataInicio, dataFim });
-        this.showNotification('Filtros aplicados com sucesso!', 'success');
+        if (valor && !isNaN(valor)) {
+            try {
+                console.log(`${acao.charAt(0).toUpperCase() + acao.slice(1)} conta ID:`, id, 'Valor:', valor);
+                this.showSuccess(`Conta ${acao === 'pagar' ? 'paga' : 'recebida'} com sucesso!`);
+                
+                // Recarregar dados
+                if (tipo === 'pagar') {
+                    await this.loadContasPagar();
+                } else {
+                    await this.loadContasReceber();
+                }
+                
+                await this.loadDashboard();
+                
+            } catch (error) {
+                console.error(`Erro ao ${acao} conta:`, error);
+                this.showError(`Erro ao ${acao} conta`);
+            }
+        }
     }
 
-    filtrarContasReceber() {
-        const status = document.getElementById('filtro-status-receber').value;
-        const dataInicio = document.getElementById('filtro-data-inicio-receber').value;
-        const dataFim = document.getElementById('filtro-data-fim-receber').value;
+    async editarConta(id, tipo) {
+        console.log('Editar conta:', id, tipo);
+        this.showInfo('Funcionalidade de edição será implementada em breve');
+    }
+
+    // === FILTROS ===
+    filterTable(tableId, searchTerm) {
+        const table = document.getElementById(tableId);
+        const rows = table.querySelectorAll('tbody tr');
         
-        console.log('Filtros aplicados:', { status, dataInicio, dataFim });
-        this.showNotification('Filtros aplicados com sucesso!', 'success');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const matches = text.includes(searchTerm.toLowerCase());
+            row.style.display = matches ? '' : 'none';
+        });
     }
 
     // === UTILITÁRIOS ===
-    formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('pt-BR');
-    }
-
-    getStatusText(status) {
-        const statusMap = {
-            'pendente': 'Pendente',
-            'pago': 'Pago',
-            'recebido': 'Recebido',
-            'atrasado': 'Atrasado',
-            'cancelado': 'Cancelado'
-        };
-        return statusMap[status] || status;
-    }
-
     formatCurrency(value) {
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
@@ -302,87 +435,29 @@ class SistemaContas {
         }).format(value);
     }
 
-    showNotification(message, type = 'info') {
-        // Criar elemento de notificação
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
-        
-        // Estilos inline para a notificação
-        Object.assign(notification.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            padding: '1rem 1.5rem',
-            borderRadius: '8px',
-            color: 'white',
-            fontWeight: '500',
-            zIndex: '9999',
-            opacity: '0',
-            transform: 'translateY(-20px)',
-            transition: 'all 0.3s ease'
-        });
-
-        // Cores baseadas no tipo
-        const colors = {
-            success: '#51cf66',
-            error: '#ff6b6b',
-            warning: '#ffd43b',
-            info: '#4dabf7'
-        };
-        notification.style.backgroundColor = colors[type] || colors.info;
-
-        // Adicionar ao DOM
-        document.body.appendChild(notification);
-
-        // Animar entrada
-        setTimeout(() => {
-            notification.style.opacity = '1';
-            notification.style.transform = 'translateY(0)';
-        }, 100);
-
-        // Remover após 3 segundos
-        setTimeout(() => {
-            notification.style.opacity = '0';
-            notification.style.transform = 'translateY(-20px)';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
+    formatDate(dateString) {
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('pt-BR');
     }
 
-    loadInitialData() {
-        // Carregar dados iniciais
-        console.log('Sistema inicializado com sucesso!');
-        this.showNotification('Sistema carregado com sucesso!', 'success');
+    // === NOTIFICAÇÕES ===
+    showSuccess(message) {
+        this.showNotification(message, 'success');
+    }
+
+    showError(message) {
+        this.showNotification(message, 'error');
+    }
+
+    showInfo(message) {
+        this.showNotification(message, 'info');
+    }
+
+    showNotification(message, type) {
+        // Implementação básica - pode ser melhorada com biblioteca de toast
+        alert(`${type.toUpperCase()}: ${message}`);
     }
 }
 
-// === FUNÇÕES GLOBAIS ===
-function atualizarDashboard() {
-    sistema.atualizarDashboard();
-}
-
-function novaContaPagar() {
-    sistema.novaContaPagar();
-}
-
-function novaContaReceber() {
-    sistema.novaContaReceber();
-}
-
-function filtrarContasPagar() {
-    sistema.filtrarContasPagar();
-}
-
-function filtrarContasReceber() {
-    sistema.filtrarContasReceber();
-}
-
-// Inicializar sistema
-const sistema = new SistemaContas();
-
-// Exportar para uso global
-window.sistema = sistema;
+// Inicializar aplicação
+const app = new SistemaContasApp();

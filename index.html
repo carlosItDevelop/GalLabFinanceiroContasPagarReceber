@@ -5,211 +5,261 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Contas a Pagar e Receber</title>
-    <link href="style.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="dark-theme">
+<body>
     <!-- Header com título e alternador de tema -->
     <header class="header">
-        <h1 class="header-title">Sistema de Contas a Pagar e Receber</h1>
-        <div class="theme-toggle">
-            <label class="toggle-switch">
-                <input type="checkbox" id="theme-toggle" checked>
-                <span class="slider">
-                    <span class="toggle-text dark-text">🌙 Dark</span>
-                    <span class="toggle-text light-text">☀️ Light</span>
-                </span>
-            </label>
+        <div class="header-content">
+            <h1>💰 Contas a Pagar e Receber</h1>
+            <div class="theme-switcher">
+                <button id="theme-toggle" class="theme-btn" title="Alternar tema">
+                    <span class="theme-icon">🌙</span>
+                    <span class="theme-text">Escuro</span>
+                </button>
+            </div>
         </div>
     </header>
 
-    <!-- Sistema de Tabs -->
-    <nav class="tabs-container">
-        <div class="tabs">
-            <button class="tab-button active" data-tab="dashboard">📊 Dashboard</button>
-            <button class="tab-button" data-tab="contas-pagar">💸 Contas a Pagar</button>
-            <button class="tab-button" data-tab="contas-receber">💰 Contas a Receber</button>
-            <button class="tab-button" data-tab="consolidados">📈 Consolidados</button>
-            <button class="tab-button" data-tab="relatorios">📋 Relatórios</button>
-            <button class="tab-button" data-tab="logs">📝 Logs</button>
-        </div>
-    </nav>
+    <!-- Container principal -->
+    <main class="main-container">
+        <!-- Sistema de Tabs -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab-btn" data-tab="contas-pagar">💸 Contas a Pagar</button>
+            <button class="tab-btn" data-tab="contas-receber">💰 Contas a Receber</button>
+            <button class="tab-btn" data-tab="consolidados">📈 Consolidados</button>
+            <button class="tab-btn" data-tab="relatorios">📋 Relatórios</button>
+            <button class="tab-btn" data-tab="logs">📝 Logs</button>
+        </nav>
 
-    <!-- Conteúdo das Tabs -->
-    <main class="main-content">
-        <!-- Tab Dashboard -->
-        <section id="dashboard" class="tab-content active">
-            <div class="dashboard-header">
-                <h2>Dashboard - Visão Geral</h2>
-                <button class="btn btn-primary" onclick="atualizarDashboard()">🔄 Atualizar</button>
+        <!-- Conteúdo das Tabs -->
+        <div class="tab-content">
+            <!-- Dashboard -->
+            <div id="dashboard" class="tab-panel active">
+                <div class="panel-header">
+                    <h2>📊 Dashboard</h2>
+                    <p>Visão geral do sistema financeiro</p>
+                </div>
+                
+                <div class="dashboard-cards">
+                    <div class="card card-red">
+                        <div class="card-icon">💸</div>
+                        <div class="card-content">
+                            <h3>A Pagar (Mês)</h3>
+                            <div class="card-value" id="total-pagar">R$ 0,00</div>
+                            <small id="vencidas-pagar">0 vencidas</small>
+                        </div>
+                    </div>
+                    
+                    <div class="card card-green">
+                        <div class="card-icon">💰</div>
+                        <div class="card-content">
+                            <h3>A Receber (Mês)</h3>
+                            <div class="card-value" id="total-receber">R$ 0,00</div>
+                            <small id="vencidas-receber">0 vencidas</small>
+                        </div>
+                    </div>
+                    
+                    <div class="card card-blue">
+                        <div class="card-icon">📊</div>
+                        <div class="card-content">
+                            <h3>Saldo Projetado</h3>
+                            <div class="card-value" id="saldo-projetado">R$ 0,00</div>
+                            <small>Baseado no mês atual</small>
+                        </div>
+                    </div>
+                    
+                    <div class="card card-orange">
+                        <div class="card-icon">⚠️</div>
+                        <div class="card-content">
+                            <h3>Alertas</h3>
+                            <div class="card-value" id="total-alertas">0</div>
+                            <small>Contas vencidas</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-charts">
+                    <div class="chart-container">
+                        <h3>📈 Resumo Mensal</h3>
+                        <div id="chart-placeholder" class="chart-placeholder">
+                            Gráfico será implementado aqui
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <div class="cards-grid">
-                <div class="dashboard-card">
-                    <div class="card-icon">💸</div>
-                    <div class="card-content">
-                        <h3>Total a Pagar (Mês)</h3>
-                        <div class="card-value" id="total-pagar">R$ 0,00</div>
-                        <div class="card-trend">🔴 Pendente</div>
+
+            <!-- Contas a Pagar -->
+            <div id="contas-pagar" class="tab-panel">
+                <div class="panel-header">
+                    <h2>💸 Contas a Pagar</h2>
+                    <div class="panel-actions">
+                        <button class="btn btn-primary" id="nova-conta-pagar">+ Nova Conta</button>
                     </div>
                 </div>
-
-                <div class="dashboard-card">
-                    <div class="card-icon">💰</div>
-                    <div class="card-content">
-                        <h3>Total a Receber (Mês)</h3>
-                        <div class="card-value" id="total-receber">R$ 0,00</div>
-                        <div class="card-trend">🟢 Pendente</div>
-                    </div>
-                </div>
-
-                <div class="dashboard-card">
-                    <div class="card-icon">⚠️</div>
-                    <div class="card-content">
-                        <h3>Contas Vencidas a Pagar</h3>
-                        <div class="card-value" id="vencidas-pagar">0</div>
-                        <div class="card-trend">🔴 Atenção</div>
-                    </div>
-                </div>
-
-                <div class="dashboard-card">
-                    <div class="card-icon">📅</div>
-                    <div class="card-content">
-                        <h3>Contas Vencidas a Receber</h3>
-                        <div class="card-value" id="vencidas-receber">0</div>
-                        <div class="card-trend">🟡 Atenção</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="charts-section">
-                <div class="chart-container">
-                    <h3>Fluxo de Caixa - Próximos 30 dias</h3>
-                    <div class="chart-placeholder">
-                        📊 Gráfico será implementado aqui
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Tab Contas a Pagar -->
-        <section id="contas-pagar" class="tab-content">
-            <div class="section-header">
-                <h2>Contas a Pagar</h2>
-                <button class="btn btn-primary" onclick="novaContaPagar()">➕ Nova Conta</button>
-            </div>
-            
-            <div class="filters-section">
-                <div class="filter-group">
-                    <label>Status:</label>
-                    <select id="filtro-status-pagar">
-                        <option value="">Todos</option>
+                
+                <div class="filters">
+                    <input type="text" id="filtro-pagar" placeholder="Buscar por descrição ou fornecedor...">
+                    <select id="status-pagar">
+                        <option value="">Todos os status</option>
                         <option value="pendente">Pendente</option>
                         <option value="pago">Pago</option>
                         <option value="atrasado">Atrasado</option>
                     </select>
+                    <input type="date" id="data-inicio-pagar">
+                    <input type="date" id="data-fim-pagar">
                 </div>
-                <div class="filter-group">
-                    <label>Data Início:</label>
-                    <input type="date" id="filtro-data-inicio-pagar">
+
+                <div class="table-container">
+                    <table class="data-table" id="tabela-contas-pagar">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Fornecedor</th>
+                                <th>Categoria</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dados serão carregados dinamicamente -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="filter-group">
-                    <label>Data Fim:</label>
-                    <input type="date" id="filtro-data-fim-pagar">
-                </div>
-                <button class="btn btn-secondary" onclick="filtrarContasPagar()">🔍 Filtrar</button>
             </div>
 
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Descrição</th>
-                            <th>Fornecedor</th>
-                            <th>Categoria</th>
-                            <th>Valor</th>
-                            <th>Vencimento</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabela-contas-pagar">
-                        <tr>
-                            <td colspan="7" class="no-data">Carregando...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- Tab Contas a Receber -->
-        <section id="contas-receber" class="tab-content">
-            <div class="section-header">
-                <h2>Contas a Receber</h2>
-                <button class="btn btn-primary" onclick="novaContaReceber()">➕ Nova Conta</button>
-            </div>
-            
-            <div class="filters-section">
-                <div class="filter-group">
-                    <label>Status:</label>
-                    <select id="filtro-status-receber">
-                        <option value="">Todos</option>
+            <!-- Contas a Receber -->
+            <div id="contas-receber" class="tab-panel">
+                <div class="panel-header">
+                    <h2>💰 Contas a Receber</h2>
+                    <div class="panel-actions">
+                        <button class="btn btn-primary" id="nova-conta-receber">+ Nova Conta</button>
+                    </div>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="filtro-receber" placeholder="Buscar por descrição ou cliente...">
+                    <select id="status-receber">
+                        <option value="">Todos os status</option>
                         <option value="pendente">Pendente</option>
                         <option value="recebido">Recebido</option>
                         <option value="atrasado">Atrasado</option>
                     </select>
+                    <input type="date" id="data-inicio-receber">
+                    <input type="date" id="data-fim-receber">
                 </div>
-                <div class="filter-group">
-                    <label>Data Início:</label>
-                    <input type="date" id="filtro-data-inicio-receber">
+
+                <div class="table-container">
+                    <table class="data-table" id="tabela-contas-receber">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Cliente</th>
+                                <th>Categoria</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dados serão carregados dinamicamente -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="filter-group">
-                    <label>Data Fim:</label>
-                    <input type="date" id="filtro-data-fim-receber">
-                </div>
-                <button class="btn btn-secondary" onclick="filtrarContasReceber()">🔍 Filtrar</button>
             </div>
 
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Descrição</th>
-                            <th>Cliente</th>
-                            <th>Categoria</th>
-                            <th>Valor</th>
-                            <th>Vencimento</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabela-contas-receber">
-                        <tr>
-                            <td colspan="7" class="no-data">Carregando...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Consolidados -->
+            <div id="consolidados" class="tab-panel">
+                <div class="panel-header">
+                    <h2>📈 Consolidados</h2>
+                    <p>Relatórios consolidados e fluxo de caixa</p>
+                </div>
+                <div class="coming-soon">
+                    <h3>🚧 Em desenvolvimento</h3>
+                    <p>Esta funcionalidade será implementada em breve</p>
+                </div>
             </div>
-        </section>
 
-        <!-- Tab Consolidados -->
-        <section id="consolidados" class="tab-content">
-            <h2>Relatórios Consolidados</h2>
-            <p>Seção de relatórios consolidados será implementada aqui.</p>
-        </section>
+            <!-- Relatórios -->
+            <div id="relatorios" class="tab-panel">
+                <div class="panel-header">
+                    <h2>📋 Relatórios</h2>
+                    <p>Relatórios detalhados por período e categoria</p>
+                </div>
+                <div class="coming-soon">
+                    <h3>🚧 Em desenvolvimento</h3>
+                    <p>Esta funcionalidade será implementada em breve</p>
+                </div>
+            </div>
 
-        <!-- Tab Relatórios -->
-        <section id="relatorios" class="tab-content">
-            <h2>Relatórios Detalhados</h2>
-            <p>Seção de relatórios detalhados será implementada aqui.</p>
-        </section>
-
-        <!-- Tab Logs -->
-        <section id="logs" class="tab-content">
-            <h2>Logs do Sistema</h2>
-            <p>Seção de logs do sistema será implementada aqui.</p>
-        </section>
+            <!-- Logs -->
+            <div id="logs" class="tab-panel">
+                <div class="panel-header">
+                    <h2>📝 Logs do Sistema</h2>
+                    <p>Histórico de operações e auditoria</p>
+                </div>
+                <div class="coming-soon">
+                    <h3>🚧 Em desenvolvimento</h3>
+                    <p>Esta funcionalidade será implementada em breve</p>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <script type="module" src="script.js"></script>
+    <!-- Modal para nova conta -->
+    <div id="modal-nova-conta" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Nova Conta</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="form-nova-conta" class="modal-body">
+                <div class="form-group">
+                    <label for="conta-descricao">Descrição*</label>
+                    <input type="text" id="conta-descricao" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="conta-valor">Valor*</label>
+                    <input type="number" id="conta-valor" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="conta-vencimento">Data de Vencimento*</label>
+                    <input type="date" id="conta-vencimento" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="conta-categoria">Categoria</label>
+                    <select id="conta-categoria">
+                        <option value="">Selecione uma categoria</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="conta-fornecedor-cliente">Fornecedor/Cliente</label>
+                    <select id="conta-fornecedor-cliente">
+                        <option value="">Selecione</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="conta-observacoes">Observações</label>
+                    <textarea id="conta-observacoes" rows="3"></textarea>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
