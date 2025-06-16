@@ -234,6 +234,60 @@ class Database {
         });
     }
 
+    // === MÉTODOS PARA EDIÇÃO COM ANEXOS ===
+    async updateContaPagar(id, dados) {
+        const query = `
+            UPDATE contas_pagar 
+            SET descricao = $1, valor_original = $2, data_vencimento = $3, 
+                fornecedor_id = $4, categoria_id = $5, observacoes = $6,
+                comentario = $7, arquivo_anexo = $8, nome_arquivo = $9,
+                tamanho_arquivo = $10, tipo_arquivo = $11, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $12
+            RETURNING *
+        `;
+        const params = [
+            dados.descricao, dados.valor_original, dados.data_vencimento,
+            dados.fornecedor_id, dados.categoria_id, dados.observacoes,
+            dados.comentario, dados.arquivo_anexo, dados.nome_arquivo,
+            dados.tamanho_arquivo, dados.tipo_arquivo, id
+        ];
+        return await this.query(query, params);
+    }
+
+    async updateContaReceber(id, dados) {
+        const query = `
+            UPDATE contas_receber 
+            SET descricao = $1, valor_original = $2, data_vencimento = $3, 
+                cliente_id = $4, categoria_id = $5, observacoes = $6,
+                comentario = $7, arquivo_anexo = $8, nome_arquivo = $9,
+                tamanho_arquivo = $10, tipo_arquivo = $11, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $12
+            RETURNING *
+        `;
+        const params = [
+            dados.descricao, dados.valor_original, dados.data_vencimento,
+            dados.cliente_id, dados.categoria_id, dados.observacoes,
+            dados.comentario, dados.arquivo_anexo, dados.nome_arquivo,
+            dados.tamanho_arquivo, dados.tipo_arquivo, id
+        ];
+        return await this.query(query, params);
+    }
+
+    async getContaById(tipo, id) {
+        const table = tipo === 'pagar' ? 'contas_pagar' : 'contas_receber';
+        const joinTable = tipo === 'pagar' ? 'fornecedores' : 'clientes';
+        const joinField = tipo === 'pagar' ? 'fornecedor_id' : 'cliente_id';
+        
+        const query = `
+            SELECT c.*, e.nome as entidade_nome, cat.nome as categoria_nome
+            FROM ${table} c
+            LEFT JOIN ${joinTable} e ON c.${joinField} = e.id
+            LEFT JOIN categorias cat ON c.categoria_id = cat.id
+            WHERE c.id = $1
+        `;
+        return await this.query(query, [id]);
+    }
+
     // === MÉTODOS PARA DASHBOARD ===
     async getDashboardData() {
         const hoje = new Date();
@@ -343,6 +397,11 @@ class Database {
                 data_pagamento DATE,
                 status VARCHAR(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'pago', 'atrasado', 'cancelado')),
                 observacoes TEXT,
+                comentario TEXT,
+                arquivo_anexo VARCHAR(500),
+                nome_arquivo VARCHAR(255),
+                tamanho_arquivo INTEGER,
+                tipo_arquivo VARCHAR(100),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
@@ -358,6 +417,11 @@ class Database {
                 data_recebimento DATE,
                 status VARCHAR(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'recebido', 'atrasado', 'cancelado')),
                 observacoes TEXT,
+                comentario TEXT,
+                arquivo_anexo VARCHAR(500),
+                nome_arquivo VARCHAR(255),
+                tamanho_arquivo INTEGER,
+                tipo_arquivo VARCHAR(100),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,

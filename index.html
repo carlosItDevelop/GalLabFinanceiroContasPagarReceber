@@ -865,6 +865,97 @@
         </div>
     </div>
 
+    <!-- Modal para editar conta -->
+    <div id="modal-editar-conta" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="modal-edit-title">Editar Conta</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="form-editar-conta" class="modal-body">
+                <!-- Informações Básicas -->
+                <div class="form-section">
+                    <h4 class="section-title">📋 Informações Básicas</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="edit-descricao">Descrição*</label>
+                            <input type="text" id="edit-descricao" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit-valor">Valor*</label>
+                            <input type="number" id="edit-valor" step="0.01" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit-vencimento">Data de Vencimento*</label>
+                            <input type="date" id="edit-vencimento" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit-categoria">Categoria</label>
+                            <select id="edit-categoria">
+                                <option value="">Selecione uma categoria</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group form-group-full">
+                            <label for="edit-entidade">Fornecedor/Cliente</label>
+                            <select id="edit-entidade">
+                                <option value="">Selecione</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div class="form-section">
+                    <h4 class="section-title">📝 Observações</h4>
+                    <div class="form-group">
+                        <label for="edit-observacoes">Observações Gerais</label>
+                        <textarea id="edit-observacoes" rows="3" placeholder="Adicione observações gerais sobre esta conta..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Comentários e Anexos -->
+                <div class="form-section">
+                    <h4 class="section-title">💬 Comentários e Anexos</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="edit-comentario">Comentário</label>
+                            <textarea id="edit-comentario" rows="4" placeholder="Adicione um comentário específico sobre esta transação..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit-arquivo">Anexar Documento</label>
+                            <div class="file-upload-area">
+                                <input type="file" id="edit-arquivo" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.csv,.xls,.xlsx">
+                                <label for="edit-arquivo" class="file-upload-label">
+                                    <span class="upload-icon">📎</span>
+                                    <span>Clique para anexar arquivo</span>
+                                    <small>PDF, DOC, IMG, TXT, CSV, XLS (máx. 10MB)</small>
+                                </label>
+                            </div>
+                            
+                            <!-- Preview do arquivo anexado -->
+                            <div id="attachment-info" style="display: none;">
+                                <div class="attachment-section">
+                                    <h5>📎 Arquivo Anexado</h5>
+                                    <div id="attachment-preview"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Bibliotecas JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js'></script>

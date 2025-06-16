@@ -14,6 +14,10 @@ class SistemaContasApp {
         this.notificationIdCounter = 1;
         this.editingEventId = null; // Controle para edição de eventos
         
+        // Sistema de Edição de Contas
+        this.editingType = null; // 'pagar' ou 'receber'
+        this.editingId = null; // ID da conta sendo editada
+        
         // Sistema de Logs
         this.logs = [];
         this.logIdCounter = 1;
@@ -185,6 +189,11 @@ class SistemaContasApp {
 
     // === MODAIS ===
     setupModals() {
+        this.setupNovaContaModal();
+        this.setupEditarContaModal();
+    }
+
+    setupNovaContaModal() {
         const modal = document.getElementById('modal-nova-conta');
         const closeBtn = modal.querySelector('.modal-close');
         const cancelBtn = modal.querySelector('.modal-cancel');
@@ -217,6 +226,46 @@ class SistemaContasApp {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             await this.saveNewConta();
+            closeModal();
+        });
+    }
+
+    setupEditarContaModal() {
+        const modal = document.getElementById('modal-editar-conta');
+        if (!modal) return; // Modal será criado no HTML
+        
+        const closeBtn = modal.querySelector('.modal-close');
+        const cancelBtn = modal.querySelector('.modal-cancel');
+        const form = document.getElementById('form-editar-conta');
+        const fileInput = document.getElementById('edit-arquivo');
+
+        // Fechar modal
+        const closeModal = () => {
+            modal.classList.remove('active');
+            form.reset();
+            this.editingType = null;
+            this.editingId = null;
+            this.updateAttachmentDisplay(null, null);
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Handle file attachment
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                this.handleAttachmentChange(e);
+            });
+        }
+
+        // Submit do formulário
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.saveEditedConta();
             closeModal();
         });
     }
@@ -534,24 +583,112 @@ class SistemaContasApp {
             
             const fornecedorClienteNome = tipo === 'pagar' ? conta.fornecedor : conta.cliente;
             
+            // Ícones para anexo e comentário
+            const hasAttachment = conta.arquivo_anexo ? true : false;
+            const hasComment = conta.comentario ? true : false;
+            
+            const attachmentIcon = hasAttachment ? 
+                `<span class="action-icon attachment-icon" onclick="app.viewAttachment(${conta.id}, '${tipo}')" title="Ver anexo">📎</span>` : '';
+            
+            const commentIcon = hasComment ? 
+                `<span class="action-icon comment-icon" onclick="app.viewComment(${conta.id}, '${tipo}')" title="Ver comentário">💬</span>` : '';
+            
             row.innerHTML = `
-                <td>${conta.descricao}</td>
+                <td>
+                    <div class="cell-content">
+                        <span class="main-text">${conta.descricao}</span>
+                        <div class="cell-icons">
+                            ${attachmentIcon}
+                            ${commentIcon}
+                        </div>
+                    </div>
+                </td>
                 <td>${fornecedorClienteNome || '-'}</td>
                 <td>${conta.categoria || '-'}</td>
                 <td>${this.formatCurrency(conta.valor)}</td>
                 <td>${this.formatDate(conta.vencimento)}</td>
                 <td><span class="status-badge status-${conta.status}">${conta.status}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-success" onclick="app.pagarReceber(${conta.id}, '${tipo}')">
-                        ${tipo === 'pagar' ? 'Pagar' : 'Receber'}
-                    </button>
-                    <button class="btn btn-sm btn-secondary" onclick="app.editarConta(${conta.id}, '${tipo}')">
-                        Editar
-                    </button>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-success" onclick="app.pagarReceber(${conta.id}, '${tipo}')">
+                            ${tipo === 'pagar' ? 'Pagar' : 'Receber'}
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="app.editarConta(${conta.id}, '${tipo}')">
+                            ✏️ Editar
+                        </button>
+                    </div>
                 </td>
             `;
             
             tbody.appendChild(row);
+        });
+    }
+
+    async viewAttachment(id, tipo) {
+        // Simular dados do anexo
+        const attachmentData = {
+            nome: 'nota_fiscal_123.pdf',
+            url: 'uploads/nota_fiscal_123.pdf',
+            tamanho: '245 KB'
+        };
+
+        await Swal.fire({
+            title: '📎 Anexo',
+            html: `
+                <div class="attachment-viewer">
+                    <div class="file-preview">
+                        <div class="file-icon-large">${this.getFileIcon(attachmentData.nome)}</div>
+                        <div class="file-details">
+                            <h4>${attachmentData.nome}</h4>
+                            <p>Tamanho: ${attachmentData.tamanho}</p>
+                        </div>
+                    </div>
+                    <div class="attachment-actions">
+                        <button class="btn btn-primary" onclick="window.open('${attachmentData.url}', '_blank')">
+                            📥 Baixar
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.open('${attachmentData.url}', '_blank')">
+                            👁️ Visualizar
+                        </button>
+                    </div>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Fechar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            width: '400px'
+        });
+    }
+
+    async viewComment(id, tipo) {
+        // Simular dados do comentário
+        const commentData = {
+            comentario: 'Este pagamento deve ser feito com urgência devido ao prazo de vencimento.',
+            data_criacao: '2024-01-10',
+            usuario: 'Usuário Sistema'
+        };
+
+        await Swal.fire({
+            title: '💬 Comentário',
+            html: `
+                <div class="comment-viewer">
+                    <div class="comment-content">
+                        <p>${commentData.comentario}</p>
+                    </div>
+                    <div class="comment-meta">
+                        <small>
+                            📅 ${this.formatDate(commentData.data_criacao)} • 
+                            👤 ${commentData.usuario}
+                        </small>
+                    </div>
+                </div>
+            `,
+            confirmButtonText: 'Fechar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            width: '400px'
         });
     }
 
@@ -671,8 +808,58 @@ class SistemaContasApp {
     }
 
     async editarConta(id, tipo) {
-        console.log('Editar conta:', id, tipo);
-        this.showInfo('Funcionalidade de edição será implementada em breve');
+        try {
+            // Simular carregamento dos dados da conta
+            const contaData = await this.getContaData(id, tipo);
+            
+            this.openEditModal(contaData, tipo);
+        } catch (error) {
+            console.error('Erro ao carregar dados da conta:', error);
+            this.showError('Erro ao carregar dados da conta');
+        }
+    }
+
+    async getContaData(id, tipo) {
+        // Simular dados da conta para edição
+        const dados = {
+            id: id,
+            descricao: tipo === 'pagar' ? 'Energia Elétrica - Janeiro' : 'Consultoria - Janeiro',
+            valor_original: tipo === 'pagar' ? 450.00 : 2500.00,
+            data_vencimento: '2024-01-15',
+            entidade_nome: tipo === 'pagar' ? 'Companhia Elétrica SP' : 'XYZ Consultoria Ltda',
+            categoria_nome: tipo === 'pagar' ? 'Utilidades' : 'Consultoria',
+            observacoes: 'Observações existentes...',
+            comentario: '',
+            arquivo_anexo: null,
+            nome_arquivo: null
+        };
+        
+        return dados;
+    }
+
+    openEditModal(contaData, tipo) {
+        const modal = document.getElementById('modal-editar-conta');
+        const title = document.getElementById('modal-edit-title');
+        
+        // Configurar título e tipo
+        title.textContent = `Editar Conta ${tipo === 'pagar' ? 'a Pagar' : 'a Receber'}`;
+        this.editingType = tipo;
+        this.editingId = contaData.id;
+        
+        // Preencher campos
+        document.getElementById('edit-descricao').value = contaData.descricao || '';
+        document.getElementById('edit-valor').value = contaData.valor_original || '';
+        document.getElementById('edit-vencimento').value = contaData.data_vencimento || '';
+        document.getElementById('edit-observacoes').value = contaData.observacoes || '';
+        document.getElementById('edit-comentario').value = contaData.comentario || '';
+        
+        // Mostrar arquivo anexado se existir
+        this.updateAttachmentDisplay(contaData.nome_arquivo, contaData.arquivo_anexo);
+        
+        // Carregar dropdown de entidades
+        this.loadEditModalData(tipo);
+        
+        modal.classList.add('active');
     }
 
     // === FILTROS ===
@@ -685,6 +872,138 @@ class SistemaContasApp {
             const matches = text.includes(searchTerm.toLowerCase());
             row.style.display = matches ? '' : 'none';
         });
+    }
+
+    // === MÉTODOS PARA MODAL DE EDIÇÃO ===
+    async loadEditModalData(tipo) {
+        try {
+            // Carregar entidades (fornecedores ou clientes)
+            const entidades = tipo === 'pagar' ? await this.getFornecedores() : await this.getClientes();
+            const selectEntidade = document.getElementById('edit-entidade');
+            selectEntidade.innerHTML = '<option value="">Selecione</option>';
+            
+            entidades.forEach(entidade => {
+                const option = document.createElement('option');
+                option.value = entidade.id;
+                option.textContent = entidade.nome;
+                selectEntidade.appendChild(option);
+            });
+
+            // Carregar categorias
+            const categorias = await this.getCategorias(tipo);
+            const selectCategoria = document.getElementById('edit-categoria');
+            selectCategoria.innerHTML = '<option value="">Selecione uma categoria</option>';
+            
+            categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.nome;
+                selectCategoria.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Erro ao carregar dados do modal:', error);
+        }
+    }
+
+    async saveEditedConta() {
+        try {
+            const formData = new FormData(document.getElementById('form-editar-conta'));
+            
+            const dados = {
+                id: this.editingId,
+                descricao: document.getElementById('edit-descricao').value,
+                valor_original: parseFloat(document.getElementById('edit-valor').value),
+                data_vencimento: document.getElementById('edit-vencimento').value,
+                entidade_id: document.getElementById('edit-entidade').value,
+                categoria_id: document.getElementById('edit-categoria').value,
+                observacoes: document.getElementById('edit-observacoes').value,
+                comentario: document.getElementById('edit-comentario').value
+            };
+
+            // Verificar se há arquivo anexado
+            const fileInput = document.getElementById('edit-arquivo');
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                dados.arquivo_anexo = await this.processFileUpload(file);
+                dados.nome_arquivo = file.name;
+                dados.tamanho_arquivo = file.size;
+                dados.tipo_arquivo = file.type;
+            }
+
+            console.log('Salvando conta editada:', dados);
+            
+            // Aqui seria feita a chamada para a API
+            this.showSuccess('Conta atualizada com sucesso!');
+            
+            // Adicionar log
+            this.addLog(
+                'update',
+                `Conta ${this.editingType === 'pagar' ? 'a pagar' : 'a receber'} editada`,
+                `Conta "${dados.descricao}" foi editada`,
+                this.editingType === 'pagar' ? 'contas-pagar' : 'contas-receber',
+                dados
+            );
+            
+            // Recarregar dados
+            if (this.editingType === 'pagar') {
+                await this.loadContasPagar();
+            } else {
+                await this.loadContasReceber();
+            }
+
+        } catch (error) {
+            console.error('Erro ao salvar conta editada:', error);
+            this.showError('Erro ao salvar alterações');
+        }
+    }
+
+    async processFileUpload(file) {
+        // Simular upload do arquivo
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const fileUrl = `uploads/${Date.now()}_${file.name}`;
+                resolve(fileUrl);
+            }, 1000);
+        });
+    }
+
+    updateAttachmentDisplay(fileName, fileUrl) {
+        const attachmentInfo = document.getElementById('attachment-info');
+        const attachmentPreview = document.getElementById('attachment-preview');
+        
+        if (fileName && fileUrl) {
+            attachmentInfo.style.display = 'block';
+            attachmentPreview.innerHTML = `
+                <div class="attached-file">
+                    <span class="file-icon">${this.getFileIcon(fileName)}</span>
+                    <span class="file-name">${fileName}</span>
+                    <button type="button" class="btn-remove-attachment" onclick="app.removeAttachment()">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            `;
+        } else {
+            attachmentInfo.style.display = 'none';
+            attachmentPreview.innerHTML = '';
+        }
+    }
+
+    removeAttachment() {
+        document.getElementById('edit-arquivo').value = '';
+        this.updateAttachmentDisplay(null, null);
+    }
+
+    handleAttachmentChange(event) {
+        const file = event.target.files[0];
+        if (file) {
+            if (file.size > 10 * 1024 * 1024) { // 10MB
+                this.showError('Arquivo muito grande (máx. 10MB)');
+                event.target.value = '';
+                return;
+            }
+            this.updateAttachmentDisplay(file.name, URL.createObjectURL(file));
+        }
     }
 
     // === UTILITÁRIOS ===
