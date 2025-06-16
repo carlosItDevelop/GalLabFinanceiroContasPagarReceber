@@ -14,6 +14,13 @@ class SistemaContasApp {
         this.notificationIdCounter = 1;
         this.editingEventId = null; // Controle para edição de eventos
         
+        // Sistema de Logs
+        this.logs = [];
+        this.logIdCounter = 1;
+        this.currentLogPage = 1;
+        this.logsPerPage = 10;
+        this.filteredLogs = [];
+        
         this.init();
     }
 
@@ -103,6 +110,9 @@ class SistemaContasApp {
                 break;
             case 'arquivos':
                 this.loadArquivos();
+                break;
+            case 'logs':
+                this.loadLogs();
                 break;
             case 'consolidados':
                 await this.loadConsolidados();
@@ -490,6 +500,15 @@ class SistemaContasApp {
             // Aqui será implementada a chamada para a API
             this.showSuccess('Conta cadastrada com sucesso!');
             
+            // Adicionar log
+            this.addLog(
+                'create',
+                `Nova conta ${this.modalType === 'pagar' ? 'a pagar' : 'a receber'} criada`,
+                `Conta "${dados.descricao}" foi criada no valor de ${this.formatCurrency(dados.valor)}`,
+                this.modalType === 'pagar' ? 'contas-pagar' : 'contas-receber',
+                dados
+            );
+            
             // Recarregar dados da tab atual
             if (this.modalType === 'pagar') {
                 await this.loadContasPagar();
@@ -619,6 +638,20 @@ class SistemaContasApp {
                     // await this.database.pagarConta(id, formValues.valor, formValues.data) ou receberConta()
                     
                     this.showSuccess(`Conta ${acao === 'pagar' ? 'paga' : 'recebida'} com sucesso!`);
+                    
+                    // Adicionar log
+                    this.addLog(
+                        tipo === 'pagar' ? 'payment' : 'receive',
+                        `${tipo === 'pagar' ? 'Pagamento' : 'Recebimento'} realizado`,
+                        `Conta ID ${id} foi ${tipo === 'pagar' ? 'paga' : 'recebida'} no valor de ${this.formatCurrency(formValues.valor)}`,
+                        tipo === 'pagar' ? 'contas-pagar' : 'contas-receber',
+                        {
+                            conta_id: id,
+                            valor: formValues.valor,
+                            data: formValues.data,
+                            observacoes: formValues.observacoes
+                        }
+                    );
                     
                     // Recarregar dados
                     if (tipo === 'pagar') {
@@ -1041,6 +1074,15 @@ class SistemaContasApp {
                 }
                 
                 this.showSuccess('Evento criado com sucesso!');
+                
+                // Adicionar log
+                this.addLog(
+                    'create',
+                    'Novo evento agendado',
+                    `Evento "${formData.titulo}" criado na agenda para ${this.formatDate(formData.data)}`,
+                    'agenda',
+                    formData
+                );
             }
             
             // Salvar no localStorage para persistência
@@ -1734,6 +1776,669 @@ class SistemaContasApp {
                 this.deleteEvent(event);
             }
         });
+    }
+
+    // === SISTEMA DE LOGS ===
+    loadLogs() {
+        this.setupLogsEventListeners();
+        this.generateSampleLogs();
+        this.applyLogsFilters();
+    }
+
+    setupLogsEventListeners() {
+        // Filtros
+        const aplicarFiltros = document.getElementById('aplicar-filtros-logs');
+        const limparFiltros = document.getElementById('limpar-filtros-logs');
+        
+        if (aplicarFiltros) {
+            aplicarFiltros.addEventListener('click', () => this.applyLogsFilters());
+        }
+        
+        if (limparFiltros) {
+            limparFiltros.addEventListener('click', () => this.clearLogsFilters());
+        }
+
+        // Busca em tempo real
+        const buscaInput = document.getElementById('filtro-busca-logs');
+        if (buscaInput) {
+            buscaInput.addEventListener('input', () => {
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    this.applyLogsFilters();
+                }, 300);
+            });
+        }
+
+        // Paginação
+        const anteriorBtn = document.getElementById('logs-anterior');
+        const proximoBtn = document.getElementById('logs-proximo');
+        
+        if (anteriorBtn) {
+            anteriorBtn.addEventListener('click', () => this.previousLogsPage());
+        }
+        
+        if (proximoBtn) {
+            proximoBtn.addEventListener('click', () => this.nextLogsPage());
+        }
+
+        // Ações dos botões
+        const exportBtn = document.getElementById('export-logs');
+        const clearBtn = document.getElementById('clear-logs');
+        
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => this.exportLogs());
+        }
+        
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => this.clearAllLogs());
+        }
+
+        // Modal de detalhes
+        this.setupLogDetailsModal();
+    }
+
+    setupLogDetailsModal() {
+        const modal = document.getElementById('modal-detalhes-log');
+        const closeBtn = modal.querySelector('.modal-close');
+        const fecharBtn = document.getElementById('modal-log-fechar');
+        const exportarBtn = document.getElementById('modal-log-exportar');
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        fecharBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        exportarBtn.addEventListener('click', () => {
+            this.exportSingleLog(this.currentLogDetail);
+            closeModal();
+        });
+    }
+
+    generateSampleLogs() {
+        const now = new Date();
+        const sampleLogs = [
+            {
+                id: 'LOG_001',
+                tipo: 'create',
+                titulo: 'Nova conta a pagar criada',
+                descricao: 'Conta "Energia Elétrica - Janeiro" foi criada no valor de R$ 450,00',
+                modulo: 'contas-pagar',
+                usuario: 'Usuário Sistema',
+                timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 horas atrás
+                ip: '192.168.1.100',
+                sessao: 'SES_12345',
+                dados: {
+                    conta: {
+                        descricao: 'Energia Elétrica - Janeiro',
+                        valor: 450.00,
+                        vencimento: '2024-01-15',
+                        fornecedor: 'Companhia Elétrica SP'
+                    }
+                }
+            },
+            {
+                id: 'LOG_002',
+                tipo: 'payment',
+                titulo: 'Pagamento realizado',
+                descricao: 'Conta "Material Escritório" foi paga no valor de R$ 230,50',
+                modulo: 'contas-pagar',
+                usuario: 'Usuário Sistema',
+                timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000), // 4 horas atrás
+                ip: '192.168.1.100',
+                sessao: 'SES_12345',
+                dados: {
+                    pagamento: {
+                        conta_id: 2,
+                        valor_pago: 230.50,
+                        data_pagamento: '2024-01-12',
+                        metodo: 'Transferência bancária'
+                    }
+                }
+            },
+            {
+                id: 'LOG_003',
+                tipo: 'receive',
+                titulo: 'Recebimento registrado',
+                descricao: 'Recebimento da consultoria XYZ no valor de R$ 2.500,00',
+                modulo: 'contas-receber',
+                usuario: 'Usuário Sistema',
+                timestamp: new Date(now.getTime() - 6 * 60 * 60 * 1000), // 6 horas atrás
+                ip: '192.168.1.100',
+                sessao: 'SES_12345',
+                dados: {
+                    recebimento: {
+                        conta_id: 1,
+                        valor_recebido: 2500.00,
+                        data_recebimento: '2024-01-10',
+                        cliente: 'XYZ Consultoria Ltda'
+                    }
+                }
+            },
+            {
+                id: 'LOG_004',
+                tipo: 'export',
+                titulo: 'Relatório exportado',
+                descricao: 'Relatório consolidado exportado em formato PDF',
+                modulo: 'consolidados',
+                usuario: 'Usuário Sistema',
+                timestamp: new Date(now.getTime() - 8 * 60 * 60 * 1000), // 8 horas atrás
+                ip: '192.168.1.100',
+                sessao: 'SES_12345',
+                dados: {
+                    exportacao: {
+                        tipo: 'consolidado',
+                        formato: 'PDF',
+                        periodo: 'Dezembro 2024',
+                        tamanho: '1.2 MB'
+                    }
+                }
+            },
+            {
+                id: 'LOG_005',
+                tipo: 'create',
+                titulo: 'Evento agendado',
+                descricao: 'Novo evento "Reunião com Cliente XYZ" criado na agenda',
+                modulo: 'agenda',
+                usuario: 'Usuário Sistema',
+                timestamp: new Date(now.getTime() - 10 * 60 * 60 * 1000), // 10 horas atrás
+                ip: '192.168.1.100',
+                sessao: 'SES_12345',
+                dados: {
+                    evento: {
+                        titulo: 'Reunião com Cliente XYZ',
+                        data: '2024-01-15',
+                        hora: '14:00',
+                        tipo: 'reuniao-cliente'
+                    }
+                }
+            },
+            {
+                id: 'LOG_006',
+                tipo: 'update',
+                titulo: 'Conta editada',
+                descricao: 'Conta "Internet - Janeiro" teve o valor alterado de R$ 100,00 para R$ 120,00',
+                modulo: 'contas-pagar',
+                usuario: 'Usuário Sistema',
+                timestamp: new Date(now.getTime() - 12 * 60 * 60 * 1000), // 12 horas atrás
+                ip: '192.168.1.100',
+                sessao: 'SES_12345',
+                dados: {
+                    alteracao: {
+                        campo: 'valor',
+                        valor_anterior: 100.00,
+                        valor_novo: 120.00,
+                        conta_id: 3
+                    }
+                }
+            },
+            {
+                id: 'LOG_007',
+                tipo: 'delete',
+                titulo: 'Arquivo removido',
+                descricao: 'Arquivo "nota_fiscal_123.pdf" foi excluído do sistema',
+                modulo: 'arquivos',
+                usuario: 'Usuário Sistema',
+                timestamp: new Date(now.getTime() - 24 * 60 * 60 * 1000), // 1 dia atrás
+                ip: '192.168.1.100',
+                sessao: 'SES_12345',
+                dados: {
+                    arquivo: {
+                        nome: 'nota_fiscal_123.pdf',
+                        tamanho: '245 KB',
+                        tipo: 'application/pdf'
+                    }
+                }
+            },
+            {
+                id: 'LOG_008',
+                tipo: 'login',
+                titulo: 'Login realizado',
+                descricao: 'Usuário realizou login no sistema',
+                modulo: 'sistema',
+                usuario: 'Usuário Sistema',
+                timestamp: new Date(now.getTime() - 25 * 60 * 60 * 1000), // 1 dia e 1 hora atrás
+                ip: '192.168.1.100',
+                sessao: 'SES_12345',
+                dados: {
+                    login: {
+                        metodo: 'username_password',
+                        navegador: 'Chrome 120.0',
+                        dispositivo: 'Desktop'
+                    }
+                }
+            },
+            {
+                id: 'LOG_009',
+                tipo: 'system',
+                titulo: 'Backup automático',
+                descricao: 'Backup automático do banco de dados realizado com sucesso',
+                modulo: 'sistema',
+                usuario: 'Sistema Automático',
+                timestamp: new Date(now.getTime() - 48 * 60 * 60 * 1000), // 2 dias atrás
+                ip: '127.0.0.1',
+                sessao: 'SYS_AUTO',
+                dados: {
+                    backup: {
+                        tamanho: '15.8 MB',
+                        duracao: '2.3 segundos',
+                        tabelas: 8,
+                        registros: 1247
+                    }
+                }
+            },
+            {
+                id: 'LOG_010',
+                tipo: 'import',
+                titulo: 'Dados importados',
+                descricao: 'Planilha de contas importada com 15 novos registros',
+                modulo: 'contas-pagar',
+                usuario: 'Usuário Sistema',
+                timestamp: new Date(now.getTime() - 72 * 60 * 60 * 1000), // 3 dias atrás
+                ip: '192.168.1.100',
+                sessao: 'SES_12345',
+                dados: {
+                    importacao: {
+                        arquivo: 'contas_janeiro.xlsx',
+                        registros_importados: 15,
+                        registros_erro: 0,
+                        tamanho: '32 KB'
+                    }
+                }
+            }
+        ];
+
+        this.logs = sampleLogs;
+        this.filteredLogs = [...this.logs];
+    }
+
+    applyLogsFilters() {
+        const dataInicio = document.getElementById('filtro-data-inicio-logs')?.value;
+        const dataFim = document.getElementById('filtro-data-fim-logs')?.value;
+        const tipo = document.getElementById('filtro-tipo-logs')?.value;
+        const modulo = document.getElementById('filtro-modulo-logs')?.value;
+        const busca = document.getElementById('filtro-busca-logs')?.value?.toLowerCase();
+
+        this.filteredLogs = this.logs.filter(log => {
+            // Filtro por data
+            if (dataInicio) {
+                const dataInicioDate = new Date(dataInicio);
+                if (log.timestamp < dataInicioDate) return false;
+            }
+            
+            if (dataFim) {
+                const dataFimDate = new Date(dataFim + 'T23:59:59');
+                if (log.timestamp > dataFimDate) return false;
+            }
+
+            // Filtro por tipo
+            if (tipo && log.tipo !== tipo) return false;
+
+            // Filtro por módulo
+            if (modulo && log.modulo !== modulo) return false;
+
+            // Filtro por busca
+            if (busca) {
+                const searchString = `${log.titulo} ${log.descricao} ${log.usuario}`.toLowerCase();
+                if (!searchString.includes(busca)) return false;
+            }
+
+            return true;
+        });
+
+        // Ordenar por timestamp (mais recente primeiro)
+        this.filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        // Reset página atual
+        this.currentLogPage = 1;
+
+        this.renderLogs();
+        this.renderLogsPagination();
+    }
+
+    clearLogsFilters() {
+        document.getElementById('filtro-data-inicio-logs').value = '';
+        document.getElementById('filtro-data-fim-logs').value = '';
+        document.getElementById('filtro-tipo-logs').value = '';
+        document.getElementById('filtro-modulo-logs').value = '';
+        document.getElementById('filtro-busca-logs').value = '';
+        
+        this.applyLogsFilters();
+    }
+
+    renderLogs() {
+        const container = document.getElementById('logs-list');
+        if (!container) return;
+
+        const startIndex = (this.currentLogPage - 1) * this.logsPerPage;
+        const endIndex = startIndex + this.logsPerPage;
+        const pageData = this.filteredLogs.slice(startIndex, endIndex);
+
+        if (pageData.length === 0) {
+            container.innerHTML = `
+                <div class="logs-empty">
+                    <h3>📋 Nenhum log encontrado</h3>
+                    <p>Não há logs que correspondam aos filtros aplicados. Tente ajustar os critérios de busca.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = pageData.map(log => `
+            <div class="log-item ${log.tipo}" onclick="app.showLogDetails('${log.id}')">
+                <div class="log-icon">${this.getLogIcon(log.tipo)}</div>
+                <div class="log-content">
+                    <div class="log-title">
+                        ${log.titulo}
+                        <span class="log-tipo-badge ${log.tipo}">${this.getLogTypeLabel(log.tipo)}</span>
+                    </div>
+                    <div class="log-description">${log.descricao}</div>
+                    <div class="log-meta">
+                        <div class="log-meta-item">
+                            <span>👤</span>
+                            <span>${log.usuario}</span>
+                        </div>
+                        <div class="log-meta-item">
+                            <span>📍</span>
+                            <span>${this.getModuleLabel(log.modulo)}</span>
+                        </div>
+                        <div class="log-meta-item">
+                            <span>🌐</span>
+                            <span>${log.ip}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="log-timestamp">
+                    <div class="log-date">${this.formatDate(log.timestamp)}</div>
+                    <div class="log-time">${this.formatTime(log.timestamp)}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderLogsPagination() {
+        const totalPages = Math.ceil(this.filteredLogs.length / this.logsPerPage);
+        const startIndex = (this.currentLogPage - 1) * this.logsPerPage;
+        const endIndex = Math.min(startIndex + this.logsPerPage, this.filteredLogs.length);
+
+        // Atualizar informações
+        const infoElement = document.getElementById('logs-info');
+        if (infoElement) {
+            infoElement.textContent = `Mostrando ${startIndex + 1}-${endIndex} de ${this.filteredLogs.length} registros`;
+        }
+
+        // Atualizar botões anterior/próximo
+        const anteriorBtn = document.getElementById('logs-anterior');
+        const proximoBtn = document.getElementById('logs-proximo');
+        
+        if (anteriorBtn) {
+            anteriorBtn.disabled = this.currentLogPage === 1;
+        }
+        
+        if (proximoBtn) {
+            proximoBtn.disabled = this.currentLogPage === totalPages || totalPages === 0;
+        }
+
+        // Gerar páginas
+        const pagesContainer = document.getElementById('logs-pages');
+        if (pagesContainer) {
+            pagesContainer.innerHTML = this.generatePaginationPages(totalPages);
+        }
+    }
+
+    generatePaginationPages(totalPages) {
+        if (totalPages <= 1) return '';
+
+        const pages = [];
+        const current = this.currentLogPage;
+        const delta = 2; // Quantas páginas mostrar ao redor da atual
+
+        // Primeira página
+        if (current > delta + 1) {
+            pages.push(1);
+            if (current > delta + 2) {
+                pages.push('...');
+            }
+        }
+
+        // Páginas ao redor da atual
+        const start = Math.max(1, current - delta);
+        const end = Math.min(totalPages, current + delta);
+        
+        for (let i = start; i <= end; i++) {
+            pages.push(i);
+        }
+
+        // Última página
+        if (current < totalPages - delta) {
+            if (current < totalPages - delta - 1) {
+                pages.push('...');
+            }
+            pages.push(totalPages);
+        }
+
+        return pages.map(page => {
+            if (page === '...') {
+                return '<span class="pagination-page disabled">...</span>';
+            }
+            
+            const isActive = page === current ? 'active' : '';
+            return `<span class="pagination-page ${isActive}" onclick="app.goToLogPage(${page})">${page}</span>`;
+        }).join('');
+    }
+
+    goToLogPage(page) {
+        this.currentLogPage = page;
+        this.renderLogs();
+        this.renderLogsPagination();
+    }
+
+    previousLogsPage() {
+        if (this.currentLogPage > 1) {
+            this.currentLogPage--;
+            this.renderLogs();
+            this.renderLogsPagination();
+        }
+    }
+
+    nextLogsPage() {
+        const totalPages = Math.ceil(this.filteredLogs.length / this.logsPerPage);
+        if (this.currentLogPage < totalPages) {
+            this.currentLogPage++;
+            this.renderLogs();
+            this.renderLogsPagination();
+        }
+    }
+
+    showLogDetails(logId) {
+        const log = this.logs.find(l => l.id === logId);
+        if (!log) return;
+
+        this.currentLogDetail = log;
+
+        // Preencher modal
+        document.getElementById('modal-log-icon').textContent = this.getLogIcon(log.tipo);
+        document.getElementById('modal-log-titulo').textContent = log.titulo;
+        document.getElementById('modal-log-tipo').textContent = this.getLogTypeLabel(log.tipo);
+        document.getElementById('modal-log-data').textContent = this.formatDate(log.timestamp);
+        document.getElementById('modal-log-hora').textContent = this.formatTime(log.timestamp);
+        document.getElementById('modal-log-descricao').textContent = log.descricao;
+        document.getElementById('modal-log-usuario').textContent = log.usuario;
+        document.getElementById('modal-log-modulo').textContent = this.getModuleLabel(log.modulo);
+        document.getElementById('modal-log-ip').textContent = log.ip;
+        document.getElementById('modal-log-id').textContent = log.id;
+        document.getElementById('modal-log-sessao').textContent = log.sessao;
+
+        // Dados estruturados
+        const dadosElement = document.getElementById('modal-log-dados');
+        dadosElement.textContent = JSON.stringify(log.dados, null, 2);
+
+        // Mostrar modal
+        document.getElementById('modal-detalhes-log').classList.add('active');
+    }
+
+    getLogIcon(tipo) {
+        const icons = {
+            'create': '📝',
+            'update': '✏️',
+            'delete': '🗑️',
+            'payment': '💰',
+            'receive': '💸',
+            'login': '🔑',
+            'export': '📄',
+            'import': '📥',
+            'system': '⚙️'
+        };
+        return icons[tipo] || '📋';
+    }
+
+    getLogTypeLabel(tipo) {
+        const labels = {
+            'create': 'Criação',
+            'update': 'Edição',
+            'delete': 'Exclusão',
+            'payment': 'Pagamento',
+            'receive': 'Recebimento',
+            'login': 'Login',
+            'export': 'Exportação',
+            'import': 'Importação',
+            'system': 'Sistema'
+        };
+        return labels[tipo] || 'Desconhecido';
+    }
+
+    getModuleLabel(modulo) {
+        const labels = {
+            'dashboard': 'Dashboard',
+            'contas-pagar': 'Contas a Pagar',
+            'contas-receber': 'Contas a Receber',
+            'consolidados': 'Consolidados',
+            'agenda': 'Agenda',
+            'arquivos': 'Arquivos',
+            'sistema': 'Sistema'
+        };
+        return labels[modulo] || modulo;
+    }
+
+    formatTime(date) {
+        return new Date(date).toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
+    // Adicionar log (método para ser usado por outras funcionalidades)
+    addLog(tipo, titulo, descricao, modulo, dados = {}) {
+        const log = {
+            id: `LOG_${this.logIdCounter++}`,
+            tipo: tipo,
+            titulo: titulo,
+            descricao: descricao,
+            modulo: modulo,
+            usuario: 'Usuário Sistema',
+            timestamp: new Date(),
+            ip: '192.168.1.100',
+            sessao: 'SES_12345',
+            dados: dados
+        };
+
+        this.logs.unshift(log); // Adicionar no início
+        
+        // Se estamos na aba de logs, atualizar
+        if (this.currentTab === 'logs') {
+            this.applyLogsFilters();
+        }
+
+        return log.id;
+    }
+
+    exportLogs() {
+        const csvContent = this.convertLogsToCSV(this.filteredLogs);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `logs_sistema_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.showSuccess('Logs exportados com sucesso!');
+    }
+
+    convertLogsToCSV(logs) {
+        const headers = ['ID', 'Data/Hora', 'Tipo', 'Título', 'Descrição', 'Módulo', 'Usuário', 'IP'];
+        const csvRows = [headers.join(',')];
+        
+        logs.forEach(log => {
+            const row = [
+                log.id,
+                `"${log.timestamp.toLocaleString('pt-BR')}"`,
+                this.getLogTypeLabel(log.tipo),
+                `"${log.titulo}"`,
+                `"${log.descricao}"`,
+                this.getModuleLabel(log.modulo),
+                `"${log.usuario}"`,
+                log.ip
+            ];
+            csvRows.push(row.join(','));
+        });
+        
+        return csvRows.join('\n');
+    }
+
+    exportSingleLog(log) {
+        const logData = {
+            ...log,
+            timestamp: log.timestamp.toLocaleString('pt-BR'),
+            tipo_label: this.getLogTypeLabel(log.tipo),
+            modulo_label: this.getModuleLabel(log.modulo)
+        };
+        
+        const jsonContent = JSON.stringify(logData, null, 2);
+        const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `log_${log.id}_${new Date().toISOString().split('T')[0]}.json`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.showSuccess(`Log ${log.id} exportado com sucesso!`);
+    }
+
+    async clearAllLogs() {
+        const result = await Swal.fire({
+            title: 'Limpar todos os logs?',
+            text: 'Esta ação não pode ser desfeita. Todos os logs serão removidos permanentemente.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, limpar tudo',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
+
+        if (result.isConfirmed) {
+            this.logs = [];
+            this.filteredLogs = [];
+            this.renderLogs();
+            this.renderLogsPagination();
+            this.showSuccess('Todos os logs foram removidos!');
+        }
     }
 
     // === ARQUIVOS ===

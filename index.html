@@ -543,11 +543,68 @@
             <div id="logs" class="tab-panel">
                 <div class="panel-header">
                     <h2>📝 Logs do Sistema</h2>
-                    <p>Histórico de operações e auditoria</p>
+                    <p>Histórico de operações e auditoria completa</p>
+                    <div class="panel-actions">
+                        <button class="btn btn-secondary" id="export-logs">📄 Exportar Logs</button>
+                        <button class="btn btn-danger" id="clear-logs">🗑️ Limpar Histórico</button>
+                    </div>
                 </div>
-                <div class="coming-soon">
-                    <h3>🚧 Em desenvolvimento</h3>
-                    <p>Esta funcionalidade será implementada em breve</p>
+
+                <!-- Filtros dos Logs -->
+                <div class="logs-filters">
+                    <div class="filters">
+                        <input type="date" id="filtro-data-inicio-logs" placeholder="Data início">
+                        <input type="date" id="filtro-data-fim-logs" placeholder="Data fim">
+                        
+                        <select id="filtro-tipo-logs">
+                            <option value="">Todos os tipos</option>
+                            <option value="create">📝 Criação</option>
+                            <option value="update">✏️ Edição</option>
+                            <option value="delete">🗑️ Exclusão</option>
+                            <option value="payment">💰 Pagamento</option>
+                            <option value="receive">💸 Recebimento</option>
+                            <option value="login">🔑 Login</option>
+                            <option value="export">📄 Exportação</option>
+                            <option value="import">📥 Importação</option>
+                            <option value="system">⚙️ Sistema</option>
+                        </select>
+                        
+                        <select id="filtro-modulo-logs">
+                            <option value="">Todos os módulos</option>
+                            <option value="dashboard">📊 Dashboard</option>
+                            <option value="contas-pagar">💸 Contas a Pagar</option>
+                            <option value="contas-receber">💰 Contas a Receber</option>
+                            <option value="consolidados">📈 Consolidados</option>
+                            <option value="agenda">🗓️ Agenda</option>
+                            <option value="arquivos">📁 Arquivos</option>
+                        </select>
+                        
+                        <input type="text" id="filtro-busca-logs" placeholder="🔍 Buscar por descrição...">
+                        
+                        <button class="btn btn-primary" id="aplicar-filtros-logs">🔍 Filtrar</button>
+                        <button class="btn btn-secondary" id="limpar-filtros-logs">🔄 Limpar</button>
+                    </div>
+                </div>
+
+                <!-- Lista de Logs -->
+                <div class="logs-container">
+                    <div class="logs-list" id="logs-list">
+                        <!-- Logs serão carregados dinamicamente -->
+                    </div>
+                    
+                    <!-- Paginação -->
+                    <div class="logs-pagination">
+                        <div class="pagination-info">
+                            <span id="logs-info">Mostrando 0-0 de 0 registros</span>
+                        </div>
+                        <div class="pagination-controls">
+                            <button class="btn btn-sm btn-secondary" id="logs-anterior" disabled>← Anterior</button>
+                            <span class="pagination-pages" id="logs-pages">
+                                <!-- Páginas serão geradas dinamicamente -->
+                            </span>
+                            <button class="btn btn-sm btn-secondary" id="logs-proximo">Próximo →</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -684,6 +741,77 @@
                     <button type="submit" class="btn btn-primary">Salvar Evento</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes do Log -->
+    <div id="modal-detalhes-log" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>📋 Detalhes do Log</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="log-details-container">
+                    <div class="log-details-header">
+                        <div class="log-icon" id="modal-log-icon">📝</div>
+                        <div class="log-info">
+                            <h4 id="modal-log-titulo">Título da Ação</h4>
+                            <span class="log-tipo" id="modal-log-tipo">Tipo</span>
+                        </div>
+                        <div class="log-timestamp">
+                            <div id="modal-log-data">00/00/0000</div>
+                            <div id="modal-log-hora">00:00:00</div>
+                        </div>
+                    </div>
+                    
+                    <div class="log-details-content">
+                        <div class="log-section">
+                            <h5>📝 Descrição</h5>
+                            <p id="modal-log-descricao">Descrição detalhada da ação...</p>
+                        </div>
+                        
+                        <div class="log-section">
+                            <h5>👤 Usuário</h5>
+                            <p id="modal-log-usuario">Sistema</p>
+                        </div>
+                        
+                        <div class="log-section">
+                            <h5>📍 Módulo/Origem</h5>
+                            <p id="modal-log-modulo">Dashboard</p>
+                        </div>
+                        
+                        <div class="log-section" id="modal-log-dados-section">
+                            <h5>💾 Dados Relacionados</h5>
+                            <div class="log-dados" id="modal-log-dados">
+                                <!-- Dados em formato JSON estruturado -->
+                            </div>
+                        </div>
+                        
+                        <div class="log-section" id="modal-log-ip-section">
+                            <h5>🌐 Informações Técnicas</h5>
+                            <div class="log-tech-info">
+                                <div class="tech-item">
+                                    <span>IP Address:</span>
+                                    <span id="modal-log-ip">127.0.0.1</span>
+                                </div>
+                                <div class="tech-item">
+                                    <span>ID do Registro:</span>
+                                    <span id="modal-log-id">LOG_001</span>
+                                </div>
+                                <div class="tech-item">
+                                    <span>Sessão:</span>
+                                    <span id="modal-log-sessao">SES_12345</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="modal-log-fechar">Fechar</button>
+                <button class="btn btn-primary" id="modal-log-exportar">📄 Exportar Este Log</button>
+            </div>
         </div>
     </div>
 
