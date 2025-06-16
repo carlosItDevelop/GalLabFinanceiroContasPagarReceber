@@ -180,11 +180,101 @@
             <div id="consolidados" class="tab-panel">
                 <div class="panel-header">
                     <h2>📈 Consolidados</h2>
-                    <p>Relatórios consolidados e fluxo de caixa</p>
+                    <p>Relatórios consolidados e análise financeira</p>
                 </div>
-                <div class="coming-soon">
-                    <h3>🚧 Em desenvolvimento</h3>
-                    <p>Esta funcionalidade será implementada em breve</p>
+
+                <!-- Filtros de Período -->
+                <div class="consolidados-filters">
+                    <div class="filters">
+                        <select id="filtro-periodo">
+                            <option value="mes-atual">Mês Atual</option>
+                            <option value="mes-anterior">Mês Anterior</option>
+                            <option value="trimestre">Último Trimestre</option>
+                            <option value="semestre">Último Semestre</option>
+                            <option value="ano">Ano Atual</option>
+                            <option value="personalizado">Período Personalizado</option>
+                        </select>
+                        <input type="date" id="data-inicio-consolidado" style="display: none;">
+                        <input type="date" id="data-fim-consolidado" style="display: none;">
+                        <button class="btn btn-primary" id="aplicar-filtros">📊 Atualizar</button>
+                    </div>
+                </div>
+
+                <!-- Cards Resumo Executivo -->
+                <div class="consolidados-cards">
+                    <div class="card card-blue">
+                        <div class="card-icon">💰</div>
+                        <div class="card-content">
+                            <h3>Total Entradas</h3>
+                            <div class="card-value" id="total-entradas-consolidado">R$ 0,00</div>
+                            <small id="variacao-entradas">+0% vs período anterior</small>
+                        </div>
+                    </div>
+
+                    <div class="card card-red">
+                        <div class="card-icon">💸</div>
+                        <div class="card-content">
+                            <h3>Total Saídas</h3>
+                            <div class="card-value" id="total-saidas-consolidado">R$ 0,00</div>
+                            <small id="variacao-saidas">+0% vs período anterior</small>
+                        </div>
+                    </div>
+
+                    <div class="card card-green">
+                        <div class="card-icon">📊</div>
+                        <div class="card-content">
+                            <h3>Saldo Líquido</h3>
+                            <div class="card-value" id="saldo-liquido-consolidado">R$ 0,00</div>
+                            <small id="variacao-saldo">+0% vs período anterior</small>
+                        </div>
+                    </div>
+
+                    <div class="card card-orange">
+                        <div class="card-icon">📈</div>
+                        <div class="card-content">
+                            <h3>Margem Líquida</h3>
+                            <div class="card-value" id="margem-liquida">0%</div>
+                            <small>Saldo / Entradas</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos -->
+                <div class="consolidados-charts">
+                    <div class="chart-container">
+                        <h3>📈 Fluxo de Caixa - Evolução Mensal</h3>
+                        <div id="chart-fluxo-caixa"></div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>🥧 Distribuição por Categorias</h3>
+                        <div id="chart-categorias"></div>
+                    </div>
+                </div>
+
+                <!-- Análises Detalhadas -->
+                <div class="consolidados-analises">
+                    <div class="analise-container">
+                        <h3>📋 Top 5 Fornecedores (Gastos)</h3>
+                        <div class="ranking-list" id="ranking-fornecedores">
+                            <!-- Dados carregados dinamicamente -->
+                        </div>
+                    </div>
+
+                    <div class="analise-container">
+                        <h3>💰 Top 5 Clientes (Receitas)</h3>
+                        <div class="ranking-list" id="ranking-clientes">
+                            <!-- Dados carregados dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparativo Temporal -->
+                <div class="consolidados-comparativo">
+                    <div class="chart-container">
+                        <h3>📊 Comparativo Mensal - Entradas vs Saídas</h3>
+                        <div id="chart-comparativo-mensal"></div>
+                    </div>
                 </div>
             </div>
 

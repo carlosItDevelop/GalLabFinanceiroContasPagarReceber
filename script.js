@@ -772,19 +772,118 @@ class SistemaContasApp {
 
     // === CONSOLIDADOS ===
     async loadConsolidados() {
-        // Gráfico de evolução
-        const evolucaoOptions = {
+        try {
+            // Configurar event listeners específicos dos consolidados
+            this.setupConsolidadosEventListeners();
+            
+            // Carregar dados consolidados
+            await this.loadConsolidadosData();
+            
+            // Carregar gráficos dos consolidados
+            this.loadConsolidadosCharts();
+            
+            // Carregar rankings
+            this.loadRankings();
+            
+        } catch (error) {
+            console.error('Erro ao carregar consolidados:', error);
+            this.showError('Erro ao carregar dados consolidados');
+        }
+    }
+
+    setupConsolidadosEventListeners() {
+        // Filtro de período
+        const filtroPeriodo = document.getElementById('filtro-periodo');
+        const dataInicio = document.getElementById('data-inicio-consolidado');
+        const dataFim = document.getElementById('data-fim-consolidado');
+        const btnAplicar = document.getElementById('aplicar-filtros');
+
+        if (filtroPeriodo) {
+            filtroPeriodo.addEventListener('change', () => {
+                if (filtroPeriodo.value === 'personalizado') {
+                    dataInicio.style.display = 'block';
+                    dataFim.style.display = 'block';
+                } else {
+                    dataInicio.style.display = 'none';
+                    dataFim.style.display = 'none';
+                }
+            });
+        }
+
+        if (btnAplicar) {
+            btnAplicar.addEventListener('click', async () => {
+                await this.loadConsolidadosData();
+                this.loadConsolidadosCharts();
+                this.loadRankings();
+                this.showSuccess('Dados atualizados com sucesso!');
+            });
+        }
+    }
+
+    async loadConsolidadosData() {
+        try {
+            // Simular dados consolidados (será conectado com API)
+            const consolidadosData = {
+                totalEntradas: 45000.00,
+                totalSaidas: 28000.00,
+                saldoLiquido: 17000.00,
+                margemLiquida: 37.8,
+                variacoes: {
+                    entradas: 12.5,
+                    saidas: -8.3,
+                    saldo: 45.2
+                }
+            };
+
+            // Atualizar cards
+            document.getElementById('total-entradas-consolidado').textContent = this.formatCurrency(consolidadosData.totalEntradas);
+            document.getElementById('total-saidas-consolidado').textContent = this.formatCurrency(consolidadosData.totalSaidas);
+            document.getElementById('saldo-liquido-consolidado').textContent = this.formatCurrency(consolidadosData.saldoLiquido);
+            document.getElementById('margem-liquida').textContent = `${consolidadosData.margemLiquida.toFixed(1)}%`;
+
+            // Atualizar variações
+            this.updateVariacao('variacao-entradas', consolidadosData.variacoes.entradas);
+            this.updateVariacao('variacao-saidas', consolidadosData.variacoes.saidas);
+            this.updateVariacao('variacao-saldo', consolidadosData.variacoes.saldo);
+
+        } catch (error) {
+            console.error('Erro ao carregar dados consolidados:', error);
+        }
+    }
+
+    updateVariacao(elementId, valor) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        const sinal = valor >= 0 ? '+' : '';
+        const classe = valor > 0 ? 'variacao-positiva' : valor < 0 ? 'variacao-negativa' : 'variacao-neutra';
+        
+        element.textContent = `${sinal}${valor.toFixed(1)}% vs período anterior`;
+        element.className = classe;
+    }
+
+    loadConsolidadosCharts() {
+        // Gráfico de Fluxo de Caixa
+        const fluxoOptions = {
             series: [{
-                name: 'Saldo',
-                data: [9000, 3000, 7000, 11000, 9000, 10000]
+                name: 'Entradas',
+                data: [31000, 28000, 35000, 42000, 38000, 45000],
+                type: 'column'
+            }, {
+                name: 'Saídas',
+                data: [22000, 25000, 28000, 31000, 29000, 28000],
+                type: 'column'
+            }, {
+                name: 'Saldo Líquido',
+                data: [9000, 3000, 7000, 11000, 9000, 17000],
+                type: 'line'
             }],
             chart: {
-                type: 'line',
-                height: 350,
+                height: 400,
                 background: 'transparent',
                 toolbar: { show: false }
             },
-            colors: ['#007bff'],
+            colors: ['#28a745', '#dc3545', '#007bff'],
             xaxis: {
                 categories: ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
                 labels: { style: { colors: 'var(--text-secondary)' } }
@@ -795,17 +894,159 @@ class SistemaContasApp {
                     formatter: (val) => this.formatCurrency(val)
                 }
             },
+            legend: {
+                labels: { colors: 'var(--text-primary)' }
+            },
             grid: {
                 borderColor: 'var(--border-color)'
             },
+            stroke: {
+                width: [0, 0, 3]
+            },
             theme: {
                 mode: this.theme
+            },
+            tooltip: {
+                theme: this.theme
             }
         };
 
-        if (this.charts.evolucao) this.charts.evolucao.destroy();
-        this.charts.evolucao = new ApexCharts(document.querySelector("#chart-evolucao"), evolucaoOptions);
-        this.charts.evolucao.render();
+        if (this.charts.fluxoConsolidado) this.charts.fluxoConsolidado.destroy();
+        this.charts.fluxoConsolidado = new ApexCharts(document.querySelector("#chart-fluxo-caixa"), fluxoOptions);
+        this.charts.fluxoConsolidado.render();
+
+        // Gráfico de Categorias (Pizza)
+        const categoriasOptions = {
+            series: [35, 25, 20, 15, 5],
+            chart: {
+                type: 'donut',
+                height: 400,
+                background: 'transparent'
+            },
+            labels: ['Fornecedores', 'Utilidades', 'Escritório', 'Serviços', 'Outros'],
+            colors: ['#007bff', '#28a745', '#ffc107', '#17a2b8', '#6c757d'],
+            legend: {
+                labels: { colors: 'var(--text-primary)' },
+                position: 'bottom'
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '65%',
+                        labels: {
+                            show: true,
+                            total: {
+                                show: true,
+                                label: 'Total',
+                                formatter: () => 'R$ 28.000'
+                            }
+                        }
+                    }
+                }
+            },
+            theme: {
+                mode: this.theme
+            },
+            tooltip: {
+                theme: this.theme,
+                y: {
+                    formatter: (val) => this.formatCurrency(val * 280) // Simulação
+                }
+            }
+        };
+
+        if (this.charts.categoriasConsolidado) this.charts.categoriasConsolidado.destroy();
+        this.charts.categoriasConsolidado = new ApexCharts(document.querySelector("#chart-categorias"), categoriasOptions);
+        this.charts.categoriasConsolidado.render();
+
+        // Gráfico Comparativo Mensal
+        const comparativoOptions = {
+            series: [{
+                name: 'Este Ano',
+                data: [31000, 28000, 35000, 42000, 38000, 45000]
+            }, {
+                name: 'Ano Passado',
+                data: [25000, 30000, 28000, 35000, 32000, 38000]
+            }],
+            chart: {
+                type: 'area',
+                height: 350,
+                background: 'transparent',
+                toolbar: { show: false }
+            },
+            colors: ['#007bff', '#6c757d'],
+            xaxis: {
+                categories: ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                labels: { style: { colors: 'var(--text-secondary)' } }
+            },
+            yaxis: {
+                labels: { 
+                    style: { colors: 'var(--text-secondary)' },
+                    formatter: (val) => this.formatCurrency(val)
+                }
+            },
+            legend: {
+                labels: { colors: 'var(--text-primary)' }
+            },
+            grid: {
+                borderColor: 'var(--border-color)'
+            },
+            fill: {
+                opacity: 0.7
+            },
+            theme: {
+                mode: this.theme
+            },
+            tooltip: {
+                theme: this.theme
+            }
+        };
+
+        if (this.charts.comparativoMensal) this.charts.comparativoMensal.destroy();
+        this.charts.comparativoMensal = new ApexCharts(document.querySelector("#chart-comparativo-mensal"), comparativoOptions);
+        this.charts.comparativoMensal.render();
+    }
+
+    loadRankings() {
+        // Ranking de fornecedores
+        const fornecedores = [
+            { nome: 'ABC Materiais Ltda', valor: 8500.00, categoria: 'Fornecedores' },
+            { nome: 'Companhia Elétrica SP', valor: 6200.00, categoria: 'Utilidades' },
+            { nome: 'TechSolutions Corp', valor: 4800.00, categoria: 'Serviços' },
+            { nome: 'Office Supply Co', valor: 3200.00, categoria: 'Escritório' },
+            { nome: 'Clean Services Ltda', valor: 2800.00, categoria: 'Serviços' }
+        ];
+
+        this.renderRanking('ranking-fornecedores', fornecedores);
+
+        // Ranking de clientes
+        const clientes = [
+            { nome: 'XYZ Consultoria Ltda', valor: 15000.00, categoria: 'Consultoria' },
+            { nome: 'Comércio ABC Ltda', valor: 12500.00, categoria: 'Vendas' },
+            { nome: 'Digital Solutions Inc', valor: 9800.00, categoria: 'Serviços' },
+            { nome: 'Retail Group SA', valor: 7500.00, categoria: 'Vendas' },
+            { nome: 'Startup Tech Ltda', valor: 5200.00, categoria: 'Consultoria' }
+        ];
+
+        this.renderRanking('ranking-clientes', clientes);
+    }
+
+    renderRanking(containerId, data) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        container.innerHTML = data.map((item, index) => `
+            <div class="ranking-item">
+                <div class="ranking-item-info">
+                    <div class="ranking-posicao">${index + 1}</div>
+                    <div>
+                        <div class="ranking-nome">${item.nome}</div>
+                        <div class="ranking-categoria">${item.categoria}</div>
+                    </div>
+                </div>
+                <div class="ranking-valor">${this.formatCurrency(item.valor)}</div>
+            </div>
+        `).join('');
     }
 
     // === NOTIFICAÇÕES COM SWEETALERT2 ===
