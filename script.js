@@ -792,9 +792,19 @@ class SistemaContasApp {
         const predefinicoes = document.querySelectorAll('.predefinicao-item');
         
         predefinicoes.forEach(item => {
+            // Configurar draggable
+            item.draggable = true;
+            
             item.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', item.dataset.tipo);
+                e.dataTransfer.setData('application/json', JSON.stringify({
+                    tipo: item.dataset.tipo,
+                    titulo: item.querySelector('strong').textContent
+                }));
                 item.classList.add('dragging');
+                
+                // Definir dados para o FullCalendar
+                e.dataTransfer.effectAllowed = 'copy';
             });
 
             item.addEventListener('dragend', () => {
@@ -854,10 +864,23 @@ class SistemaContasApp {
             eventDrop: (info) => {
                 this.updateEventDate(info.event, info.event.start);
             },
+            editable: true,
             droppable: true,
+            dropAccept: '.predefinicao-item',
             drop: (info) => {
-                const tipo = info.draggedEl.dataset.tipo;
-                this.createEventFromDrop(tipo, info.date);
+                const draggedEl = info.draggedEl;
+                const tipo = draggedEl.dataset.tipo;
+                const date = info.date;
+                
+                // Remover classes de drag
+                draggedEl.classList.remove('dragging');
+                
+                // Criar evento
+                this.createEventFromDrop(tipo, date);
+            },
+            dragover: (info) => {
+                // Permitir drop
+                info.jsEvent.preventDefault();
             },
             eventDidMount: (info) => {
                 // Adicionar classes CSS baseadas no tipo e prioridade
@@ -870,10 +893,16 @@ class SistemaContasApp {
                 if (prioridade) {
                     info.el.classList.add(`prioridade-${prioridade}`);
                 }
-            }
+            },
+            // Configuração adicional para external dragging
+            dayMaxEvents: true,
+            moreLinkClick: 'popover'
         });
 
         this.calendarAgenda.render();
+        
+        // Configurar container como drop zone
+        this.setupCalendarDropZone();
     }
 
     generateSampleEvents() {
@@ -1055,29 +1084,94 @@ class SistemaContasApp {
         };
     }
 
+    setupCalendarDropZone() {
+        const calendarEl = document.getElementById('calendar-agenda');
+        if (!calendarEl) return;
+        
+        // Adicionar eventos de drag para o calendário
+        calendarEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            
+            // Adicionar feedback visual
+            const dayEl = e.target.closest('.fc-day, .fc-timegrid-slot');
+            if (dayEl) {
+                dayEl.classList.add('drag-over');
+            }
+        });
+        
+        calendarEl.addEventListener('dragleave', (e) => {
+            // Remover feedback visual
+            const dayEl = e.target.closest('.fc-day, .fc-timegrid-slot');
+            if (dayEl) {
+                dayEl.classList.remove('drag-over');
+            }
+        });
+        
+        calendarEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            
+            // Remover feedback visual
+            document.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+            
+            // Obter dados do drag
+            const tipo = e.dataTransfer.getData('text/plain');
+            if (!tipo) return;
+            
+            // Calcular data baseada na posição do drop
+            const dayEl = e.target.closest('.fc-day');
+            if (dayEl) {
+                const dateStr = dayEl.dataset.date;
+                if (dateStr) {
+                    const date = new Date(dateStr + 'T12:00:00');
+                    this.createEventFromDrop(tipo, date);
+                }
+            }
+        });
+    }
+
     createEventFromDrop(tipo, date) {
         const tipoInfo = {
-            'vencimento-pagar': { titulo: 'Vencimento a Pagar', duracao: 30 },
-            'vencimento-receber': { titulo: 'Vencimento a Receber', duracao: 30 },
-            'reuniao-cliente': { titulo: 'Reunião com Cliente', duracao: 60 },
-            'cobranca': { titulo: 'Cobrança', duracao: 15 },
-            'revisao-fluxo': { titulo: 'Revisão de Fluxo', duracao: 60 },
-            'negociacao': { titulo: 'Negociação', duracao: 90 },
-            'reuniao-interna': { titulo: 'Reunião Interna', duracao: 60 },
-            'lembrete': { titulo: 'Lembrete', duracao: 15 }
+            'vencimento-pagar': { titulo: 'Vencimento a Pagar', duracao: 30, cor: '#dc3545', icone: '💸' },
+            'vencimento-receber': { titulo: 'Vencimento a Receber', duracao: 30, cor: '#28a745', icone: '💰' },
+            'reuniao-cliente': { titulo: 'Reunião com Cliente', duracao: 60, cor: '#17a2b8', icone: '🤝' },
+            'cobranca': { titulo: 'Cobrança', duracao: 15, cor: '#ffc107', icone: '📞' },
+            'revisao-fluxo': { titulo: 'Revisão de Fluxo', duracao: 60, cor: '#6f42c1', icone: '📊' },
+            'negociacao': { titulo: 'Negociação', duracao: 90, cor: '#fd7e14', icone: '🎯' },
+            'reuniao-interna': { titulo: 'Reunião Interna', duracao: 60, cor: '#6c757d', icone: '👥' },
+            'lembrete': { titulo: 'Lembrete', duracao: 15, cor: '#20c997', icone: '⏰' }
         };
 
         const info = tipoInfo[tipo];
-        if (!info) return;
+        if (!info) {
+            console.error('Tipo de evento não reconhecido:', tipo);
+            return;
+        }
 
         // Definir hora padrão baseada no tipo
         const hora = tipo.includes('cobranca') ? '16:00' : 
                     tipo.includes('reuniao') ? '14:00' : '09:00';
 
+        // Garantir que a data seja um objeto Date válido
+        let targetDate;
+        if (date instanceof Date) {
+            targetDate = date;
+        } else {
+            targetDate = new Date(date);
+        }
+
+        // Verificar se a data é válida
+        if (isNaN(targetDate.getTime())) {
+            console.error('Data inválida para criar evento:', date);
+            return;
+        }
+
         const formData = {
             titulo: info.titulo,
             tipo: tipo,
-            data: date.toISOString().split('T')[0],
+            data: targetDate.toISOString().split('T')[0],
             hora: hora,
             duracao: info.duracao,
             prioridade: tipo.includes('vencimento') ? 'alta' : 'media',
@@ -1090,17 +1184,27 @@ class SistemaContasApp {
             frequencia: 'weekly'
         };
 
-        const evento = this.createEventObject(formData);
-        this.eventos.push(evento);
-        
-        if (this.calendarAgenda) {
-            this.calendarAgenda.addEvent(evento);
+        try {
+            const evento = this.createEventObject(formData);
+            
+            // Adicionar cor específica do tipo
+            evento.backgroundColor = info.cor;
+            evento.borderColor = info.cor;
+            
+            this.eventos.push(evento);
+            
+            if (this.calendarAgenda) {
+                this.calendarAgenda.addEvent(evento);
+            }
+            
+            this.updateAgendaStats();
+            this.loadProximosEventos();
+            
+            this.showSuccess(`${info.icone} ${info.titulo} agendado para ${this.formatDate(targetDate)}!`);
+        } catch (error) {
+            console.error('Erro ao criar evento do drop:', error);
+            this.showError('Erro ao criar evento. Tente novamente.');
         }
-        
-        this.updateAgendaStats();
-        this.loadProximosEventos();
-        
-        this.showSuccess(`${info.titulo} agendado com sucesso!`);
     }
 
     updateEventDate(event, newDate) {

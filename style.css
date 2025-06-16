@@ -1795,9 +1795,40 @@ body {
     position: relative;
 }
 
-.fc-day.drag-over {
-    background-color: rgba(0, 123, 255, 0.1) !important;
+.fc-day.drag-over,
+.fc-timegrid-slot.drag-over {
+    background-color: rgba(0, 123, 255, 0.15) !important;
+    outline: 2px dashed var(--accent-color) !important;
+    outline-offset: -2px;
+}
+
+.fc-day:hover {
+    background-color: rgba(0, 123, 255, 0.05) !important;
+}
+
+/* Melhorar feedback visual durante drag */
+.predefinicao-item.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg) scale(0.95);
+    box-shadow: 0 8px 25px var(--shadow);
+    z-index: 1000;
+    position: relative;
+}
+
+/* Cursor durante drag */
+.predefinicao-item {
+    cursor: grab;
+}
+
+.predefinicao-item:active {
+    cursor: grabbing;
+}
+
+/* Área de drop ativa */
+#calendar-agenda.drag-active {
     outline: 2px dashed var(--accent-color);
+    outline-offset: 4px;
+    background-color: rgba(0, 123, 255, 0.02);
 }
 
 /* Notificações da Agenda */
