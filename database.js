@@ -293,8 +293,11 @@ class Database {
     // === MÉTODO PARA CRIAR TABELAS ===
     async createTables() {
         const tables = [
+            // Habilitar extensão UUID
+            `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`,
+            
             `CREATE TABLE IF NOT EXISTS fornecedores (
-                id SERIAL PRIMARY KEY,
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 nome VARCHAR(255) NOT NULL,
                 cnpj_cpf VARCHAR(20) UNIQUE,
                 email VARCHAR(255),
@@ -307,7 +310,7 @@ class Database {
             )`,
             
             `CREATE TABLE IF NOT EXISTS clientes (
-                id SERIAL PRIMARY KEY,
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 nome VARCHAR(255) NOT NULL,
                 cnpj_cpf VARCHAR(20) UNIQUE,
                 email VARCHAR(255),
@@ -320,7 +323,7 @@ class Database {
             )`,
             
             `CREATE TABLE IF NOT EXISTS categorias (
-                id SERIAL PRIMARY KEY,
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 nome VARCHAR(255) NOT NULL,
                 tipo VARCHAR(20) CHECK (tipo IN ('pagar', 'receber')),
                 cor VARCHAR(7),
@@ -330,9 +333,9 @@ class Database {
             )`,
             
             `CREATE TABLE IF NOT EXISTS contas_pagar (
-                id SERIAL PRIMARY KEY,
-                fornecedor_id INTEGER REFERENCES fornecedores(id),
-                categoria_id INTEGER REFERENCES categorias(id),
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                fornecedor_id UUID REFERENCES fornecedores(id),
+                categoria_id UUID REFERENCES categorias(id),
                 descricao VARCHAR(255) NOT NULL,
                 valor_original DECIMAL(10,2) NOT NULL,
                 valor_pago DECIMAL(10,2) DEFAULT 0,
@@ -345,9 +348,9 @@ class Database {
             )`,
             
             `CREATE TABLE IF NOT EXISTS contas_receber (
-                id SERIAL PRIMARY KEY,
-                cliente_id INTEGER REFERENCES clientes(id),
-                categoria_id INTEGER REFERENCES categorias(id),
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                cliente_id UUID REFERENCES clientes(id),
+                categoria_id UUID REFERENCES categorias(id),
                 descricao VARCHAR(255) NOT NULL,
                 valor_original DECIMAL(10,2) NOT NULL,
                 valor_recebido DECIMAL(10,2) DEFAULT 0,
@@ -360,9 +363,9 @@ class Database {
             )`,
             
             `CREATE TABLE IF NOT EXISTS logs_sistema (
-                id SERIAL PRIMARY KEY,
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 tabela VARCHAR(50) NOT NULL,
-                registro_id INTEGER,
+                registro_id UUID,
                 acao VARCHAR(20) NOT NULL,
                 dados_anteriores JSONB,
                 dados_novos JSONB,
@@ -376,7 +379,7 @@ class Database {
             for (const table of tables) {
                 await this.query(table);
             }
-            console.log('Tabelas criadas com sucesso!');
+            console.log('Tabelas criadas com sucesso com UUIDs!');
             return true;
         } catch (error) {
             console.error('Erro ao criar tabelas:', error);
