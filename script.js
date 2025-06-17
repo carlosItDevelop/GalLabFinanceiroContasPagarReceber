@@ -2276,18 +2276,93 @@ class SistemaContasApp {
                     <div class="lembrete-item">
                         <strong>📊 Revisão Mensal de Fluxo</strong>
                         <p>Analisar performance financeira do mês</p>
-                        <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('revisao-mensal')">Agendar</button>
+                        <div class="lembrete-opcoes">
+                            <select id="revisao-mensal-data" class="data-select">
+                                <option value="proxima-segunda">Próxima Segunda</option>
+                                <option value="proxima-sexta">Próxima Sexta</option>
+                                <option value="fim-mes">Final do Mês</option>
+                                <option value="personalizado">Data Personalizada</option>
+                            </select>
+                            <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('revisao-mensal')">Agendar</button>
+                        </div>
                     </div>
+                    
                     <div class="lembrete-item">
                         <strong>📈 Relatório Gerencial</strong>
                         <p>Preparar relatório para diretoria</p>
-                        <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('relatorio-gerencial')">Agendar</button>
+                        <div class="lembrete-opcoes">
+                            <select id="relatorio-gerencial-data" class="data-select">
+                                <option value="proxima-segunda">Próxima Segunda</option>
+                                <option value="proxima-quinta">Próxima Quinta</option>
+                                <option value="fim-mes">Final do Mês</option>
+                                <option value="personalizado">Data Personalizada</option>
+                            </select>
+                            <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('relatorio-gerencial')">Agendar</button>
+                        </div>
                     </div>
+                    
                     <div class="lembrete-item">
                         <strong>🎯 Revisão de Metas</strong>
                         <p>Avaliar cumprimento de metas financeiras</p>
-                        <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('revisao-metas')">Agendar</button>
+                        <div class="lembrete-opcoes">
+                            <select id="revisao-metas-data" class="data-select">
+                                <option value="proxima-terca">Próxima Terça</option>
+                                <option value="meio-mes">Meio do Mês</option>
+                                <option value="fim-mes">Final do Mês</option>
+                                <option value="personalizado">Data Personalizada</option>
+                            </select>
+                            <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('revisao-metas')">Agendar</button>
+                        </div>
                     </div>
+                    
+                    <div class="lembrete-item">
+                        <strong>💰 Fechamento Financeiro</strong>
+                        <p>Reconciliação de contas e balanço mensal</p>
+                        <div class="lembrete-opcoes">
+                            <select id="fechamento-financeiro-data" class="data-select">
+                                <option value="ultimo-dia-mes">Último Dia do Mês</option>
+                                <option value="primeiro-dia-mes">Primeiro Dia do Próximo Mês</option>
+                                <option value="personalizado">Data Personalizada</option>
+                            </select>
+                            <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('fechamento-financeiro')">Agendar</button>
+                        </div>
+                    </div>
+                    
+                    <div class="lembrete-item">
+                        <strong>📋 Backup de Dados</strong>
+                        <p>Backup de segurança do sistema financeiro</p>
+                        <div class="lembrete-opcoes">
+                            <select id="backup-dados-data" class="data-select">
+                                <option value="toda-sexta">Toda Sexta-feira</option>
+                                <option value="quinzenal">Quinzenal</option>
+                                <option value="mensal">Mensal</option>
+                                <option value="personalizado">Data Personalizada</option>
+                            </select>
+                            <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('backup-dados')">Agendar</button>
+                        </div>
+                    </div>
+                    
+                    <div class="lembrete-item">
+                        <strong>🔍 Auditoria de Processos</strong>
+                        <p>Revisão de procedimentos e controles internos</p>
+                        <div class="lembrete-opcoes">
+                            <select id="auditoria-processos-data" class="data-select">
+                                <option value="trimestral">Trimestral</option>
+                                <option value="semestral">Semestral</option>
+                                <option value="personalizado">Data Personalizada</option>
+                            </select>
+                            <button class="btn btn-sm btn-primary" onclick="app.agendarLembrete('auditoria-processos')">Agendar</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="lembretes-acao-rapida">
+                    <hr style="margin: 1.5rem 0; border-color: var(--border-color);">
+                    <h4>🚀 Ação Rápida</h4>
+                    <p>Agendar todos os lembretes essenciais para este mês:</p>
+                    <button class="btn btn-primary" onclick="app.agendarTodosLembretes()">
+                        ⚡ Agendar Todos os Essenciais
+                    </button>
                 </div>
             `,
             showConfirmButton: false,
@@ -2295,32 +2370,72 @@ class SistemaContasApp {
             cancelButtonText: 'Fechar',
             background: 'var(--bg-secondary)',
             color: 'var(--text-primary)',
-            width: '600px'
+            width: '700px'
         });
     }
 
     agendarLembrete(tipo) {
         const lembretes = {
-            'revisao-mensal': { titulo: 'Revisão Mensal de Fluxo', duracao: 120 },
-            'relatorio-gerencial': { titulo: 'Relatório Gerencial', duracao: 90 },
-            'revisao-metas': { titulo: 'Revisão de Metas', duracao: 60 }
+            'revisao-mensal': { 
+                titulo: 'Revisão Mensal de Fluxo', 
+                duracao: 120, 
+                icone: '📊',
+                descricao: 'Análise completa da performance financeira mensal'
+            },
+            'relatorio-gerencial': { 
+                titulo: 'Relatório Gerencial', 
+                duracao: 90, 
+                icone: '📈',
+                descricao: 'Preparação do relatório executivo para diretoria'
+            },
+            'revisao-metas': { 
+                titulo: 'Revisão de Metas', 
+                duracao: 60, 
+                icone: '🎯',
+                descricao: 'Avaliação do cumprimento de objetivos financeiros'
+            },
+            'fechamento-financeiro': { 
+                titulo: 'Fechamento Financeiro', 
+                duracao: 180, 
+                icone: '💰',
+                descricao: 'Reconciliação de contas e fechamento do período'
+            },
+            'backup-dados': { 
+                titulo: 'Backup de Dados', 
+                duracao: 30, 
+                icone: '📋',
+                descricao: 'Backup de segurança do sistema financeiro'
+            },
+            'auditoria-processos': { 
+                titulo: 'Auditoria de Processos', 
+                duracao: 240, 
+                icone: '🔍',
+                descricao: 'Revisão de procedimentos e controles internos'
+            }
         };
         
         const lembrete = lembretes[tipo];
         if (!lembrete) return;
         
-        const proximaSegunda = new Date();
-        proximaSegunda.setDate(proximaSegunda.getDate() + (8 - proximaSegunda.getDay()) % 7);
+        // Obter a opção de data selecionada
+        const selectElement = document.getElementById(`${tipo}-data`);
+        const opcaoData = selectElement ? selectElement.value : 'proxima-segunda';
+        
+        const dataEvento = this.calcularDataLembrete(opcaoData, tipo);
+        const horaEvento = this.obterHorarioLembrete(tipo);
         
         const evento = {
             id: `lembrete-${this.eventIdCounter++}`,
-            title: `⏰ ${lembrete.titulo}`,
-            start: proximaSegunda.toISOString().split('T')[0] + 'T10:00:00',
-            end: new Date(proximaSegunda.getTime() + lembrete.duracao * 60000).toISOString(),
+            title: `${lembrete.icone} ${lembrete.titulo}`,
+            start: dataEvento.toISOString().split('T')[0] + `T${horaEvento}:00`,
+            end: new Date(dataEvento.getTime() + lembrete.duracao * 60000).toISOString(),
             extendedProps: {
                 tipo: 'lembrete',
-                prioridade: 'media',
-                descricao: lembrete.titulo
+                prioridade: this.obterPrioridadeLembrete(tipo),
+                descricao: lembrete.descricao,
+                categoria: 'Gestão Financeira',
+                recorrente: this.isRecorrente(opcaoData),
+                frequencia: this.getFrequenciaRecorrencia(opcaoData)
             }
         };
         
@@ -2329,11 +2444,163 @@ class SistemaContasApp {
             this.calendarAgenda.addEvent(evento);
         }
         
+        // Salvar no localStorage para persistência
+        this.saveEventosToStorage();
+        
         this.updateAgendaStats();
         this.loadProximosEventos();
         
+        // Adicionar log
+        this.addLog(
+            'create',
+            `Lembrete importante agendado`,
+            `${lembrete.titulo} foi agendado para ${this.formatDate(dataEvento)} às ${horaEvento}`,
+            'agenda',
+            {
+                tipo: tipo,
+                data: dataEvento,
+                duracao: lembrete.duracao,
+                opcao_data: opcaoData
+            }
+        );
+        
         Swal.close();
-        this.showSuccess(`${lembrete.titulo} agendado para próxima segunda-feira!`);
+        this.showSuccess(`${lembrete.icone} ${lembrete.titulo} agendado para ${this.formatDate(dataEvento)} às ${horaEvento}!`);
+    }
+
+    calcularDataLembrete(opcaoData, tipo) {
+        const hoje = new Date();
+        let dataCalculada = new Date();
+        
+        switch (opcaoData) {
+            case 'proxima-segunda':
+                dataCalculada.setDate(hoje.getDate() + (8 - hoje.getDay()) % 7);
+                break;
+            case 'proxima-terca':
+                const diasParaTerca = (2 - hoje.getDay() + 7) % 7;
+                dataCalculada.setDate(hoje.getDate() + (diasParaTerca === 0 ? 7 : diasParaTerca));
+                break;
+            case 'proxima-quinta':
+                const diasParaQuinta = (4 - hoje.getDay() + 7) % 7;
+                dataCalculada.setDate(hoje.getDate() + (diasParaQuinta === 0 ? 7 : diasParaQuinta));
+                break;
+            case 'proxima-sexta':
+                const diasParaSexta = (5 - hoje.getDay() + 7) % 7;
+                dataCalculada.setDate(hoje.getDate() + (diasParaSexta === 0 ? 7 : diasParaSexta));
+                break;
+            case 'meio-mes':
+                dataCalculada = new Date(hoje.getFullYear(), hoje.getMonth(), 15);
+                if (dataCalculada <= hoje) {
+                    dataCalculada = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 15);
+                }
+                break;
+            case 'fim-mes':
+                dataCalculada = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0); // Último dia do mês
+                break;
+            case 'ultimo-dia-mes':
+                dataCalculada = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+                break;
+            case 'primeiro-dia-mes':
+                dataCalculada = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
+                break;
+            case 'toda-sexta':
+                const diasParaProximaSexta = (5 - hoje.getDay() + 7) % 7;
+                dataCalculada.setDate(hoje.getDate() + (diasParaProximaSexta === 0 ? 7 : diasParaProximaSexta));
+                break;
+            case 'quinzenal':
+                dataCalculada.setDate(hoje.getDate() + 14);
+                break;
+            case 'mensal':
+                dataCalculada.setMonth(hoje.getMonth() + 1);
+                break;
+            case 'trimestral':
+                dataCalculada.setMonth(hoje.getMonth() + 3);
+                break;
+            case 'semestral':
+                dataCalculada.setMonth(hoje.getMonth() + 6);
+                break;
+            default:
+                // Próxima segunda como padrão
+                dataCalculada.setDate(hoje.getDate() + (8 - hoje.getDay()) % 7);
+        }
+        
+        return dataCalculada;
+    }
+
+    obterHorarioLembrete(tipo) {
+        const horarios = {
+            'revisao-mensal': '10:00',
+            'relatorio-gerencial': '09:00',
+            'revisao-metas': '14:00',
+            'fechamento-financeiro': '08:00',
+            'backup-dados': '18:00',
+            'auditoria-processos': '09:00'
+        };
+        
+        return horarios[tipo] || '10:00';
+    }
+
+    obterPrioridadeLembrete(tipo) {
+        const prioridades = {
+            'revisao-mensal': 'alta',
+            'relatorio-gerencial': 'alta',
+            'revisao-metas': 'media',
+            'fechamento-financeiro': 'alta',
+            'backup-dados': 'media',
+            'auditoria-processos': 'alta'
+        };
+        
+        return prioridades[tipo] || 'media';
+    }
+
+    isRecorrente(opcaoData) {
+        const recorrentes = ['toda-sexta', 'quinzenal', 'mensal', 'trimestral', 'semestral'];
+        return recorrentes.includes(opcaoData);
+    }
+
+    getFrequenciaRecorrencia(opcaoData) {
+        const frequencias = {
+            'toda-sexta': 'weekly',
+            'quinzenal': 'bi-weekly',
+            'mensal': 'monthly',
+            'trimestral': 'quarterly',
+            'semestral': 'bi-annually'
+        };
+        
+        return frequencias[opcaoData] || 'none';
+    }
+
+    agendarTodosLembretes() {
+        const lembretesEssenciais = [
+            { tipo: 'revisao-mensal', opcao: 'proxima-sexta' },
+            { tipo: 'relatorio-gerencial', opcao: 'proxima-quinta' },
+            { tipo: 'fechamento-financeiro', opcao: 'ultimo-dia-mes' },
+            { tipo: 'backup-dados', opcao: 'toda-sexta' }
+        ];
+        
+        let contadorAgendados = 0;
+        
+        lembretesEssenciais.forEach(item => {
+            // Simular seleção da opção
+            const selectElement = document.getElementById(`${item.tipo}-data`);
+            if (selectElement) {
+                selectElement.value = item.opcao;
+                this.agendarLembrete(item.tipo);
+                contadorAgendados++;
+            }
+        });
+        
+        Swal.close();
+        this.showSuccess(`🚀 ${contadorAgendados} lembretes essenciais agendados com sucesso!`);
+        
+        // Adicionar log resumo
+        this.addLog(
+            'create',
+            'Agendamento em lote de lembretes',
+            `${contadorAgendados} lembretes essenciais foram agendados automaticamente`,
+            'agenda',
+            { lembretes_agendados: contadorAgendados, tipos: lembretesEssenciais.map(l => l.tipo) }
+        );
     }
 
     sincronizarVencimentos() {
