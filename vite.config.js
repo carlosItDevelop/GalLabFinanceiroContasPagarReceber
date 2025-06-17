@@ -6,5 +6,13 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     hmr: true, // Change this line to false disable auto-refreshing.
+  },
+  build: {
+    rollupOptions: {
+      external: ['/script.js']
+    }
+  },
+  optimizeDeps: {
+    exclude: ['script.js']
   }
 })
