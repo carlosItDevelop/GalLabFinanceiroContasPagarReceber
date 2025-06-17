@@ -41,16 +41,9 @@
         <div class="tab-content">
             <!-- Dashboard -->
             <div id="dashboard" class="tab-panel active">
-                <div class="page-header">
-                    <div>
-                        <h2>📊 Dashboard Executivo</h2>
-                        <p>Visão geral das suas finanças</p>
-                    </div>
-                    <div class="page-actions">
-                        <button class="btn btn-primary" id="atualizar-dashboard" onclick="app.loadDashboard()">
-                            🔄 Atualizar Dados
-                        </button>
-                    </div>
+                <div class="panel-header">
+                    <h2>📊 Dashboard</h2>
+                    <p>Visão geral do sistema financeiro</p>
                 </div>
 
                 <div class="dashboard-cards">
@@ -93,13 +86,10 @@
 
                 <div class="dashboard-charts">
                     <div class="chart-container">
-                        <h3>📈 Fluxo de Caixa - Últimos 6 Meses</h3>
-                        <div id="chart-fluxo-dashboard"></div>
-                    </div>
-
-                    <div class="chart-container">
-                        <h3>🥧 Distribuição de Gastos por Categoria</h3>
-                        <div id="chart-categorias-dashboard"></div>
+                        <h3>📈 Resumo Mensal</h3>
+                        <div id="chart-placeholder" class="chart-placeholder">
+                            Gráfico será implementado aqui
+                        </div>
                     </div>
                 </div>
             </div>
@@ -255,7 +245,7 @@
                         <h3>📈 Fluxo de Caixa - Evolução Mensal</h3>
                         <div id="chart-fluxo-caixa"></div>
                     </div>
-
+                    
                     <div class="chart-container">
                         <h3>🥧 Distribuição por Categorias</h3>
                         <div id="chart-categorias"></div>
@@ -400,7 +390,7 @@
                                         <small>Arraste para agendar</small>
                                     </div>
                                 </div>
-
+                                
                                 <div class="predefinicao-item" draggable="true" data-tipo="vencimento-receber">
                                     <div class="predefinicao-icon">💰</div>
                                     <div class="predefinicao-info">
@@ -408,7 +398,7 @@
                                         <small>Arraste para agendar</small>
                                     </div>
                                 </div>
-
+                                
                                 <div class="predefinicao-item" draggable="true" data-tipo="reuniao-cliente">
                                     <div class="predefinicao-icon">🤝</div>
                                     <div class="predefinicao-info">
@@ -416,7 +406,7 @@
                                         <small>Arraste para agendar</small>
                                     </div>
                                 </div>
-
+                                
                                 <div class="predefinicao-item" draggable="true" data-tipo="cobranca">
                                     <div class="predefinicao-icon">📞</div>
                                     <div class="predefinicao-info">
@@ -424,7 +414,7 @@
                                         <small>Arraste para agendar</small>
                                     </div>
                                 </div>
-
+                                
                                 <div class="predefinicao-item" draggable="true" data-tipo="revisao-fluxo">
                                     <div class="predefinicao-icon">📊</div>
                                     <div class="predefinicao-info">
@@ -432,7 +422,7 @@
                                         <small>Arraste para agendar</small>
                                     </div>
                                 </div>
-
+                                
                                 <div class="predefinicao-item" draggable="true" data-tipo="negociacao">
                                     <div class="predefinicao-icon">🎯</div>
                                     <div class="predefinicao-info">
@@ -440,7 +430,7 @@
                                         <small>Arraste para agendar</small>
                                     </div>
                                 </div>
-
+                                
                                 <div class="predefinicao-item" draggable="true" data-tipo="reuniao-interna">
                                     <div class="predefinicao-icon">👥</div>
                                     <div class="predefinicao-info">
@@ -448,7 +438,7 @@
                                         <small>Arraste para agendar</small>
                                     </div>
                                 </div>
-
+                                
                                 <div class="predefinicao-item" draggable="true" data-tipo="lembrete">
                                     <div class="predefinicao-icon">⏰</div>
                                     <div class="predefinicao-info">
@@ -518,19 +508,19 @@
                                     <option value="cobranca">Cobranças</option>
                                     <option value="lembrete">Lembretes</option>
                                 </select>
-
+                                
                                 <select id="filtro-prioridade">
                                     <option value="">Todas as prioridades</option>
                                     <option value="alta">Alta Prioridade</option>
                                     <option value="media">Média Prioridade</option>
                                     <option value="baixa">Baixa Prioridade</option>
                                 </select>
-
+                                
                                 <button class="btn btn-sm btn-secondary" id="limpar-filtros">
                                     🔄 Limpar Filtros
                                 </button>
                             </div>
-
+                            
                             <div class="calendar-views">
                                 <button class="btn btn-sm" data-view="dayGridMonth">Mês</button>
                                 <button class="btn btn-sm" data-view="timeGridWeek">Semana</button>
@@ -538,7 +528,7 @@
                                 <button class="btn btn-sm" data-view="listWeek">Lista</button>
                             </div>
                         </div>
-
+                        
                         <div id="calendar-agenda"></div>
                     </div>
                 </div>
@@ -565,7 +555,7 @@
                     <div class="filters">
                         <input type="date" id="filtro-data-inicio-logs" placeholder="Data início">
                         <input type="date" id="filtro-data-fim-logs" placeholder="Data fim">
-
+                        
                         <select id="filtro-tipo-logs">
                             <option value="">Todos os tipos</option>
                             <option value="create">📝 Criação</option>
@@ -578,7 +568,7 @@
                             <option value="import">📥 Importação</option>
                             <option value="system">⚙️ Sistema</option>
                         </select>
-
+                        
                         <select id="filtro-modulo-logs">
                             <option value="">Todos os módulos</option>
                             <option value="dashboard">📊 Dashboard</option>
@@ -588,9 +578,9 @@
                             <option value="agenda">🗓️ Agenda</option>
                             <option value="arquivos">📁 Arquivos</option>
                         </select>
-
+                        
                         <input type="text" id="filtro-busca-logs" placeholder="🔍 Buscar por descrição...">
-
+                        
                         <button class="btn btn-primary" id="aplicar-filtros-logs">🔍 Filtrar</button>
                         <button class="btn btn-secondary" id="limpar-filtros-logs">🔄 Limpar</button>
                     </div>
@@ -601,7 +591,7 @@
                     <div class="logs-list" id="logs-list">
                         <!-- Logs serão carregados dinamicamente -->
                     </div>
-
+                    
                     <!-- Paginação -->
                     <div class="logs-pagination">
                         <div class="pagination-info">
@@ -617,7 +607,7 @@
                     </div>
                 </div>
             </div>
-
+            
             <!-- Arquivos -->
             <div id="arquivos" class="tab-panel">
                 <div class="panel-header">
@@ -665,7 +655,7 @@
                         <label for="evento-data">Data*</label>
                         <input type="date" id="evento-data" required>
                     </div>
-
+                    
                     <div class="form-group">
                         <label for="evento-hora">Hora*</label>
                         <input type="time" id="evento-hora" required>
@@ -774,30 +764,30 @@
                             <div id="modal-log-hora">00:00:00</div>
                         </div>
                     </div>
-
+                    
                     <div class="log-details-content">
                         <div class="log-section">
                             <h5>📝 Descrição</h5>
                             <p id="modal-log-descricao">Descrição detalhada da ação...</p>
                         </div>
-
+                        
                         <div class="log-section">
                             <h5>👤 Usuário</h5>
                             <p id="modal-log-usuario">Sistema</p>
                         </div>
-
+                        
                         <div class="log-section">
                             <h5>📍 Módulo/Origem</h5>
                             <p id="modal-log-modulo">Dashboard</p>
                         </div>
-
+                        
                         <div class="log-section" id="modal-log-dados-section">
                             <h5>💾 Dados Relacionados</h5>
                             <div class="log-dados" id="modal-log-dados">
                                 <!-- Dados em formato JSON estruturado -->
                             </div>
                         </div>
-
+                        
                         <div class="log-section" id="modal-log-ip-section">
                             <h5>🌐 Informações Técnicas</h5>
                             <div class="log-tech-info">
@@ -938,7 +928,7 @@
                         <div class="form-group">
                             <label for="edit-comentario">Novo Comentário</label>
                             <textarea id="edit-comentario" rows="3" placeholder="Adicione um comentário específico sobre esta transação..."></textarea>
-
+                            
                             <!-- Lista de comentários existentes -->
                             <div id="comentarios-existentes" class="comentarios-historico">
                                 <!-- Comentários carregados dinamicamente -->
@@ -955,7 +945,7 @@
                                     <small>PDF, DOC, IMG, TXT, CSV, XLS (máx. 10MB)</small>
                                 </label>
                             </div>
-
+                            
                             <!-- Lista de anexos existentes -->
                             <div id="anexos-existentes" class="anexos-historico">
                                 <!-- Anexos carregados dinamicamente -->
@@ -977,7 +967,7 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-
+    
     <script src="script.js"></script>
 </body>
 </html>
