@@ -1200,374 +1200,754 @@ body {
 }
 
 /* === FASE 3: SUB-ABA INTELIGENTE === */
-.inteligente-dashboard {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-.inteligente-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-}
-
-.inteligente-card {
-    background: var(--bg-secondary);
+/* Resumo Executivo IA */
+.inteligente-resumo-executivo {
+    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
     border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent-color);
     border-radius: 0.75rem;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px var(--shadow);
 }
 
-.inteligente-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px var(--shadow);
-}
-
-.inteligente-card.tendencias {
-    border-left: 4px solid var(--success-color);
-}
-
-.inteligente-card.projecoes {
-    border-left: 4px solid var(--info-color);
-}
-
-.inteligente-card.insights {
-    border-left: 4px solid var(--warning-color);
-}
-
-.inteligente-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.inteligente-icon {
-    font-size: 1.5rem;
-    opacity: 0.8;
-}
-
-.inteligente-header h4 {
-    margin: 0;
-    color: var(--text-primary);
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.inteligente-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-/* Tendências */
-.tendencia-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
-    background: var(--bg-tertiary);
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
-}
-
-.tendencia-indicador {
-    font-size: 1.1rem;
-    min-width: 25px;
-}
-
-.tendencia-indicador.positivo {
-    color: var(--success-color);
-}
-
-.tendencia-indicador.atencao {
-    color: var(--warning-color);
-}
-
-/* Projeções */
-.projecao-item {
+.resumo-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem;
-    background: var(--bg-tertiary);
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.projecao-periodo {
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.projecao-valor {
-    font-weight: 600;
-    font-size: 1rem;
-}
-
-.projecao-valor.positivo {
-    color: var(--success-color);
-}
-
-.projecao-valor.negativo {
-    color: var(--danger-color);
-}
-
-/* Insights */
-.insight-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
-    background: var(--bg-tertiary);
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
-}
-
-.insight-prioridade {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.2rem 0.5rem;
-    border-radius: 1rem;
-    min-width: 70px;
-    text-align: center;
-}
-
-.insight-item.alta .insight-prioridade {
-    background: rgba(220, 53, 69, 0.2);
-    color: var(--danger-color);
-}
-
-.insight-item.media .insight-prioridade {
-    background: rgba(255, 193, 7, 0.2);
-    color: var(--warning-color);
-}
-
-.insight-item.baixa .insight-prioridade {
-    background: rgba(40, 167, 69, 0.2);
-    color: var(--success-color);
-}
-
-/* Resumo Executivo */
-.inteligente-resumo-executivo {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.ia-ativa {
-    margin-top: 1rem;
+.resumo-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 700;
 }
 
 .ia-status {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    background: var(--bg-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 1.5rem;
+    border: 1px solid var(--border-color);
 }
 
 .status-indicator {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--success-color);
     animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
-.recomendacao-principal,
-.tendencia-mercado,
-.risco-operacional {
-    margin-bottom: 0.75rem;
-    padding: 0.5rem;
-    background: var(--bg-tertiary);
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
-}
-
-.confianca {
-    background: rgba(40, 167, 69, 0.2);
-    color: var(--success-color);
-    padding: 0.2rem 0.5rem;
-    border-radius: 1rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-left: 0.5rem;
-}
-
-/* Machine Learning Previsões */
-.inteligente-ml-previsoes {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.cenarios-previsao {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-}
-
-.cenario-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 1rem;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.cenario-badge.otimista {
-    background: rgba(40, 167, 69, 0.2);
-    color: var(--success-color);
-}
-
-.cenario-badge.conservador {
-    background: rgba(23, 162, 184, 0.2);
-    color: var(--info-color);
-}
-
-.cenario-badge.pessimista {
-    background: rgba(255, 193, 7, 0.2);
-    color: var(--warning-color);
-}
-
-.previsoes-mensais {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-}
-
-.mes-previsao {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    text-align: center;
-}
-
-.mes-previsao strong {
-    color: var(--text-primary);
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-}
-
-.mes-previsao div {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.25rem;
-}
-
-.confianca-mes {
-    color: var(--accent-color) !important;
-    font-weight: 600 !important;
-    margin-top: 0.5rem !important;
-}
-
-/* Analytics */
-.inteligente-analytics {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-}
-
-.analytics-container h4 {
-    margin-bottom: 1rem;
-    color: var(--text-primary);
-    font-size: 1rem;
-}
-
-/* Recomendações */
-.inteligente-recomendacoes h4 {
-    margin-bottom: 1.5rem;
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.recomendacoes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-}
-
-.recomendacao-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 0.75rem;
-    padding: 1.25rem;
-    transition: all 0.3s ease;
-}
-
-.recomendacao-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--shadow);
-}
-
-.recomendacao-card.financeira {
-    border-left: 4px solid var(--success-color);
-}
-
-.recomendacao-card.operacional {
-    border-left: 4px solid var(--info-color);
-}
-
-.recomendacao-card.estrategica {
-    border-left: 4px solid var(--warning-color);
-}
-
-.recomendacao-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.recomendacao-tipo {
+.ia-status span {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.recomendacao-impacto {
-    font-size: 0.75rem;
+.resumo-content {
+    display: grid;
+    gap: 1rem;
+}
+
+.resumo-item {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.resumo-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.resumo-item strong {
+    color: var(--accent-color);
     font-weight: 600;
-    padding: 0.2rem 0.6rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.resumo-item p {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.confianca {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.2), rgba(40, 167, 69, 0.1));
+    color: var(--success-color);
+    padding: 0.3rem 0.75rem;
     border-radius: 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+/* Previsões Machine Learning */
+.ml-previsoes-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.ml-previsoes-section h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.cenarios-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.cenario-tab {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.cenario-tab:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.cenario-tab.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.previsoes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.previsao-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.previsao-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-color), var(--success-color));
+}
+
+.previsao-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px var(--shadow);
+}
+
+.previsao-mes {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    text-align: center;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+}
+
+.previsao-valores {
+    margin-bottom: 1rem;
+}
+
+.valor-linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+}
+
+.valor-linha.saldo {
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+    font-weight: 600;
+}
+
+.valor-label {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.valor-amount {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.valor-amount.positivo {
+    color: var(--success-color);
+}
+
+.confianca-badge {
+    background: linear-gradient(135deg, var(--info-color), var(--accent-color));
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* Análise Comportamental */
+.analise-comportamental {
+    margin-bottom: 2rem;
+}
+
+.analise-comportamental h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.comportamental-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.comportamental-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.comportamental-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--shadow);
+}
+
+.comportamental-card.gastos {
+    border-left: 4px solid var(--danger-color);
+}
+
+.comportamental-card.receitas {
+    border-left: 4px solid var(--success-color);
+}
+
+.comportamental-card h4 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.metricas-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.metrica {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.metrica-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.metrica-valor {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.metrica-valor.positivo {
+    color: var(--success-color);
+}
+
+.insights-comportamentais {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.insight-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.insight-icon {
+    font-size: 1rem;
+    min-width: 20px;
+}
+
+.insight-text {
+    color: var(--text-primary);
+}
+
+/* Otimizações Inteligentes */
+.otimizacoes-section {
+    margin-bottom: 2rem;
+}
+
+.otimizacoes-section h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.otimizacoes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.otimizacao-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.otimizacao-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px var(--shadow);
+}
+
+.otimizacao-card.prioridade-alta {
+    border-left: 4px solid var(--danger-color);
+}
+
+.otimizacao-card.prioridade-media {
+    border-left: 4px solid var(--warning-color);
+}
+
+.otimizacao-card.prioridade-baixa {
+    border-left: 4px solid var(--success-color);
+}
+
+.otimizacao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.otimizacao-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.prioridade-badge {
+    padding: 0.3rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.prioridade-badge.alta {
+    background: rgba(220, 53, 69, 0.2);
+    color: var(--danger-color);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.prioridade-badge.media {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--warning-color);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.prioridade-badge.baixa {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--success-color);
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.otimizacao-details {
+    margin-bottom: 1.5rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.detail-icon {
+    font-size: 1rem;
+    min-width: 20px;
+}
+
+.otimizacao-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* Recomendações Estratégicas */
+.recomendacoes-estrategicas {
+    margin-bottom: 2rem;
+}
+
+.recomendacoes-estrategicas h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.recomendacoes-estrategicas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.recomendacao-estrategica {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent-color);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+.recomendacao-estrategica:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px var(--shadow);
+}
+
+.recomendacao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.recomendacao-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.recomendacao-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.impacto-badge {
+    padding: 0.3rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
     text-transform: uppercase;
 }
 
-.recomendacao-impacto.alto {
+.impacto-badge.alto {
     background: rgba(220, 53, 69, 0.2);
     color: var(--danger-color);
+    border: 1px solid rgba(220, 53, 69, 0.3);
 }
 
-.recomendacao-impacto.medio {
-    background: rgba(255, 193, 7, 0.2);
-    color: var(--warning-color);
+.prazo {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
-.recomendacao-card p {
+.recomendacao-description {
+    margin-bottom: 1.5rem;
+}
+
+.recomendacao-description p {
     margin: 0;
+    color: var(--text-primary);
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.acoes-recomendadas {
+    margin-bottom: 1.5rem;
+}
+
+.acoes-recomendadas h5 {
+    margin: 0 0 0.75rem 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.acoes-recomendadas ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    list-style: none;
+}
+
+.acoes-recomendadas li {
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    position: relative;
+}
+
+.acoes-recomendadas li::before {
+    content: '✓';
+    position: absolute;
+    left: -1.25rem;
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.recomendacao-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* Fluxo de Caixa Inteligente */
+.fluxo-inteligente-section {
+    margin-bottom: 2rem;
+}
+
+.fluxo-inteligente-section h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.fluxo-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.fluxo-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.fluxo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--shadow);
+}
+
+.fluxo-card.atual {
+    border-left: 4px solid var(--info-color);
+}
+
+.fluxo-card.menor {
+    border-left: 4px solid var(--warning-color);
+}
+
+.fluxo-card.projecao {
+    border-left: 4px solid var(--success-color);
+}
+
+.fluxo-card h4 {
+    margin: 0 0 1rem 0;
     color: var(--text-secondary);
     font-size: 0.9rem;
-    line-height: 1.4;
+    font-weight: 600;
+}
+
+.valor-destaque {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.valor-destaque.positivo {
+    color: var(--success-color);
+}
+
+/* Centro de Controle IA */
+.centro-controle-ia {
+    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.centro-controle-ia h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.controle-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.controle-actions .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.controle-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+    .comportamental-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .recomendacoes-estrategicas-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .cenarios-tabs {
+        flex-direction: column;
+    }
+    
+    .previsoes-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .metricas-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .otimizacoes-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .otimizacao-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .fluxo-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .controle-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .controle-actions .btn {
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    .otimizacao-actions,
+    .recomendacao-actions {
+        justify-content: center;
+        margin-top: 1rem;
+    }
+    
+    .recomendacao-meta {
+        align-items: flex-start;
+    }
 }
 
 /* === FASE 3: FLUXO DE CAIXA INTELIGENTE === */
