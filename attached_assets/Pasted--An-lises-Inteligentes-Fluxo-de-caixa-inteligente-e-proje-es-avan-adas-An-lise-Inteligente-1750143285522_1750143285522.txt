@@ -1,0 +1,117 @@
+🔮 Análises Inteligentes
+Fluxo de caixa inteligente e projeções avançadas
+
+🧠 Análise Inteligente - Resumo Executivo
+IA Ativa
+Recomendação Principal:
+Cenário favorável para investimentos em expansão e novos projetos
+85% confiança
+Tendência de Mercado:
+Expansão (12.0% médio)
+Risco Operacional:
+Baixo (Volatilidade: 7.8%)
+🤖 Previsões Machine Learning - Próximos 6 Meses
+📊 Cenário Base 📈 Otimista (+20%) 📉 Conservador (-10%) ⚠️ Pessimista (-20%)
+Jul
+Entradas: R$ 51.933,33
+Saídas: R$ 42.533,33
+Saldo: R$ 9.400,00
+90% confiança
+Ago
+Entradas: R$ 53.961,90
+Saídas: R$ 44.019,05
+Saldo: R$ 9.942,86
+85% confiança
+Set
+Entradas: R$ 55.990,48
+Saídas: R$ 45.504,76
+Saldo: R$ 10.485,71
+80% confiança
+Out
+Entradas: R$ 58.019,05
+Saídas: R$ 46.990,48
+Saldo: R$ 11.028,57
+75% confiança
+Nov
+Entradas: R$ 60.047,62
+Saídas: R$ 48.476,19
+Saldo: R$ 11.571,43
+70% confiança
+Dez
+Entradas: R$ 62.076,19
+Saídas: R$ 49.961,90
+Saldo: R$ 12.114,29
+65% confiança
+📊 Análise Comportamental Transacional
+💸 Padrão de Gastos
+Frequência Média:
+9.0 transações/mês
+Ticket Médio:
+R$ 639,33
+Crescimento Médio:
+4.7%
+Volatilidade:
+7.8%
+➕ Mais Estável: Companhia Elétrica SP 2.1%
+⚠️ Mais Volátil: TechSolutions Corp 15.3%
+💰 Padrão de Receitas
+Frequência Média:
+8.0 transações/mês
+Ticket Médio:
+R$ 1.380,00
+Crescimento Médio:
+12.0%
+Volatilidade:
+9.8%
+➕ Mais Estável: Retail Group SA -3.1%
+📈 Maior Crescimento: Startup Tech Ltda +25.6%
+⚡ Otimizações Inteligentes Sugeridas
+Renegociar condições de pagamento
+ALTA
+🎯 Alvo: ABC Materiais Ltda
+📈 Impacto: R$ 425,00
+⏱️ Prazo: 30 dias
+📋 Categoria: Fornecedores
+⚡ Executar 📅 Agendar
+Propor aumento de escopo/serviços
+MEDIA
+🎯 Alvo: Startup Tech Ltda
+📈 Impacto: R$ 1.560,00
+⏱️ Prazo: 60 dias
+📋 Categoria: Clientes
+⚡ Executar 📅 Agendar
+Automatizar processo de compras recorrentes
+BAIXA
+🎯 Alvo: Office Supply Co
+📈 Impacto: R$ 1.200,00
+⏱️ Prazo: 45 dias
+📋 Categoria: Processos
+⚡ Executar 📅 Agendar
+🎯 Recomendações Estratégicas IA
+Diversificar Base de Fornecedores
+Alto Impacto 90 dias
+ABC Materiais Ltda representa 33.3% dos gastos. Risco de concentração alto.
+
+Ações Recomendadas:
+Identificar fornecedores alternativos
+Dividir compras entre múltiplos fornecedores
+Renegociar dependência atual
+🚀 Implementar 📊 Estudar Impacto
+Aproveitar Clientes em Crescimento
+Alto Impacto 60 dias
+2 cliente(s) com crescimento >15%. Oportunidade de expansão.
+
+Ações Recomendadas:
+Propor serviços adicionais
+Aumentar ticket médio
+Estabelecer parcerias estratégicas
+🚀 Implementar 📊 Estudar Impacto
+💰 Fluxo de Caixa Inteligente
+💰 Saldo Atual
+R$ 17.000,00
+📊 Menor Saldo (30 dias)
+R$ 17.947,70
+🎯 Projeção (30 dias)
+R$ 42.474,30
+🎛️ Centro de Controle IA
+🔄 Executar Análise Completa ⚙️ Configurar IA 📊 Exportar Análise IA ⏰ Análise Automática
