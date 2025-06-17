@@ -1,4 +1,3 @@
-
 // Classe principal do sistema
 class SistemaContasApp {
     constructor() {
