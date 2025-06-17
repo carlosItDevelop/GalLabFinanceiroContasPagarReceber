@@ -812,7 +812,7 @@ class SistemaContasApp {
             // Simular carregamento dos dados da conta
             const contaData = await this.getContaData(id, tipo);
             
-            this.openEditModal(contaData, tipo);
+            await this.openEditModal(contaData, tipo);
         } catch (error) {
             console.error('Erro ao carregar dados da conta:', error);
             this.showError('Erro ao carregar dados da conta');
@@ -837,7 +837,7 @@ class SistemaContasApp {
         return dados;
     }
 
-    openEditModal(contaData, tipo) {
+    async openEditModal(contaData, tipo) {
         const modal = document.getElementById('modal-editar-conta');
         const title = document.getElementById('modal-edit-title');
         
@@ -846,20 +846,111 @@ class SistemaContasApp {
         this.editingType = tipo;
         this.editingId = contaData.id;
         
-        // Preencher campos
+        // Preencher campos básicos
         document.getElementById('edit-descricao').value = contaData.descricao || '';
         document.getElementById('edit-valor').value = contaData.valor_original || '';
         document.getElementById('edit-vencimento').value = contaData.data_vencimento || '';
         document.getElementById('edit-observacoes').value = contaData.observacoes || '';
-        document.getElementById('edit-comentario').value = contaData.comentario || '';
         
-        // Mostrar arquivo anexado se existir
-        this.updateAttachmentDisplay(contaData.nome_arquivo, contaData.arquivo_anexo);
+        // Limpar campo de novo comentário
+        document.getElementById('edit-comentario').value = '';
+        
+        // Carregar comentários e anexos existentes
+        await this.loadComentariosExistentes(tipo, contaData.id);
+        await this.loadAnexosExistentes(tipo, contaData.id);
         
         // Carregar dropdown de entidades
-        this.loadEditModalData(tipo);
+        await this.loadEditModalData(tipo);
         
         modal.classList.add('active');
+    }
+
+    async loadComentariosExistentes(tipo, contaId) {
+        const container = document.getElementById('comentarios-existentes');
+        
+        // Simular comentários existentes
+        const comentarios = [
+            {
+                id: 1,
+                comentario: 'Este pagamento deve ser feito com urgência devido ao prazo.',
+                usuario: 'Usuário Sistema',
+                created_at: '2024-01-10T10:30:00'
+            },
+            {
+                id: 2,
+                comentario: 'Fornecedor confirmou recebimento do pedido.',
+                usuario: 'Usuário Sistema',
+                created_at: '2024-01-08T14:15:00'
+            }
+        ];
+
+        if (comentarios.length === 0) {
+            container.innerHTML = '<p style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">Nenhum comentário anterior</p>';
+            return;
+        }
+
+        container.innerHTML = comentarios.map(comentario => `
+            <div class="comentario-item">
+                <div class="comentario-header">
+                    <span>👤 ${comentario.usuario}</span>
+                    <span>${this.formatDate(comentario.created_at)} ${this.formatTime(comentario.created_at)}</span>
+                </div>
+                <div class="comentario-texto">${comentario.comentario}</div>
+            </div>
+        `).join('');
+    }
+
+    async loadAnexosExistentes(tipo, contaId) {
+        const container = document.getElementById('anexos-existentes');
+        
+        // Simular anexos existentes
+        const anexos = [
+            {
+                id: 1,
+                nome_arquivo: 'nota_fiscal_123.pdf',
+                tamanho_arquivo: 245760,
+                tipo_arquivo: 'application/pdf',
+                usuario: 'Usuário Sistema',
+                created_at: '2024-01-10T10:30:00'
+            }
+        ];
+
+        if (anexos.length === 0) {
+            container.innerHTML = '<p style="color: var(--text-muted); font-style: italic; font-size: 0.8rem;">Nenhum anexo anterior</p>';
+            return;
+        }
+
+        container.innerHTML = anexos.map(anexo => `
+            <div class="anexo-item">
+                <div class="anexo-icon">${this.getFileIcon(anexo.tipo_arquivo)}</div>
+                <div class="anexo-info">
+                    <div class="anexo-nome">${anexo.nome_arquivo}</div>
+                    <div class="anexo-meta">
+                        ${this.formatFileSize(anexo.tamanho_arquivo)} • 
+                        ${this.formatDate(anexo.created_at)} • 
+                        ${anexo.usuario}
+                    </div>
+                </div>
+                <div class="anexo-acoes">
+                    <button class="btn btn-sm btn-primary btn-anexo" onclick="app.downloadAnexo(${anexo.id})">
+                        📥
+                    </button>
+                    <button class="btn btn-sm btn-secondary btn-anexo" onclick="app.viewAnexo(${anexo.id})">
+                        👁️
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    downloadAnexo(anexoId) {
+        console.log('Download anexo:', anexoId);
+        this.showInfo('Download iniciado!');
+    }
+
+    viewAnexo(anexoId) {
+        console.log('Visualizar anexo:', anexoId);
+        this.showInfo('Abrindo anexo...');
     }
 
     // === FILTROS ===
@@ -908,8 +999,6 @@ class SistemaContasApp {
 
     async saveEditedConta() {
         try {
-            const formData = new FormData(document.getElementById('form-editar-conta'));
-            
             const dados = {
                 id: this.editingId,
                 descricao: document.getElementById('edit-descricao').value,
@@ -917,23 +1006,25 @@ class SistemaContasApp {
                 data_vencimento: document.getElementById('edit-vencimento').value,
                 entidade_id: document.getElementById('edit-entidade').value,
                 categoria_id: document.getElementById('edit-categoria').value,
-                observacoes: document.getElementById('edit-observacoes').value,
-                comentario: document.getElementById('edit-comentario').value
+                observacoes: document.getElementById('edit-observacoes').value
             };
 
-            // Verificar se há arquivo anexado
+            // Atualizar conta principal
+            console.log('Salvando conta editada:', dados);
+            
+            // Salvar novo comentário se foi adicionado
+            const novoComentario = document.getElementById('edit-comentario').value.trim();
+            if (novoComentario) {
+                await this.salvarComentario(this.editingType, this.editingId, novoComentario);
+            }
+
+            // Salvar novo anexo se foi adicionado
             const fileInput = document.getElementById('edit-arquivo');
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
-                dados.arquivo_anexo = await this.processFileUpload(file);
-                dados.nome_arquivo = file.name;
-                dados.tamanho_arquivo = file.size;
-                dados.tipo_arquivo = file.type;
+                await this.salvarAnexo(this.editingType, this.editingId, file);
             }
-
-            console.log('Salvando conta editada:', dados);
             
-            // Aqui seria feita a chamada para a API
             this.showSuccess('Conta atualizada com sucesso!');
             
             // Adicionar log
@@ -955,6 +1046,53 @@ class SistemaContasApp {
         } catch (error) {
             console.error('Erro ao salvar conta editada:', error);
             this.showError('Erro ao salvar alterações');
+        }
+    }
+
+    async salvarComentario(tipo, contaId, comentario) {
+        try {
+            // Simular salvamento do comentário
+            console.log(`Salvando comentário para ${tipo}:`, { contaId, comentario });
+            
+            this.addLog(
+                'create',
+                'Comentário adicionado',
+                `Novo comentário adicionado à conta`,
+                tipo === 'pagar' ? 'contas-pagar' : 'contas-receber',
+                { conta_id: contaId, comentario }
+            );
+        } catch (error) {
+            console.error('Erro ao salvar comentário:', error);
+            throw error;
+        }
+    }
+
+    async salvarAnexo(tipo, contaId, arquivo) {
+        try {
+            if (arquivo.size > 10 * 1024 * 1024) { // 10MB
+                throw new Error('Arquivo muito grande (máx. 10MB)');
+            }
+
+            const dadosArquivo = {
+                nome: arquivo.name,
+                caminho: `uploads/${Date.now()}_${arquivo.name}`,
+                tamanho: arquivo.size,
+                tipo: arquivo.type
+            };
+
+            // Simular upload e salvamento
+            console.log(`Salvando anexo para ${tipo}:`, { contaId, dadosArquivo });
+            
+            this.addLog(
+                'create',
+                'Anexo adicionado',
+                `Arquivo "${arquivo.name}" anexado à conta`,
+                tipo === 'pagar' ? 'contas-pagar' : 'contas-receber',
+                { conta_id: contaId, arquivo: dadosArquivo }
+            );
+        } catch (error) {
+            console.error('Erro ao salvar anexo:', error);
+            throw error;
         }
     }
 

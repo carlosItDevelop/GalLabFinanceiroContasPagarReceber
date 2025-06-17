@@ -239,17 +239,13 @@ class Database {
         const query = `
             UPDATE contas_pagar 
             SET descricao = $1, valor_original = $2, data_vencimento = $3, 
-                fornecedor_id = $4, categoria_id = $5, observacoes = $6,
-                comentario = $7, arquivo_anexo = $8, nome_arquivo = $9,
-                tamanho_arquivo = $10, tipo_arquivo = $11, updated_at = CURRENT_TIMESTAMP
-            WHERE id = $12
+                fornecedor_id = $4, categoria_id = $5, observacoes = $6, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $7
             RETURNING *
         `;
         const params = [
             dados.descricao, dados.valor_original, dados.data_vencimento,
-            dados.fornecedor_id, dados.categoria_id, dados.observacoes,
-            dados.comentario, dados.arquivo_anexo, dados.nome_arquivo,
-            dados.tamanho_arquivo, dados.tipo_arquivo, id
+            dados.fornecedor_id, dados.categoria_id, dados.observacoes, id
         ];
         return await this.query(query, params);
     }
@@ -258,17 +254,13 @@ class Database {
         const query = `
             UPDATE contas_receber 
             SET descricao = $1, valor_original = $2, data_vencimento = $3, 
-                cliente_id = $4, categoria_id = $5, observacoes = $6,
-                comentario = $7, arquivo_anexo = $8, nome_arquivo = $9,
-                tamanho_arquivo = $10, tipo_arquivo = $11, updated_at = CURRENT_TIMESTAMP
-            WHERE id = $12
+                cliente_id = $4, categoria_id = $5, observacoes = $6, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $7
             RETURNING *
         `;
         const params = [
             dados.descricao, dados.valor_original, dados.data_vencimento,
-            dados.cliente_id, dados.categoria_id, dados.observacoes,
-            dados.comentario, dados.arquivo_anexo, dados.nome_arquivo,
-            dados.tamanho_arquivo, dados.tipo_arquivo, id
+            dados.cliente_id, dados.categoria_id, dados.observacoes, id
         ];
         return await this.query(query, params);
     }
@@ -344,6 +336,63 @@ class Database {
         }
     }
 
+    // === MÉTODOS PARA COMENTÁRIOS ===
+    async addComment(tipo, contaId, comentario) {
+        const table = tipo === 'pagar' ? 'contas_pagar_comments' : 'contas_receber_comments';
+        const foreignKey = tipo === 'pagar' ? 'conta_pagar_id' : 'conta_receber_id';
+        
+        const query = `
+            INSERT INTO ${table} (${foreignKey}, comentario, usuario)
+            VALUES ($1, $2, $3)
+            RETURNING *
+        `;
+        return await this.query(query, [contaId, comentario, 'Usuário Sistema']);
+    }
+
+    async getComments(tipo, contaId) {
+        const table = tipo === 'pagar' ? 'contas_pagar_comments' : 'contas_receber_comments';
+        const foreignKey = tipo === 'pagar' ? 'conta_pagar_id' : 'conta_receber_id';
+        
+        const query = `
+            SELECT * FROM ${table} 
+            WHERE ${foreignKey} = $1 
+            ORDER BY created_at DESC
+        `;
+        return await this.query(query, [contaId]);
+    }
+
+    // === MÉTODOS PARA ANEXOS ===
+    async addAttachment(tipo, contaId, dadosArquivo) {
+        const table = tipo === 'pagar' ? 'contas_pagar_attachments' : 'contas_receber_attachments';
+        const foreignKey = tipo === 'pagar' ? 'conta_pagar_id' : 'conta_receber_id';
+        
+        const query = `
+            INSERT INTO ${table} (${foreignKey}, nome_arquivo, caminho_arquivo, tamanho_arquivo, tipo_arquivo, usuario)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+        `;
+        return await this.query(query, [
+            contaId, 
+            dadosArquivo.nome, 
+            dadosArquivo.caminho, 
+            dadosArquivo.tamanho, 
+            dadosArquivo.tipo, 
+            'Usuário Sistema'
+        ]);
+    }
+
+    async getAttachments(tipo, contaId) {
+        const table = tipo === 'pagar' ? 'contas_pagar_attachments' : 'contas_receber_attachments';
+        const foreignKey = tipo === 'pagar' ? 'conta_pagar_id' : 'conta_receber_id';
+        
+        const query = `
+            SELECT * FROM ${table} 
+            WHERE ${foreignKey} = $1 
+            ORDER BY created_at DESC
+        `;
+        return await this.query(query, [contaId]);
+    }
+
     // === MÉTODO PARA CRIAR TABELAS ===
     async createTables() {
         const tables = [
@@ -397,11 +446,6 @@ class Database {
                 data_pagamento DATE,
                 status VARCHAR(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'pago', 'atrasado', 'cancelado')),
                 observacoes TEXT,
-                comentario TEXT,
-                arquivo_anexo VARCHAR(500),
-                nome_arquivo VARCHAR(255),
-                tamanho_arquivo INTEGER,
-                tipo_arquivo VARCHAR(100),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
@@ -417,11 +461,6 @@ class Database {
                 data_recebimento DATE,
                 status VARCHAR(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'recebido', 'atrasado', 'cancelado')),
                 observacoes TEXT,
-                comentario TEXT,
-                arquivo_anexo VARCHAR(500),
-                nome_arquivo VARCHAR(255),
-                tamanho_arquivo INTEGER,
-                tipo_arquivo VARCHAR(100),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`,
@@ -435,6 +474,46 @@ class Database {
                 dados_novos JSONB,
                 usuario VARCHAR(255),
                 ip_address INET,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            
+            // Tabelas para comentários
+            `CREATE TABLE IF NOT EXISTS contas_pagar_comments (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                conta_pagar_id UUID REFERENCES contas_pagar(id) ON DELETE CASCADE,
+                comentario TEXT NOT NULL,
+                usuario VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            
+            `CREATE TABLE IF NOT EXISTS contas_receber_comments (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                conta_receber_id UUID REFERENCES contas_receber(id) ON DELETE CASCADE,
+                comentario TEXT NOT NULL,
+                usuario VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            
+            // Tabelas para anexos
+            `CREATE TABLE IF NOT EXISTS contas_pagar_attachments (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                conta_pagar_id UUID REFERENCES contas_pagar(id) ON DELETE CASCADE,
+                nome_arquivo VARCHAR(255) NOT NULL,
+                caminho_arquivo VARCHAR(500) NOT NULL,
+                tamanho_arquivo INTEGER,
+                tipo_arquivo VARCHAR(100),
+                usuario VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            
+            `CREATE TABLE IF NOT EXISTS contas_receber_attachments (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                conta_receber_id UUID REFERENCES contas_receber(id) ON DELETE CASCADE,
+                nome_arquivo VARCHAR(255) NOT NULL,
+                caminho_arquivo VARCHAR(500) NOT NULL,
+                tamanho_arquivo INTEGER,
+                tipo_arquivo VARCHAR(100),
+                usuario VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )`
         ];

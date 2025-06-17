@@ -823,26 +823,30 @@
                 <button class="modal-close">&times;</button>
             </div>
             <form id="form-nova-conta" class="modal-body">
-                <div class="form-group">
-                    <label for="conta-descricao">Descrição*</label>
-                    <input type="text" id="conta-descricao" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="conta-descricao">Descrição*</label>
+                        <input type="text" id="conta-descricao" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="conta-valor">Valor*</label>
+                        <input type="number" id="conta-valor" step="0.01" required>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="conta-valor">Valor*</label>
-                    <input type="number" id="conta-valor" step="0.01" required>
-                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="conta-vencimento">Data de Vencimento*</label>
+                        <input type="date" id="conta-vencimento" required>
+                    </div>
 
-                <div class="form-group">
-                    <label for="conta-vencimento">Data de Vencimento*</label>
-                    <input type="date" id="conta-vencimento" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="conta-categoria">Categoria</label>
-                    <select id="conta-categoria">
-                        <option value="">Selecione uma categoria</option>
-                    </select>
+                    <div class="form-group">
+                        <label for="conta-categoria">Categoria</label>
+                        <select id="conta-categoria">
+                            <option value="">Selecione uma categoria</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -913,7 +917,7 @@
                     <h4 class="section-title">📝 Observações</h4>
                     <div class="form-group">
                         <label for="edit-observacoes">Observações Gerais</label>
-                        <textarea id="edit-observacoes" rows="3" placeholder="Adicione observações gerais sobre esta conta..."></textarea>
+                        <textarea id="edit-observacoes" rows="2" placeholder="Adicione observações gerais sobre esta conta..."></textarea>
                     </div>
                 </div>
 
@@ -922,8 +926,13 @@
                     <h4 class="section-title">💬 Comentários e Anexos</h4>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="edit-comentario">Comentário</label>
-                            <textarea id="edit-comentario" rows="4" placeholder="Adicione um comentário específico sobre esta transação..."></textarea>
+                            <label for="edit-comentario">Novo Comentário</label>
+                            <textarea id="edit-comentario" rows="3" placeholder="Adicione um comentário específico sobre esta transação..."></textarea>
+                            
+                            <!-- Lista de comentários existentes -->
+                            <div id="comentarios-existentes" class="comentarios-historico">
+                                <!-- Comentários carregados dinamicamente -->
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -937,12 +946,9 @@
                                 </label>
                             </div>
                             
-                            <!-- Preview do arquivo anexado -->
-                            <div id="attachment-info" style="display: none;">
-                                <div class="attachment-section">
-                                    <h5>📎 Arquivo Anexado</h5>
-                                    <div id="attachment-preview"></div>
-                                </div>
+                            <!-- Lista de anexos existentes -->
+                            <div id="anexos-existentes" class="anexos-historico">
+                                <!-- Anexos carregados dinamicamente -->
                             </div>
                         </div>
                     </div>
