@@ -211,182 +211,235 @@
                     <p>Relatórios consolidados e análise financeira</p>
                 </div>
 
-                <!-- Filtros de Período -->
-                <div class="consolidados-filters">
-                    <div class="filters">
-                        <select id="filtro-periodo">
-                            <option value="mes-atual">Mês Atual</option>
-                            <option value="mes-anterior">Mês Anterior</option>
-                            <option value="trimestre">Último Trimestre</option>
-                            <option value="semestre">Último Semestre</option>
-                            <option value="ano">Ano Atual</option>
-                            <option value="personalizado">Período Personalizado</option>
-                        </select>
-                        <input type="date" id="data-inicio-consolidado" style="display: none;">
-                        <input type="date" id="data-fim-consolidado" style="display: none;">
-                        <button class="btn btn-primary" id="aplicar-filtros">📊 Atualizar</button>
-                    </div>
-                </div>
+                <!-- Sub-navegação dos Consolidados -->
+                <nav class="consolidados-nav">
+                    <button class="consolidados-tab-btn active" data-consolidado-tab="visao-geral">📈 Visão Geral</button>
+                    <button class="consolidados-tab-btn" data-consolidado-tab="rankings">🏆 Rankings</button>
+                    <button class="consolidados-tab-btn" data-consolidado-tab="orcamento">📊 Orçamento</button>
+                    <button class="consolidados-tab-btn" data-consolidado-tab="inteligente">🔮 Inteligente</button>
+                    <button class="consolidados-tab-btn" data-consolidado-tab="riscos">⚠️ Riscos</button>
+                </nav>
+
+                <!-- Conteúdo das Sub-tabs -->
+                <div class="consolidados-content">
+                    <!-- Sub-tab: Visão Geral -->
+                    <div id="visao-geral" class="consolidados-sub-panel active">
+                        <!-- Filtros de Período -->
+                        <div class="consolidados-filters">
+                            <div class="filters">
+                                <select id="filtro-periodo">
+                                    <option value="mes-atual">Mês Atual</option>
+                                    <option value="mes-anterior">Mês Anterior</option>
+                                    <option value="trimestre">Último Trimestre</option>
+                                    <option value="semestre">Último Semestre</option>
+                                    <option value="ano">Ano Atual</option>
+                                    <option value="personalizado">Período Personalizado</option>
+                                </select>
+                                <input type="date" id="data-inicio-consolidado" style="display: none;">
+                                <input type="date" id="data-fim-consolidado" style="display: none;">
+                                <button class="btn btn-primary" id="aplicar-filtros">📊 Atualizar</button>
+                            </div>
+                        </div>
 
                 <!-- Cards Resumo Executivo -->
-                <div class="consolidados-cards">
-                    <div class="card card-blue">
-                        <div class="card-icon">💰</div>
-                        <div class="card-content">
-                            <h3>Total Entradas</h3>
-                            <div class="card-value" id="total-entradas-consolidado">R$ 0,00</div>
-                            <small id="variacao-entradas">+0% vs período anterior</small>
+                        <div class="consolidados-cards">
+                            <div class="card card-blue">
+                                <div class="card-icon">💰</div>
+                                <div class="card-content">
+                                    <h3>Total Entradas</h3>
+                                    <div class="card-value" id="total-entradas-consolidado">R$ 0,00</div>
+                                    <small id="variacao-entradas">+0% vs período anterior</small>
+                                </div>
+                            </div>
+
+                            <div class="card card-red">
+                                <div class="card-icon">💸</div>
+                                <div class="card-content">
+                                    <h3>Total Saídas</h3>
+                                    <div class="card-value" id="total-saidas-consolidado">R$ 0,00</div>
+                                    <small id="variacao-saidas">+0% vs período anterior</small>
+                                </div>
+                            </div>
+
+                            <div class="card card-green">
+                                <div class="card-icon">📊</div>
+                                <div class="card-content">
+                                    <h3>Saldo Líquido</h3>
+                                    <div class="card-value" id="saldo-liquido-consolidado">R$ 0,00</div>
+                                    <small id="variacao-saldo">+0% vs período anterior</small>
+                                </div>
+                            </div>
+
+                            <div class="card card-orange">
+                                <div class="card-icon">📈</div>
+                                <div class="card-content">
+                                    <h3>Margem Líquida</h3>
+                                    <div class="card-value" id="margem-liquida">0%</div>
+                                    <small>Saldo / Entradas</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gráficos -->
+                        <div class="consolidados-charts">
+                            <div class="chart-container">
+                                <h3>📈 Fluxo de Caixa - Evolução Mensal</h3>
+                                <div id="chart-fluxo-caixa"></div>
+                            </div>
+                            
+                            <div class="chart-container">
+                                <h3>🥧 Distribuição por Categorias</h3>
+                                <div id="chart-categorias"></div>
+                            </div>
+                        </div>
+
+                        <!-- Comparativo Temporal -->
+                        <div class="consolidados-comparativo">
+                            <div class="chart-container">
+                                <h3>📊 Comparativo Mensal - Entradas vs Saídas</h3>
+                                <div id="chart-comparativo-mensal"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="card card-red">
-                        <div class="card-icon">💸</div>
-                        <div class="card-content">
-                            <h3>Total Saídas</h3>
-                            <div class="card-value" id="total-saidas-consolidado">R$ 0,00</div>
-                            <small id="variacao-saidas">+0% vs período anterior</small>
+                    <!-- Sub-tab: Rankings -->
+                    <div id="rankings" class="consolidados-sub-panel">
+                        <div class="sub-panel-header">
+                            <h3>🏆 Rankings e Análises Comparativas</h3>
+                            <p>Top performers e análises detalhadas</p>
                         </div>
-                    </div>
-
-                    <div class="card card-green">
-                        <div class="card-icon">📊</div>
-                        <div class="card-content">
-                            <h3>Saldo Líquido</h3>
-                            <div class="card-value" id="saldo-liquido-consolidado">R$ 0,00</div>
-                            <small id="variacao-saldo">+0% vs período anterior</small>
-                        </div>
-                    </div>
-
-                    <div class="card card-orange">
-                        <div class="card-icon">📈</div>
-                        <div class="card-content">
-                            <h3>Margem Líquida</h3>
-                            <div class="card-value" id="margem-liquida">0%</div>
-                            <small>Saldo / Entradas</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Gráficos -->
-                <div class="consolidados-charts">
-                    <div class="chart-container">
-                        <h3>📈 Fluxo de Caixa - Evolução Mensal</h3>
-                        <div id="chart-fluxo-caixa"></div>
-                    </div>
-                    
-                    <div class="chart-container">
-                        <h3>🥧 Distribuição por Categorias</h3>
-                        <div id="chart-categorias"></div>
-                    </div>
-                </div>
 
                 <!-- Análises Detalhadas -->
-                <div class="consolidados-analises">
-                    <div class="analise-container">
-                        <h3>📋 Top 5 Fornecedores (Gastos)</h3>
-                        <div class="ranking-list" id="ranking-fornecedores">
-                            <!-- Dados carregados dinamicamente -->
-                        </div>
-                    </div>
-
-                    <div class="analise-container">
-                        <h3>💰 Top 5 Clientes (Receitas)</h3>
-                        <div class="ranking-list" id="ranking-clientes">
-                            <!-- Dados carregados dinamicamente -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Comparativo Temporal -->
-                <div class="consolidados-comparativo">
-                    <div class="chart-container">
-                        <h3>📊 Comparativo Mensal - Entradas vs Saídas</h3>
-                        <div id="chart-comparativo-mensal"></div>
-                    </div>
-                </div>
-
-                <!-- FASE 2: Análises Avançadas -->
-                <div class="consolidados-analises-avancadas">
-                    <div class="analise-container">
-                        <h3>📈 Análise Temporal Comparativa</h3>
-                        <div id="analise-comparativo-anual">
-                            <!-- Dados carregados dinamicamente -->
-                        </div>
-                    </div>
-
-                    <div class="analise-container">
-                        <h3>🔮 Tendências e Projeções</h3>
-                        <div id="analise-tendencias">
-                            <!-- Dados carregados dinamicamente -->
-                        </div>
-                    </div>
-                </div>
-
-                <div class="consolidados-sazonalidade">
-                    <div class="analise-container">
-                        <h3>🌊 Análise de Sazonalidade</h3>
-                        <div id="analise-sazonalidade">
-                            <!-- Dados carregados dinamicamente -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FASE 3: Orçamento vs Realizado -->
-                <!-- Container será criado dinamicamente -->
-
-                <!-- FASE 3: Fluxo de Caixa Inteligente -->
-                <!-- Container será criado dinamicamente -->
-
-                <!-- FASE 3: Análise Preditiva de Inadimplência -->
-                <!-- Container será criado dinamicamente -->
-
-                <!-- FASE 2: Exportação de Relatórios -->
-                <div class="consolidados-exportacao">
-                    <div class="analise-container">
-                        <h3>📄 Exportar Relatórios</h3>
-                        <div class="exportacao-opcoes">
-                            <div class="export-group">
-                                <h4>📊 Relatório Consolidado</h4>
-                                <div class="export-buttons">
-                                    <button class="btn btn-primary btn-export" data-formato="pdf" data-tipo="consolidado">
-                                        📑 PDF
-                                    </button>
-                                    <button class="btn btn-success btn-export" data-formato="excel" data-tipo="consolidado">
-                                        📊 Excel
-                                    </button>
-                                    <button class="btn btn-secondary btn-export" data-formato="csv" data-tipo="consolidado">
-                                        📋 CSV
-                                    </button>
+                        <div class="consolidados-analises">
+                            <div class="analise-container">
+                                <h3>📋 Top 5 Fornecedores (Gastos)</h3>
+                                <div class="ranking-list" id="ranking-fornecedores">
+                                    <!-- Dados carregados dinamicamente -->
                                 </div>
                             </div>
 
-                            <div class="export-group">
-                                <h4>🏢 Relatório de Fornecedores</h4>
-                                <div class="export-buttons">
-                                    <button class="btn btn-primary btn-export" data-formato="pdf" data-tipo="fornecedores">
-                                        📑 PDF
-                                    </button>
-                                    <button class="btn btn-success btn-export" data-formato="excel" data-tipo="fornecedores">
-                                        📊 Excel
-                                    </button>
-                                    <button class="btn btn-secondary btn-export" data-formato="csv" data-tipo="fornecedores">
-                                        📋 CSV
-                                    </button>
+                            <div class="analise-container">
+                                <h3>💰 Top 5 Clientes (Receitas)</h3>
+                                <div class="ranking-list" id="ranking-clientes">
+                                    <!-- Dados carregados dinamicamente -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FASE 2: Análises Avançadas -->
+                        <div class="consolidados-analises-avancadas">
+                            <div class="analise-container">
+                                <h3>📈 Análise Temporal Comparativa</h3>
+                                <div id="analise-comparativo-anual">
+                                    <!-- Dados carregados dinamicamente -->
                                 </div>
                             </div>
 
-                            <div class="export-group">
-                                <h4>👥 Relatório de Clientes</h4>
-                                <div class="export-buttons">
-                                    <button class="btn btn-primary btn-export" data-formato="pdf" data-tipo="clientes">
-                                        📑 PDF
-                                    </button>
-                                    <button class="btn btn-success btn-export" data-formato="excel" data-tipo="clientes">
-                                        📊 Excel
-                                    </button>
-                                    <button class="btn btn-secondary btn-export" data-formato="csv" data-tipo="clientes">
-                                        📋 CSV
-                                    </button>
+                            <div class="analise-container">
+                                <h3>🔮 Tendências e Projeções</h3>
+                                <div id="analise-tendencias">
+                                    <!-- Dados carregados dinamicamente -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="consolidados-sazonalidade">
+                            <div class="analise-container">
+                                <h3>🌊 Análise de Sazonalidade</h3>
+                                <div id="analise-sazonalidade">
+                                    <!-- Dados carregados dinamicamente -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-tab: Orçamento -->
+                    <div id="orcamento" class="consolidados-sub-panel">
+                        <div class="sub-panel-header">
+                            <h3>📊 Orçamento vs Realizado</h3>
+                            <p>Controle orçamentário e performance por categoria</p>
+                        </div>
+
+                <!-- Conteúdo do orçamento será carregado dinamicamente -->
+                        <div id="orcamento-content">
+                            <!-- FASE 3: Orçamento vs Realizado -->
+                        </div>
+                    </div>
+
+                    <!-- Sub-tab: Inteligente -->
+                    <div id="inteligente" class="consolidados-sub-panel">
+                        <div class="sub-panel-header">
+                            <h3>🔮 Análises Inteligentes</h3>
+                            <p>Fluxo de caixa inteligente e projeções avançadas</p>
+                        </div>
+                        
+                        <!-- Conteúdo inteligente será carregado dinamicamente -->
+                        <div id="inteligente-content">
+                            <!-- FASE 3: Fluxo de Caixa Inteligente -->
+                        </div>
+                    </div>
+
+                    <!-- Sub-tab: Riscos -->
+                    <div id="riscos" class="consolidados-sub-panel">
+                        <div class="sub-panel-header">
+                            <h3>⚠️ Gestão de Riscos</h3>
+                            <p>Análise preditiva de inadimplência e ações preventivas</p>
+                        </div>
+                        
+                        <!-- Conteúdo de riscos será carregado dinamicamente -->
+                        <div id="riscos-content">
+                            <!-- FASE 3: Análise Preditiva de Inadimplência -->
+                        </div>
+
+                        <!-- FASE 2: Exportação de Relatórios -->
+                        <div class="consolidados-exportacao">
+                            <div class="analise-container">
+                                <h3>📄 Exportar Relatórios</h3>
+                                <div class="exportacao-opcoes">
+                                    <div class="export-group">
+                                        <h4>📊 Relatório Consolidado</h4>
+                                        <div class="export-buttons">
+                                            <button class="btn btn-primary btn-export" data-formato="pdf" data-tipo="consolidado">
+                                                📑 PDF
+                                            </button>
+                                            <button class="btn btn-success btn-export" data-formato="excel" data-tipo="consolidado">
+                                                📊 Excel
+                                            </button>
+                                            <button class="btn btn-secondary btn-export" data-formato="csv" data-tipo="consolidado">
+                                                📋 CSV
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="export-group">
+                                        <h4>🏢 Relatório de Fornecedores</h4>
+                                        <div class="export-buttons">
+                                            <button class="btn btn-primary btn-export" data-formato="pdf" data-tipo="fornecedores">
+                                                📑 PDF
+                                            </button>
+                                            <button class="btn btn-success btn-export" data-formato="excel" data-tipo="fornecedores">
+                                                📊 Excel
+                                            </button>
+                                            <button class="btn btn-secondary btn-export" data-formato="csv" data-tipo="fornecedores">
+                                                📋 CSV
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="export-group">
+                                        <h4>👥 Relatório de Clientes</h4>
+                                        <div class="export-buttons">
+                                            <button class="btn btn-primary btn-export" data-formato="pdf" data-tipo="clientes">
+                                                📑 PDF
+                                            </button>
+                                            <button class="btn btn-success btn-export" data-formato="excel" data-tipo="clientes">
+                                                📊 Excel
+                                            </button>
+                                            <button class="btn btn-secondary btn-export" data-formato="csv" data-tipo="clientes">
+                                                📋 CSV
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

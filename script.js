@@ -3214,6 +3214,9 @@ class SistemaContasApp {
     // === CONSOLIDADOS ===
     async loadConsolidados() {
         try {
+            // Configurar sub-tabs dos consolidados
+            this.setupConsolidadosSubTabs();
+            
             // Configurar event listeners específicos dos consolidados
             this.setupConsolidadosEventListeners();
             
@@ -3252,6 +3255,51 @@ class SistemaContasApp {
         } catch (error) {
             console.error('Erro ao carregar consolidados:', error);
             this.showError('Erro ao carregar dados consolidados');
+        }
+    }
+
+    setupConsolidadosSubTabs() {
+        const subTabBtns = document.querySelectorAll('.consolidados-tab-btn');
+        const subPanels = document.querySelectorAll('.consolidados-sub-panel');
+
+        subTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-consolidado-tab');
+                
+                // Remover classe active de todos
+                subTabBtns.forEach(b => b.classList.remove('active'));
+                subPanels.forEach(p => p.classList.remove('active'));
+                
+                // Adicionar classe active aos selecionados
+                btn.classList.add('active');
+                const targetPanel = document.getElementById(tabId);
+                if (targetPanel) {
+                    targetPanel.classList.add('active');
+                }
+                
+                // Carregar dados específicos da sub-tab
+                this.loadConsolidadosSubTabData(tabId);
+            });
+        });
+    }
+
+    async loadConsolidadosSubTabData(tabId) {
+        switch (tabId) {
+            case 'visao-geral':
+                // Já carregado na inicialização
+                break;
+            case 'rankings':
+                this.loadRankings();
+                break;
+            case 'orcamento':
+                this.loadOrcamentoRealizado();
+                break;
+            case 'inteligente':
+                this.loadFluxoCaixaInteligente();
+                break;
+            case 'riscos':
+                this.loadAnalisePreditivaInadimplencia();
+                break;
         }
     }
 

@@ -407,6 +407,75 @@ body {
 }
 
 /* === CONSOLIDADOS === */
+/* Sub-navegação dos Consolidados */
+.consolidados-nav {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 2rem;
+    background: var(--bg-primary);
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.consolidados-tab-btn {
+    background: transparent;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    min-width: fit-content;
+}
+
+.consolidados-tab-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.consolidados-tab-btn.active {
+    background: var(--accent-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Conteúdo das sub-tabs */
+.consolidados-content {
+    margin-top: 1rem;
+}
+
+.consolidados-sub-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.consolidados-sub-panel.active {
+    display: block;
+}
+
+.sub-panel-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sub-panel-header h3 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.sub-panel-header p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
 .consolidados-filters {
     margin-bottom: 2rem;
     background: var(--bg-primary);
@@ -1475,6 +1544,27 @@ body {
     .orcamento-acoes {
         flex-direction: column;
         align-items: center;
+    }
+}
+
+/* Responsividade para sub-navegação */
+@media (max-width: 768px) {
+    .consolidados-nav {
+        padding: 0.25rem;
+        gap: 0.15rem;
+    }
+    
+    .consolidados-tab-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .sub-panel-header h3 {
+        font-size: 1.25rem;
+    }
+    
+    .sub-panel-header {
+        margin-bottom: 1.5rem;
     }
 }
 
