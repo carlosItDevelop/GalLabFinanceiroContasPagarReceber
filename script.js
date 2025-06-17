@@ -313,14 +313,8 @@ class SistemaContasApp {
 
     async loadDashboard() {
         try {
-            // Simular dados do dashboard (será conectado com API)
-            const dashboardData = {
-                totalPagar: 15000.00,
-                totalReceber: 25000.00,
-                vencidasPagar: 3,
-                vencidasReceber: 1,
-                alertas: 4
-            };
+            // Simular dados dinâmicos do dashboard
+            const dashboardData = this.generateDashboardData();
 
             // Atualizar cards
             document.getElementById('total-pagar').textContent = this.formatCurrency(dashboardData.totalPagar);
@@ -330,78 +324,306 @@ class SistemaContasApp {
             document.getElementById('vencidas-receber').textContent = `${dashboardData.vencidasReceber} vencidas`;
             document.getElementById('total-alertas').textContent = dashboardData.alertas;
 
-            // Carregar gráficos
-            this.loadCharts();
+            // Carregar gráficos com dados dinâmicos
+            this.loadDashboardCharts(dashboardData);
+
+            console.log('Dashboard carregado com dados:', dashboardData);
 
         } catch (error) {
             console.error('Erro ao carregar dashboard:', error);
         }
     }
 
-    // === GRÁFICOS ===
-    loadCharts() {
-        // Gráfico de Fluxo de Caixa
+    generateDashboardData() {
+        // Gerar dados realistas e variados para demonstração
+        const baseEntradas = [25000, 22000, 35000, 33000, 27000, 45000];
+        const baseSaidas = [18000, 16000, 23000, 24000, 24000, 32000];
+        
+        // Adicionar variação aleatória aos dados base
+        const entradas = baseEntradas.map(valor => 
+            Math.round(valor + (Math.random() - 0.5) * valor * 0.3)
+        );
+        const saidas = baseSaidas.map(valor => 
+            Math.round(valor + (Math.random() - 0.5) * valor * 0.2)
+        );
+
+        const totalPagar = Math.round(15000 + Math.random() * 10000);
+        const totalReceber = Math.round(25000 + Math.random() * 15000);
+
+        return {
+            totalPagar,
+            totalReceber,
+            vencidasPagar: Math.floor(Math.random() * 6),
+            vencidasReceber: Math.floor(Math.random() * 3),
+            alertas: Math.floor(Math.random() * 8) + 1,
+            fluxoMensal: {
+                categorias: ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                entradas,
+                saidas
+            },
+            distribuicaoCategorias: {
+                labels: ['Fornecedores', 'Utilidades', 'Escritório', 'Serviços', 'Outros'],
+                series: [35, 25, 20, 15, 5],
+                colors: ['#007bff', '#28a745', '#ffc107', '#17a2b8', '#6c757d']
+            }
+        };
+    }
+
+    // === GRÁFICOS DO DASHBOARD ===
+    loadDashboardCharts(dashboardData) {
+        this.loadFluxoCaixaChart(dashboardData.fluxoMensal);
+        this.loadCategoriasChart(dashboardData.distribuicaoCategorias);
+    }
+
+    loadFluxoCaixaChart(fluxoData) {
+        const { categorias, entradas, saidas } = fluxoData;
+        
+        // Calcular saldo líquido para cada mês
+        const saldoLiquido = entradas.map((entrada, index) => entrada - saidas[index]);
+
         const fluxoOptions = {
             series: [{
-                name: 'A Receber',
-                data: [31000, 28000, 35000, 42000, 38000, 45000]
+                name: 'Entradas',
+                type: 'column',
+                data: entradas
             }, {
-                name: 'A Pagar',
-                data: [22000, 25000, 28000, 31000, 29000, 35000]
+                name: 'Saídas',
+                type: 'column',
+                data: saidas
+            }, {
+                name: 'Saldo Líquido',
+                type: 'line',
+                data: saldoLiquido
             }],
             chart: {
-                type: 'area',
-                height: 350,
+                height: 400,
                 background: 'transparent',
-                toolbar: { show: false }
+                toolbar: { 
+                    show: true,
+                    tools: {
+                        download: true,
+                        selection: false,
+                        zoom: false,
+                        zoomin: false,
+                        zoomout: false,
+                        pan: false,
+                        reset: false
+                    }
+                },
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800,
+                    animateGradually: {
+                        enabled: true,
+                        delay: 150
+                    },
+                    dynamicAnimation: {
+                        enabled: true,
+                        speed: 350
+                    }
+                }
             },
-            colors: ['#28a745', '#dc3545'],
+            colors: ['#28a745', '#dc3545', '#007bff'],
+            plotOptions: {
+                bar: {
+                    columnWidth: '60%',
+                    borderRadius: 4
+                }
+            },
+            stroke: {
+                width: [0, 0, 3],
+                curve: 'smooth'
+            },
             xaxis: {
-                categories: ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-                labels: { style: { colors: 'var(--text-secondary)' } }
+                categories: categorias,
+                labels: { 
+                    style: { 
+                        colors: 'var(--text-secondary)',
+                        fontSize: '12px',
+                        fontWeight: 500
+                    }
+                }
             },
             yaxis: {
                 labels: { 
-                    style: { colors: 'var(--text-secondary)' },
+                    style: { 
+                        colors: 'var(--text-secondary)',
+                        fontSize: '11px'
+                    },
                     formatter: (val) => this.formatCurrency(val)
                 }
             },
             legend: {
-                labels: { colors: 'var(--text-primary)' }
+                labels: { 
+                    colors: 'var(--text-primary)',
+                    useSeriesColors: false
+                },
+                position: 'top',
+                horizontalAlign: 'right',
+                floating: true,
+                offsetY: -25,
+                offsetX: -5
             },
             grid: {
-                borderColor: 'var(--border-color)'
+                borderColor: 'var(--border-color)',
+                strokeDashArray: 3,
+                opacity: 0.3
             },
-            theme: {
-                mode: this.theme
+            tooltip: {
+                theme: this.theme,
+                shared: true,
+                intersect: false,
+                y: {
+                    formatter: (val) => this.formatCurrency(val)
+                }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            fill: {
+                type: ['solid', 'solid', 'gradient'],
+                gradient: {
+                    shade: this.theme,
+                    type: "vertical",
+                    shadeIntensity: 0.3,
+                    gradientToColors: undefined,
+                    inverseColors: false,
+                    opacityFrom: 0.8,
+                    opacityTo: 0.1,
+                    stops: [0, 100]
+                }
             }
         };
 
-        if (this.charts.fluxo) this.charts.fluxo.destroy();
-        this.charts.fluxo = new ApexCharts(document.querySelector("#chart-fluxo-caixa"), fluxoOptions);
-        this.charts.fluxo.render();
+        if (this.charts.fluxoDashboard) this.charts.fluxoDashboard.destroy();
+        const chartElement = document.querySelector("#chart-fluxo-dashboard");
+        if (chartElement) {
+            this.charts.fluxoDashboard = new ApexCharts(chartElement, fluxoOptions);
+            this.charts.fluxoDashboard.render();
+        }
 
-        // Gráfico de Categorias
+        console.log('Gráfico de fluxo carregado com dados:', fluxoData);
+    }
+
+    loadCategoriasChart(categoriaData) {
+        const { labels, series, colors } = categoriaData;
+
         const categoriaOptions = {
-            series: [44, 35, 21],
+            series: series,
             chart: {
                 type: 'donut',
-                height: 350,
-                background: 'transparent'
+                height: 400,
+                background: 'transparent',
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800,
+                    animateGradually: {
+                        enabled: true,
+                        delay: 150
+                    }
+                }
             },
-            labels: ['Fornecedores', 'Utilidades', 'Escritório'],
-            colors: ['#007bff', '#ffc107', '#28a745'],
+            labels: labels,
+            colors: colors,
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '65%',
+                        labels: {
+                            show: true,
+                            name: {
+                                show: true,
+                                fontSize: '16px',
+                                fontWeight: 600,
+                                color: 'var(--text-primary)'
+                            },
+                            value: {
+                                show: true,
+                                fontSize: '14px',
+                                fontWeight: 400,
+                                color: 'var(--text-secondary)',
+                                formatter: (val) => `${val}%`
+                            },
+                            total: {
+                                show: true,
+                                showAlways: false,
+                                label: 'Total Gastos',
+                                fontSize: '16px',
+                                fontWeight: 600,
+                                color: 'var(--text-primary)',
+                                formatter: () => '100%'
+                            }
+                        }
+                    }
+                }
+            },
             legend: {
-                labels: { colors: 'var(--text-primary)' }
+                position: 'bottom',
+                horizontalAlign: 'center',
+                floating: false,
+                fontSize: '13px',
+                fontWeight: 500,
+                labels: {
+                    colors: 'var(--text-primary)',
+                    useSeriesColors: true
+                },
+                markers: {
+                    width: 12,
+                    height: 12,
+                    strokeWidth: 0,
+                    radius: 6
+                },
+                itemMargin: {
+                    horizontal: 15,
+                    vertical: 5
+                }
             },
-            theme: {
-                mode: this.theme
-            }
+            tooltip: {
+                theme: this.theme,
+                y: {
+                    formatter: (val) => `${val}%`
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                style: {
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    colors: ['#fff']
+                },
+                formatter: (val) => `${Math.round(val)}%`,
+                dropShadow: {
+                    enabled: true,
+                    top: 1,
+                    left: 1,
+                    blur: 1,
+                    color: '#000',
+                    opacity: 0.45
+                }
+            },
+            responsive: [{
+                breakpoint: 768,
+                options: {
+                    chart: {
+                        height: 300
+                    },
+                    legend: {
+                        fontSize: '11px'
+                    }
+                }
+            }]
         };
 
-        if (this.charts.categorias) this.charts.categorias.destroy();
-        this.charts.categorias = new ApexCharts(document.querySelector("#chart-categorias"), categoriaOptions);
-        this.charts.categorias.render();
+        if (this.charts.categoriasDashboard) this.charts.categoriasDashboard.destroy();
+        const chartElement = document.querySelector("#chart-categorias-dashboard");
+        if (chartElement) {
+            this.charts.categoriasDashboard = new ApexCharts(chartElement, categoriaOptions);
+            this.charts.categoriasDashboard.render();
+        }
+
+        console.log('Gráfico de categorias carregado com dados:', categoriaData);
     }
 
     async loadContasPagar() {
