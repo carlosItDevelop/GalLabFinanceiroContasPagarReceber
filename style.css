@@ -916,6 +916,133 @@ body {
     margin-bottom: 2rem;
 }
 
+/* Cards de Resumo Orçamentário */
+.orcamento-cards-resumo {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.orcamento-card-resumo {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.orcamento-card-resumo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--shadow);
+}
+
+.orcamento-card-resumo.saidas::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--danger-color);
+}
+
+.orcamento-card-resumo.entradas::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--success-color);
+}
+
+.orcamento-card-resumo.saldo::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--info-color);
+}
+
+.orcamento-icon {
+    font-size: 2.5rem;
+    opacity: 0.8;
+    min-width: 60px;
+}
+
+.orcamento-info {
+    flex: 1;
+}
+
+.orcamento-info h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.orcamento-valor {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.orcamento-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.orcamento-percentual {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+    display: inline-block;
+}
+
+.orcamento-percentual.positivo {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--success-color);
+}
+
+.orcamento-percentual.negativo {
+    background: rgba(220, 53, 69, 0.2);
+    color: var(--danger-color);
+}
+
+.orcamento-status {
+    font-size: 1.5rem;
+    min-width: 40px;
+    text-align: center;
+}
+
+.orcamento-detalhes {
+    margin-bottom: 2rem;
+}
+
+.orcamento-chart-container {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.orcamento-chart-container h4 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
 .orcamento-card {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
@@ -1070,6 +1197,251 @@ body {
     gap: 1rem;
     justify-content: center;
     margin-top: 2rem;
+}
+
+/* === FASE 3: SUB-ABA INTELIGENTE === */
+.inteligente-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.inteligente-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.inteligente-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.inteligente-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px var(--shadow);
+}
+
+.inteligente-card.tendencias {
+    border-left: 4px solid var(--success-color);
+}
+
+.inteligente-card.projecoes {
+    border-left: 4px solid var(--info-color);
+}
+
+.inteligente-card.insights {
+    border-left: 4px solid var(--warning-color);
+}
+
+.inteligente-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.inteligente-icon {
+    font-size: 1.5rem;
+    opacity: 0.8;
+}
+
+.inteligente-header h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.inteligente-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Tendências */
+.tendencia-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.tendencia-indicador {
+    font-size: 1.1rem;
+    min-width: 25px;
+}
+
+.tendencia-indicador.positivo {
+    color: var(--success-color);
+}
+
+.tendencia-indicador.atencao {
+    color: var(--warning-color);
+}
+
+/* Projeções */
+.projecao-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.projecao-periodo {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.projecao-valor {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.projecao-valor.positivo {
+    color: var(--success-color);
+}
+
+.projecao-valor.negativo {
+    color: var(--danger-color);
+}
+
+/* Insights */
+.insight-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.insight-prioridade {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+    min-width: 70px;
+    text-align: center;
+}
+
+.insight-item.alta .insight-prioridade {
+    background: rgba(220, 53, 69, 0.2);
+    color: var(--danger-color);
+}
+
+.insight-item.media .insight-prioridade {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--warning-color);
+}
+
+.insight-item.baixa .insight-prioridade {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--success-color);
+}
+
+/* Analytics */
+.inteligente-analytics {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.analytics-container h4 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+/* Recomendações */
+.inteligente-recomendacoes h4 {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.recomendacoes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.recomendacao-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.recomendacao-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.recomendacao-card.financeira {
+    border-left: 4px solid var(--success-color);
+}
+
+.recomendacao-card.operacional {
+    border-left: 4px solid var(--info-color);
+}
+
+.recomendacao-card.estrategica {
+    border-left: 4px solid var(--warning-color);
+}
+
+.recomendacao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.recomendacao-tipo {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.recomendacao-impacto {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    text-transform: uppercase;
+}
+
+.recomendacao-impacto.alto {
+    background: rgba(220, 53, 69, 0.2);
+    color: var(--danger-color);
+}
+
+.recomendacao-impacto.medio {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--warning-color);
+}
+
+.recomendacao-card p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
 }
 
 /* === FASE 3: FLUXO DE CAIXA INTELIGENTE === */
@@ -1509,6 +1881,46 @@ body {
     .orcamento-categorias {
         grid-template-columns: 1fr;
         gap: 1rem;
+    }
+    
+    .orcamento-cards-resumo {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .orcamento-card-resumo {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .orcamento-icon {
+        font-size: 2rem;
+        min-width: auto;
+    }
+    
+    .inteligente-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .recomendacoes-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .recomendacao-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .tendencia-item,
+    .projecao-item,
+    .insight-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
     }
     
     .fluxo-inteligente-resumo {
