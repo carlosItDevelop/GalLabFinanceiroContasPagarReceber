@@ -300,101 +300,11 @@
                                 <div id="chart-comparativo-mensal"></div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Sub-tab: Rankings -->
-                    <div id="rankings" class="consolidados-sub-panel">
-                        <div class="sub-panel-header">
-                            <h3>🏆 Rankings e Análises Comparativas</h3>
-                            <p>Top performers e análises detalhadas</p>
-                        </div>
-
-                <!-- Análises Detalhadas -->
-                        <div class="consolidados-analises">
-                            <div class="analise-container">
-                                <h3>📋 Top 5 Fornecedores (Gastos)</h3>
-                                <div class="ranking-list" id="ranking-fornecedores">
-                                    <!-- Dados carregados dinamicamente -->
-                                </div>
-                            </div>
-
-                            <div class="analise-container">
-                                <h3>💰 Top 5 Clientes (Receitas)</h3>
-                                <div class="ranking-list" id="ranking-clientes">
-                                    <!-- Dados carregados dinamicamente -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- FASE 2: Análises Avançadas -->
-                        <div class="consolidados-analises-avancadas">
-                            <div class="analise-container">
-                                <h3>📈 Análise Temporal Comparativa</h3>
-                                <div id="analise-comparativo-anual">
-                                    <!-- Dados carregados dinamicamente -->
-                                </div>
-                            </div>
-
-                            <div class="analise-container">
-                                <h3>🔮 Tendências e Projeções</h3>
-                                <div id="analise-tendencias">
-                                    <!-- Dados carregados dinamicamente -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="consolidados-sazonalidade">
-                            <div class="analise-container">
-                                <h3>🌊 Análise de Sazonalidade</h3>
-                                <div id="analise-sazonalidade">
-                                    <!-- Dados carregados dinamicamente -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sub-tab: Orçamento -->
-                    <div id="orcamento" class="consolidados-sub-panel">
-                        <div class="sub-panel-header">
-                            <h3>📊 Orçamento vs Realizado</h3>
-                            <p>Controle orçamentário e performance por categoria</p>
-                        </div>
-
-                <!-- Conteúdo do orçamento será carregado dinamicamente -->
-                        <div id="orcamento-content">
-                            <!-- FASE 3: Orçamento vs Realizado -->
-                        </div>
-                    </div>
-
-                    <!-- Sub-tab: Inteligente -->
-                    <div id="inteligente" class="consolidados-sub-panel">
-                        <div class="sub-panel-header">
-                            <h3>🔮 Análises Inteligentes</h3>
-                            <p>Fluxo de caixa inteligente e projeções avançadas</p>
-                        </div>
-                        
-                        <!-- Conteúdo inteligente será carregado dinamicamente -->
-                        <div id="inteligente-content">
-                            <!-- FASE 3: Fluxo de Caixa Inteligente -->
-                        </div>
-                    </div>
-
-                    <!-- Sub-tab: Riscos -->
-                    <div id="riscos" class="consolidados-sub-panel">
-                        <div class="sub-panel-header">
-                            <h3>⚠️ Gestão de Riscos</h3>
-                            <p>Análise preditiva de inadimplência e ações preventivas</p>
-                        </div>
-                        
-                        <!-- Conteúdo de riscos será carregado dinamicamente -->
-                        <div id="riscos-content">
-                            <!-- FASE 3: Análise Preditiva de Inadimplência -->
-                        </div>
-
-                        <!-- FASE 2: Exportação de Relatórios -->
+                        <!-- Exportação Geral -->
                         <div class="consolidados-exportacao">
                             <div class="analise-container">
-                                <h3>📄 Exportar Relatórios</h3>
+                                <h3>📄 Exportar Relatórios Gerais</h3>
                                 <div class="exportacao-opcoes">
                                     <div class="export-group">
                                         <h4>📊 Relatório Consolidado</h4>
@@ -436,6 +346,134 @@
                                                 📊 Excel
                                             </button>
                                             <button class="btn btn-secondary btn-export" data-formato="csv" data-tipo="clientes">
+                                                📋 CSV
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-tab: Rankings -->
+                    <div id="rankings" class="consolidados-sub-panel">
+                        <div class="sub-panel-header">
+                            <h3>🏆 Rankings e Análises Comparativas</h3>
+                            <p>Top performers e análises detalhadas</p>
+                        </div>
+
+                        <!-- Rankings Principais -->
+                        <div class="consolidados-analises">
+                            <div class="analise-container">
+                                <h3>📋 Top 5 Fornecedores (Gastos)</h3>
+                                <div class="ranking-list" id="ranking-fornecedores">
+                                    <!-- Dados carregados dinamicamente -->
+                                </div>
+                            </div>
+
+                            <div class="analise-container">
+                                <h3>💰 Top 5 Clientes (Receitas)</h3>
+                                <div class="ranking-list" id="ranking-clientes">
+                                    <!-- Dados carregados dinamicamente -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Análises Temporais -->
+                        <div class="consolidados-analises-avancadas">
+                            <div class="analise-container">
+                                <h3>📈 Análise Temporal Comparativa</h3>
+                                <div id="analise-comparativo-anual">
+                                    <!-- Dados carregados dinamicamente -->
+                                </div>
+                            </div>
+
+                            <div class="analise-container">
+                                <h3>🔮 Tendências e Projeções</h3>
+                                <div id="analise-tendencias">
+                                    <!-- Dados carregados dinamicamente -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="consolidados-sazonalidade">
+                            <div class="analise-container">
+                                <h3>🌊 Análise de Sazonalidade</h3>
+                                <div id="analise-sazonalidade">
+                                    <!-- Dados carregados dinamicamente -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-tab: Orçamento -->
+                    <div id="orcamento" class="consolidados-sub-panel">
+                        <div class="sub-panel-header">
+                            <h3>📊 Orçamento vs Realizado</h3>
+                            <p>Controle orçamentário e performance por categoria</p>
+                        </div>
+
+                        <!-- Conteúdo do orçamento será carregado dinamicamente -->
+                        <div id="orcamento-content">
+                            <!-- Conteúdo carregado via JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Sub-tab: Inteligente -->
+                    <div id="inteligente" class="consolidados-sub-panel">
+                        <div class="sub-panel-header">
+                            <h3>🔮 Análises Inteligentes</h3>
+                            <p>Fluxo de caixa inteligente e projeções avançadas</p>
+                        </div>
+                        
+                        <!-- Conteúdo inteligente será carregado dinamicamente -->
+                        <div id="inteligente-content">
+                            <!-- Conteúdo carregado via JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Sub-tab: Riscos -->
+                    <div id="riscos" class="consolidados-sub-panel">
+                        <div class="sub-panel-header">
+                            <h3>⚠️ Gestão de Riscos</h3>
+                            <p>Análise preditiva de inadimplência e ações preventivas</p>
+                        </div>
+                        
+                        <!-- Conteúdo de riscos será carregado dinamicamente -->
+                        <div id="riscos-content">
+                            <!-- Conteúdo carregado via JavaScript -->
+                        </div>
+
+                        <!-- Exportação de Relatórios (movido para seção separada) -->
+                        <div class="consolidados-exportacao">
+                            <div class="analise-container">
+                                <h3>📄 Exportar Relatórios de Risco</h3>
+                                <div class="exportacao-opcoes">
+                                    <div class="export-group">
+                                        <h4>⚠️ Relatório de Riscos</h4>
+                                        <div class="export-buttons">
+                                            <button class="btn btn-primary btn-export" data-formato="pdf" data-tipo="riscos">
+                                                📑 PDF
+                                            </button>
+                                            <button class="btn btn-success btn-export" data-formato="excel" data-tipo="riscos">
+                                                📊 Excel
+                                            </button>
+                                            <button class="btn btn-secondary btn-export" data-formato="csv" data-tipo="riscos">
+                                                📋 CSV
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="export-group">
+                                        <h4>👥 Análise de Inadimplência</h4>
+                                        <div class="export-buttons">
+                                            <button class="btn btn-primary btn-export" data-formato="pdf" data-tipo="inadimplencia">
+                                                📑 PDF
+                                            </button>
+                                            <button class="btn btn-success btn-export" data-formato="excel" data-tipo="inadimplencia">
+                                                📊 Excel
+                                            </button>
+                                            <button class="btn btn-secondary btn-export" data-formato="csv" data-tipo="inadimplencia">
                                                 📋 CSV
                                             </button>
                                         </div>

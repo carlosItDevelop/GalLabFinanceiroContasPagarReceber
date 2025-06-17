@@ -3493,12 +3493,6 @@ class SistemaContasApp {
             // Carregar gráficos dos consolidados
             this.loadConsolidadosCharts();
             
-            // Carregar rankings
-            this.loadRankings();
-            
-            // Carregar análises temporais (Fase 2)
-            this.loadAnaliseTemporais();
-            
             // Configurar exportação (Fase 2)
             this.setupExportacao();
             
@@ -3509,15 +3503,8 @@ class SistemaContasApp {
             // Carregar alertas personalizados
             this.loadAlertasPersonalizados();
             
-            // === FASE 3: FUNCIONALIDADES AVANÇADAS ===
-            // Orçamento vs Realizado
-            this.loadOrcamentoRealizado();
-            
-            // Fluxo de caixa projetado inteligente
-            this.loadFluxoCaixaInteligente();
-            
-            // Análise preditiva de inadimplência
-            this.loadAnalisePreditivaInadimplencia();
+            // Carregar apenas dados da visão geral inicialmente
+            // As outras sub-abas carregam quando selecionadas
             
         } catch (error) {
             console.error('Erro ao carregar consolidados:', error);
@@ -3808,6 +3795,9 @@ class SistemaContasApp {
         ];
 
         this.renderRanking('ranking-clientes', clientes);
+
+        // Carregar apenas análises temporais na sub-aba Rankings
+        this.loadAnaliseTemporais();
     }
 
     renderRanking(containerId, data) {
