@@ -3546,10 +3546,10 @@ class SistemaContasApp {
                 this.loadRankings();
                 break;
             case 'orcamento':
-                this.loadOrcamentoRealizado();
+                this.loadOrcamentoCompleto();
                 break;
             case 'inteligente':
-                this.loadFluxoCaixaInteligente();
+                this.loadAnaliseInteligente();
                 break;
             case 'riscos':
                 this.loadAnalisePreditivaInadimplencia();
@@ -4310,116 +4310,437 @@ class SistemaContasApp {
         document.body.appendChild(alertContainer);
     }
 
-    // === FASE 3: ORÇAMENTO VS REALIZADO ===
-    loadOrcamentoRealizado() {
-        const orcamentoData = {
-            categorias: [
-                {
-                    nome: 'Escritório',
-                    orcado: 2000.00,
-                    realizado: 1900.00,
-                    percentual: 95.0,
-                    status: 'atencao',
-                    meta: 'Manter gastos abaixo de R$ 2.000'
-                },
-                {
-                    nome: 'Utilidades',
-                    orcado: 1500.00,
-                    realizado: 1200.00,
-                    percentual: 80.0,
-                    status: 'ok',
-                    meta: 'Reduzir 10% vs mês anterior'
-                },
-                {
-                    nome: 'Fornecedores',
-                    orcado: 8000.00,
-                    realizado: 8500.00,
-                    percentual: 106.25,
-                    status: 'ultrapassado',
-                    meta: 'Negociar melhores preços'
-                },
-                {
-                    nome: 'Serviços',
-                    orcado: 3000.00,
-                    realizado: 2400.00,
-                    percentual: 80.0,
-                    status: 'ok',
-                    meta: 'Manter nível atual'
-                }
-            ],
-            resumo: {
-                totalOrcado: 14500.00,
-                totalRealizado: 14000.00,
-                percentualGeral: 96.55,
-                economia: 500.00
-            }
-        };
+    // === ORÇAMENTO COMPLETO ===
+    loadOrcamentoCompleto() {
+        // Dados baseados nos rankings existentes
+        const fornecedoresRanking = [
+            { nome: 'ABC Materiais Ltda', valor: 8500.00, categoria: 'Fornecedores', transacoes: 12, crescimento: 8.5 },
+            { nome: 'Companhia Elétrica SP', valor: 6200.00, categoria: 'Utilidades', transacoes: 8, crescimento: 2.1 },
+            { nome: 'TechSolutions Corp', valor: 4800.00, categoria: 'Serviços', transacoes: 6, crescimento: 15.3 },
+            { nome: 'Office Supply Co', valor: 3200.00, categoria: 'Escritório', transacoes: 15, crescimento: -8.2 },
+            { nome: 'Clean Services Ltda', valor: 2800.00, categoria: 'Serviços', transacoes: 4, crescimento: 5.7 }
+        ];
 
-        this.renderOrcamentoRealizado(orcamentoData);
+        const clientesRanking = [
+            { nome: 'XYZ Consultoria Ltda', valor: 15000.00, categoria: 'Consultoria', transacoes: 6, crescimento: 12.4 },
+            { nome: 'Comércio ABC Ltda', valor: 12500.00, categoria: 'Vendas', transacoes: 10, crescimento: 6.8 },
+            { nome: 'Digital Solutions Inc', valor: 9800.00, categoria: 'Serviços', transacoes: 8, crescimento: 18.2 },
+            { nome: 'Retail Group SA', valor: 7500.00, categoria: 'Vendas', transacoes: 12, crescimento: -3.1 },
+            { nome: 'Startup Tech Ltda', valor: 5200.00, categoria: 'Consultoria', transacoes: 4, crescimento: 25.6 }
+        ];
+
+        const orcamentoData = this.calcularOrcamentoFromRankings(fornecedoresRanking, clientesRanking);
+        this.renderOrcamentoCompleto(orcamentoData);
     }
 
-    renderOrcamentoRealizado(data) {
-        const container = document.getElementById('orcamento-realizado') || this.createOrcamentoContainer();
+    calcularOrcamentoFromRankings(fornecedores, clientes) {
+        // Calcular orçamento baseado nos dados de ranking
+        const categoriasSaidas = {};
+        const categoriasEntradas = {};
+
+        // Agrupar fornecedores por categoria
+        fornecedores.forEach(f => {
+            if (!categoriasSaidas[f.categoria]) {
+                categoriasSaidas[f.categoria] = { realizado: 0, items: [] };
+            }
+            categoriasSaidas[f.categoria].realizado += f.valor;
+            categoriasSaidas[f.categoria].items.push(f);
+        });
+
+        // Agrupar clientes por categoria
+        clientes.forEach(c => {
+            if (!categoriasEntradas[c.categoria]) {
+                categoriasEntradas[c.categoria] = { realizado: 0, items: [] };
+            }
+            categoriasEntradas[c.categoria].realizado += c.valor;
+            categoriasEntradas[c.categoria].items.push(c);
+        });
+
+        // Definir orçamentos baseados no realizado com margem
+        const categoriasSaidasCompletas = Object.keys(categoriasSaidas).map(categoria => {
+            const realizado = categoriasSaidas[categoria].realizado;
+            const orcado = realizado * 1.1; // 10% de margem
+            const percentual = (realizado / orcado) * 100;
+            
+            return {
+                nome: categoria,
+                tipo: 'saida',
+                orcado: orcado,
+                realizado: realizado,
+                percentual: percentual,
+                status: percentual > 100 ? 'ultrapassado' : percentual > 90 ? 'atencao' : 'ok',
+                items: categoriasSaidas[categoria].items,
+                meta: this.getMetaPorCategoria(categoria, 'saida')
+            };
+        });
+
+        const categoriasEntradasCompletas = Object.keys(categoriasEntradas).map(categoria => {
+            const realizado = categoriasEntradas[categoria].realizado;
+            const orcado = realizado * 0.95; // Meta 5% maior que realizado
+            const percentual = (realizado / orcado) * 100;
+            
+            return {
+                nome: categoria,
+                tipo: 'entrada',
+                orcado: orcado,
+                realizado: realizado,
+                percentual: percentual,
+                status: percentual > 110 ? 'excelente' : percentual > 100 ? 'superado' : 'ok',
+                items: categoriasEntradas[categoria].items,
+                meta: this.getMetaPorCategoria(categoria, 'entrada')
+            };
+        });
+
+        return {
+            saidas: categoriasSaidasCompletas,
+            entradas: categoriasEntradasCompletas,
+            resumo: this.calcularResumoOrcamento(categoriasSaidasCompletas, categoriasEntradasCompletas),
+            projecoes: this.calcularProjecoesOrcamento(fornecedores, clientes)
+        };
+    }
+
+    getMetaPorCategoria(categoria, tipo) {
+        const metas = {
+            saida: {
+                'Fornecedores': 'Negociar melhores preços',
+                'Utilidades': 'Reduzir 10% vs mês anterior',
+                'Escritório': 'Manter gastos controlados',
+                'Serviços': 'Otimizar contratos'
+            },
+            entrada: {
+                'Consultoria': 'Aumentar ticket médio',
+                'Vendas': 'Crescer 15% ao mês',
+                'Serviços': 'Expandir carteira'
+            }
+        };
+        return metas[tipo][categoria] || `Otimizar ${categoria.toLowerCase()}`;
+    }
+
+    calcularResumoOrcamento(saidas, entradas) {
+        const totalOrcadoSaidas = saidas.reduce((acc, cat) => acc + cat.orcado, 0);
+        const totalRealizadoSaidas = saidas.reduce((acc, cat) => acc + cat.realizado, 0);
+        const totalOrcadoEntradas = entradas.reduce((acc, cat) => acc + cat.orcado, 0);
+        const totalRealizadoEntradas = entradas.reduce((acc, cat) => acc + cat.realizado, 0);
+
+        return {
+            saidas: {
+                orcado: totalOrcadoSaidas,
+                realizado: totalRealizadoSaidas,
+                percentual: (totalRealizadoSaidas / totalOrcadoSaidas) * 100,
+                economia: totalOrcadoSaidas - totalRealizadoSaidas
+            },
+            entradas: {
+                orcado: totalOrcadoEntradas,
+                realizado: totalRealizadoEntradas,
+                percentual: (totalRealizadoEntradas / totalOrcadoEntradas) * 100,
+                superacao: totalRealizadoEntradas - totalOrcadoEntradas
+            },
+            saldoLiquido: {
+                orcado: totalOrcadoEntradas - totalOrcadoSaidas,
+                realizado: totalRealizadoEntradas - totalRealizadoSaidas
+            }
+        };
+    }
+
+    calcularProjecoesOrcamento(fornecedores, clientes) {
+        // Projeções baseadas no crescimento dos rankings
+        const crescimentoMedioFornecedores = fornecedores.reduce((acc, f) => acc + f.crescimento, 0) / fornecedores.length;
+        const crescimentoMedioClientes = clientes.reduce((acc, c) => acc + c.crescimento, 0) / clientes.length;
+
+        return {
+            proximoMes: {
+                saidasProjetadas: fornecedores.reduce((acc, f) => acc + f.valor, 0) * (1 + crescimentoMedioFornecedores / 100),
+                entradasProjetadas: clientes.reduce((acc, c) => acc + c.valor, 0) * (1 + crescimentoMedioClientes / 100),
+                crescimentoSaidas: crescimentoMedioFornecedores,
+                crescimentoEntradas: crescimentoMedioClientes
+            },
+            alertas: this.gerarAlertasOrcamento(fornecedores, clientes),
+            recomendacoes: this.gerarRecomendacoesOrcamento(fornecedores, clientes)
+        };
+    }
+
+    gerarAlertasOrcamento(fornecedores, clientes) {
+        const alertas = [];
+
+        // Fornecedores com crescimento alto
+        fornecedores.forEach(f => {
+            if (f.crescimento > 10) {
+                alertas.push({
+                    tipo: 'atencao',
+                    categoria: f.categoria,
+                    fornecedor: f.nome,
+                    message: `${f.nome}: crescimento de ${f.crescimento.toFixed(1)}% pode impactar orçamento`
+                });
+            }
+        });
+
+        // Clientes com crescimento negativo
+        clientes.forEach(c => {
+            if (c.crescimento < 0) {
+                alertas.push({
+                    tipo: 'risco',
+                    categoria: c.categoria,
+                    cliente: c.nome,
+                    message: `${c.nome}: queda de ${Math.abs(c.crescimento).toFixed(1)}% nas receitas`
+                });
+            }
+        });
+
+        return alertas.slice(0, 5); // Máximo 5 alertas
+    }
+
+    gerarRecomendacoesOrcamento(fornecedores, clientes) {
+        const recomendacoes = [];
+
+        // Top fornecedor com maior crescimento
+        const fornecedorMaiorCrescimento = fornecedores.reduce((max, f) => f.crescimento > max.crescimento ? f : max);
+        if (fornecedorMaiorCrescimento.crescimento > 15) {
+            recomendacoes.push({
+                tipo: 'negociacao',
+                titulo: 'Renegociar Contrato',
+                descricao: `${fornecedorMaiorCrescimento.nome} teve crescimento de ${fornecedorMaiorCrescimento.crescimento.toFixed(1)}%. Considere renegociar preços.`,
+                impacto: fornecedorMaiorCrescimento.valor * 0.1
+            });
+        }
+
+        // Top cliente com maior crescimento
+        const clienteMaiorCrescimento = clientes.reduce((max, c) => c.crescimento > max.crescimento ? c : max);
+        if (clienteMaiorCrescimento.crescimento > 20) {
+            recomendacoes.push({
+                tipo: 'oportunidade',
+                titulo: 'Expandir Relacionamento',
+                descricao: `${clienteMaiorCrescimento.nome} cresceu ${clienteMaiorCrescimento.crescimento.toFixed(1)}%. Oportunidade para aumentar ticket médio.`,
+                impacto: clienteMaiorCrescimento.valor * 0.2
+            });
+        }
+
+        return recomendacoes;
+    }
+
+    renderOrcamentoCompleto(data) {
+        const container = document.getElementById('orcamento-content');
+        if (!container) return;
         
         container.innerHTML = `
-            <div class="orcamento-resumo">
-                <div class="orcamento-card ${data.resumo.percentualGeral > 100 ? 'ultrapassado' : data.resumo.percentualGeral > 90 ? 'atencao' : 'ok'}">
-                    <h4>📊 Resumo Geral do Orçamento</h4>
-                    <div class="orcamento-valores">
-                        <p><strong>Orçado:</strong> ${this.formatCurrency(data.resumo.totalOrcado)}</p>
-                        <p><strong>Realizado:</strong> ${this.formatCurrency(data.resumo.totalRealizado)}</p>
-                        <p><strong>Performance:</strong> ${data.resumo.percentualGeral.toFixed(1)}%</p>
-                        <p class="${data.resumo.economia > 0 ? 'economia' : 'excesso'}">
-                            <strong>${data.resumo.economia > 0 ? 'Economia' : 'Excesso'}:</strong> 
-                            ${this.formatCurrency(Math.abs(data.resumo.economia))}
-                        </p>
+            <div class="orcamento-dashboard">
+                <!-- Resumo Executivo -->
+                <div class="orcamento-resumo-executivo">
+                    <div class="resumo-card saidas">
+                        <h4>💸 Saídas (Gastos)</h4>
+                        <div class="resumo-valores">
+                            <div class="valor-principal">${this.formatCurrency(data.resumo.saidas.realizado)}</div>
+                            <div class="valor-meta">Meta: ${this.formatCurrency(data.resumo.saidas.orcado)}</div>
+                            <div class="performance ${data.resumo.saidas.percentual > 100 ? 'ruim' : 'boa'}">
+                                ${data.resumo.saidas.percentual.toFixed(1)}% da meta
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="resumo-card entradas">
+                        <h4>💰 Entradas (Receitas)</h4>
+                        <div class="resumo-valores">
+                            <div class="valor-principal">${this.formatCurrency(data.resumo.entradas.realizado)}</div>
+                            <div class="valor-meta">Meta: ${this.formatCurrency(data.resumo.entradas.orcado)}</div>
+                            <div class="performance ${data.resumo.entradas.percentual > 100 ? 'boa' : 'ruim'}">
+                                ${data.resumo.entradas.percentual.toFixed(1)}% da meta
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="resumo-card saldo">
+                        <h4>📊 Saldo Líquido</h4>
+                        <div class="resumo-valores">
+                            <div class="valor-principal ${data.resumo.saldoLiquido.realizado > 0 ? 'positivo' : 'negativo'}">
+                                ${this.formatCurrency(data.resumo.saldoLiquido.realizado)}
+                            </div>
+                            <div class="valor-meta">Meta: ${this.formatCurrency(data.resumo.saldoLiquido.orcado)}</div>
+                            <div class="performance ${data.resumo.saldoLiquido.realizado > data.resumo.saldoLiquido.orcado ? 'boa' : 'ruim'}">
+                                ${((data.resumo.saldoLiquido.realizado / data.resumo.saldoLiquido.orcado) * 100).toFixed(1)}% da meta
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="orcamento-categorias">
-                ${data.categorias.map(categoria => `
-                    <div class="categoria-orcamento ${categoria.status}">
-                        <div class="categoria-header">
-                            <h5>${categoria.nome}</h5>
-                            <span class="categoria-percentual">${categoria.percentual.toFixed(1)}%</span>
-                        </div>
-                        
-                        <div class="categoria-valores">
-                            <div class="valor-item">
-                                <span>Orçado:</span>
-                                <span>${this.formatCurrency(categoria.orcado)}</span>
+
+                <!-- Saídas por Categoria -->
+                <div class="orcamento-section">
+                    <h3>💸 Controle de Gastos por Categoria</h3>
+                    <div class="categorias-grid">
+                        ${data.saidas.map(categoria => `
+                            <div class="categoria-card ${categoria.status}">
+                                <div class="categoria-header">
+                                    <h5>${categoria.nome}</h5>
+                                    <span class="status-badge ${categoria.status}">${categoria.percentual.toFixed(1)}%</span>
+                                </div>
+                                
+                                <div class="categoria-valores">
+                                    <div class="valor-linha">
+                                        <span>Orçado:</span>
+                                        <strong>${this.formatCurrency(categoria.orcado)}</strong>
+                                    </div>
+                                    <div class="valor-linha">
+                                        <span>Realizado:</span>
+                                        <strong class="${categoria.realizado > categoria.orcado ? 'over-budget' : 'in-budget'}">
+                                            ${this.formatCurrency(categoria.realizado)}
+                                        </strong>
+                                    </div>
+                                    <div class="valor-linha diferenca">
+                                        <span>Diferença:</span>
+                                        <strong class="${categoria.realizado > categoria.orcado ? 'negativo' : 'positivo'}">
+                                            ${categoria.realizado > categoria.orcado ? '+' : ''}${this.formatCurrency(Math.abs(categoria.realizado - categoria.orcado))}
+                                        </strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="progresso-container">
+                                    <div class="progresso-bar">
+                                        <div class="progresso-fill ${categoria.status}" style="width: ${Math.min(categoria.percentual, 100)}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="categoria-detalhes">
+                                    <div class="meta-categoria">🎯 ${categoria.meta}</div>
+                                    <div class="items-categoria">
+                                        <strong>Top Fornecedores:</strong>
+                                        ${categoria.items.slice(0, 2).map(item => `
+                                            <div class="item-ranking">
+                                                ${item.nome}: ${this.formatCurrency(item.valor)}
+                                                <span class="crescimento ${item.crescimento >= 0 ? 'positivo' : 'negativo'}">
+                                                    ${item.crescimento >= 0 ? '+' : ''}${item.crescimento.toFixed(1)}%
+                                                </span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
                             </div>
-                            <div class="valor-item">
-                                <span>Realizado:</span>
-                                <span>${this.formatCurrency(categoria.realizado)}</span>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Entradas por Categoria -->
+                <div class="orcamento-section">
+                    <h3>💰 Performance de Receitas por Categoria</h3>
+                    <div class="categorias-grid">
+                        ${data.entradas.map(categoria => `
+                            <div class="categoria-card ${categoria.status}">
+                                <div class="categoria-header">
+                                    <h5>${categoria.nome}</h5>
+                                    <span class="status-badge ${categoria.status}">${categoria.percentual.toFixed(1)}%</span>
+                                </div>
+                                
+                                <div class="categoria-valores">
+                                    <div class="valor-linha">
+                                        <span>Meta:</span>
+                                        <strong>${this.formatCurrency(categoria.orcado)}</strong>
+                                    </div>
+                                    <div class="valor-linha">
+                                        <span>Realizado:</span>
+                                        <strong class="${categoria.realizado > categoria.orcado ? 'over-target' : 'under-target'}">
+                                            ${this.formatCurrency(categoria.realizado)}
+                                        </strong>
+                                    </div>
+                                    <div class="valor-linha diferenca">
+                                        <span>Superação:</span>
+                                        <strong class="${categoria.realizado > categoria.orcado ? 'positivo' : 'negativo'}">
+                                            ${categoria.realizado > categoria.orcado ? '+' : ''}${this.formatCurrency(categoria.realizado - categoria.orcado)}
+                                        </strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="progresso-container">
+                                    <div class="progresso-bar">
+                                        <div class="progresso-fill ${categoria.status}" style="width: ${Math.min(categoria.percentual, 100)}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="categoria-detalhes">
+                                    <div class="meta-categoria">🎯 ${categoria.meta}</div>
+                                    <div class="items-categoria">
+                                        <strong>Top Clientes:</strong>
+                                        ${categoria.items.slice(0, 2).map(item => `
+                                            <div class="item-ranking">
+                                                ${item.nome}: ${this.formatCurrency(item.valor)}
+                                                <span class="crescimento ${item.crescimento >= 0 ? 'positivo' : 'negativo'}">
+                                                    ${item.crescimento >= 0 ? '+' : ''}${item.crescimento.toFixed(1)}%
+                                                </span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
                             </div>
-                            <div class="valor-item diferenca">
-                                <span>Diferença:</span>
-                                <span class="${categoria.realizado > categoria.orcado ? 'negativo' : 'positivo'}">
-                                    ${categoria.realizado > categoria.orcado ? '+' : ''}${this.formatCurrency(categoria.realizado - categoria.orcado)}
-                                </span>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Projeções e Alertas -->
+                <div class="orcamento-projecoes">
+                    <div class="projecao-card">
+                        <h4>📈 Projeção Próximo Mês</h4>
+                        <div class="projecao-valores">
+                            <div class="projecao-item saidas">
+                                <span>Gastos Projetados:</span>
+                                <strong>${this.formatCurrency(data.projecoes.proximoMes.saidasProjetadas)}</strong>
+                                <small class="${data.projecoes.proximoMes.crescimentoSaidas >= 0 ? 'negativo' : 'positivo'}">
+                                    ${data.projecoes.proximoMes.crescimentoSaidas >= 0 ? '+' : ''}${data.projecoes.proximoMes.crescimentoSaidas.toFixed(1)}%
+                                </small>
                             </div>
-                        </div>
-                        
-                        <div class="progresso-bar">
-                            <div class="progresso-fill" style="width: ${Math.min(categoria.percentual, 100)}%; background-color: ${categoria.status === 'ok' ? 'var(--success-color)' : categoria.status === 'atencao' ? 'var(--warning-color)' : 'var(--danger-color)'}"></div>
-                        </div>
-                        
-                        <div class="categoria-meta">
-                            <small>🎯 Meta: ${categoria.meta}</small>
+                            <div class="projecao-item entradas">
+                                <span>Receitas Projetadas:</span>
+                                <strong>${this.formatCurrency(data.projecoes.proximoMes.entradasProjetadas)}</strong>
+                                <small class="${data.projecoes.proximoMes.crescimentoEntradas >= 0 ? 'positivo' : 'negativo'}">
+                                    ${data.projecoes.proximoMes.crescimentoEntradas >= 0 ? '+' : ''}${data.projecoes.proximoMes.crescimentoEntradas.toFixed(1)}%
+                                </small>
+                            </div>
+                            <div class="projecao-item saldo">
+                                <span>Saldo Projetado:</span>
+                                <strong class="${(data.projecoes.proximoMes.entradasProjetadas - data.projecoes.proximoMes.saidasProjetadas) > 0 ? 'positivo' : 'negativo'}">
+                                    ${this.formatCurrency(data.projecoes.proximoMes.entradasProjetadas - data.projecoes.proximoMes.saidasProjetadas)}
+                                </strong>
+                            </div>
                         </div>
                     </div>
-                `).join('')}
-            </div>
-            
-            <div class="orcamento-acoes">
-                <button class="btn btn-primary" onclick="app.editarOrcamento()">
-                    ✏️ Editar Orçamento
-                </button>
-                <button class="btn btn-secondary" onclick="app.projetarOrcamento()">
-                    📈 Projetar Próximo Mês
-                </button>
+
+                    ${data.projecoes.alertas.length > 0 ? `
+                        <div class="alertas-orcamento">
+                            <h4>⚠️ Alertas Orçamentários</h4>
+                            <div class="alertas-list">
+                                ${data.projecoes.alertas.map(alerta => `
+                                    <div class="alerta-item ${alerta.tipo}">
+                                        <span class="alerta-categoria">${alerta.categoria}</span>
+                                        <span class="alerta-message">${alerta.message}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${data.projecoes.recomendacoes.length > 0 ? `
+                        <div class="recomendacoes-orcamento">
+                            <h4>💡 Recomendações Estratégicas</h4>
+                            <div class="recomendacoes-list">
+                                ${data.projecoes.recomendacoes.map(rec => `
+                                    <div class="recomendacao-item ${rec.tipo}">
+                                        <h5>${rec.titulo}</h5>
+                                        <p>${rec.descricao}</p>
+                                        <small>💰 Impacto estimado: ${this.formatCurrency(rec.impacto)}</small>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Ações -->
+                <div class="orcamento-acoes">
+                    <button class="btn btn-primary" onclick="app.editarOrcamentoDetalhado()">
+                        ✏️ Editar Orçamento Detalhado
+                    </button>
+                    <button class="btn btn-success" onclick="app.exportarOrcamento()">
+                        📊 Exportar Relatório Orçamentário
+                    </button>
+                    <button class="btn btn-secondary" onclick="app.configurarAlertasOrcamento()">
+                        🔔 Configurar Alertas
+                    </button>
+                </div>
             </div>
         `;
     }
@@ -4436,6 +4757,330 @@ class SistemaContasApp {
         }
         
         return container;
+    }
+
+    // === ANÁLISE INTELIGENTE COMPLETA ===
+    loadAnaliseInteligente() {
+        const analiseCompleta = this.calcularAnaliseInteligente();
+        this.renderAnaliseInteligente(analiseCompleta);
+    }
+
+    calcularAnaliseInteligente() {
+        // Dados dos rankings para alimentar a IA
+        const fornecedoresData = [
+            { nome: 'ABC Materiais Ltda', valor: 8500.00, categoria: 'Fornecedores', transacoes: 12, crescimento: 8.5 },
+            { nome: 'Companhia Elétrica SP', valor: 6200.00, categoria: 'Utilidades', transacoes: 8, crescimento: 2.1 },
+            { nome: 'TechSolutions Corp', valor: 4800.00, categoria: 'Serviços', transacoes: 6, crescimento: 15.3 },
+            { nome: 'Office Supply Co', valor: 3200.00, categoria: 'Escritório', transacoes: 15, crescimento: -8.2 },
+            { nome: 'Clean Services Ltda', valor: 2800.00, categoria: 'Serviços', transacoes: 4, crescimento: 5.7 }
+        ];
+
+        const clientesData = [
+            { nome: 'XYZ Consultoria Ltda', valor: 15000.00, categoria: 'Consultoria', transacoes: 6, crescimento: 12.4 },
+            { nome: 'Comércio ABC Ltda', valor: 12500.00, categoria: 'Vendas', transacoes: 10, crescimento: 6.8 },
+            { nome: 'Digital Solutions Inc', valor: 9800.00, categoria: 'Serviços', transacoes: 8, crescimento: 18.2 },
+            { nome: 'Retail Group SA', valor: 7500.00, categoria: 'Vendas', transacoes: 12, crescimento: -3.1 },
+            { nome: 'Startup Tech Ltda', valor: 5200.00, categoria: 'Consultoria', transacoes: 4, crescimento: 25.6 }
+        ];
+
+        return {
+            fluxoCaixaInteligente: this.calcularFluxoCaixaInteligente(),
+            analiseComportamental: this.analisarComportamentoTransacional(fornecedoresData, clientesData),
+            previsoesMachineLearning: this.calcularPrevisoesMachineLearning(fornecedoresData, clientesData),
+            otimizacaoAutomatica: this.sugerirOtimizacoes(fornecedoresData, clientesData),
+            alertasInteligentes: this.gerarAlertasInteligentes(fornecedoresData, clientesData),
+            recomendacoesStrategicas: this.gerarRecomendacoesIA(fornecedoresData, clientesData)
+        };
+    }
+
+    analisarComportamentoTransacional(fornecedores, clientes) {
+        // Análise de padrões comportamentais
+        const padroesFornecedores = {
+            frecuenciaMedia: fornecedores.reduce((acc, f) => acc + f.transacoes, 0) / fornecedores.length,
+            ticketMedio: fornecedores.reduce((acc, f) => acc + (f.valor / f.transacoes), 0) / fornecedores.length,
+            crescimentoMedio: fornecedores.reduce((acc, f) => acc + f.crescimento, 0) / fornecedores.length,
+            volatilidade: this.calcularVolatilidadeCrescimento(fornecedores),
+            fornecedorMaisEstavel: fornecedores.reduce((min, f) => Math.abs(f.crescimento) < Math.abs(min.crescimento) ? f : min),
+            fornecedorMaisVolatil: fornecedores.reduce((max, f) => Math.abs(f.crescimento) > Math.abs(max.crescimento) ? f : max)
+        };
+
+        const padroesClientes = {
+            frecuenciaMedia: clientes.reduce((acc, c) => acc + c.transacoes, 0) / clientes.length,
+            ticketMedio: clientes.reduce((acc, c) => acc + (c.valor / c.transacoes), 0) / clientes.length,
+            crescimentoMedio: clientes.reduce((acc, c) => acc + c.crescimento, 0) / clientes.length,
+            volatilidade: this.calcularVolatilidadeCrescimento(clientes),
+            clienteMaisEstavel: clientes.reduce((min, c) => Math.abs(c.crescimento) < Math.abs(min.crescimento) ? c : min),
+            clienteMaisVolatil: clientes.reduce((max, c) => Math.abs(c.crescimento) > Math.abs(max.crescimento) ? c : max)
+        };
+
+        return {
+            fornecedores: padroesFornecedores,
+            clientes: padroesClientes,
+            insights: this.gerarInsightComportamentais(padroesFornecedores, padroesClientes)
+        };
+    }
+
+    calcularVolatilidadeCrescimento(dados) {
+        const crescimentos = dados.map(d => d.crescimento);
+        const media = crescimentos.reduce((acc, c) => acc + c, 0) / crescimentos.length;
+        const variancia = crescimentos.reduce((acc, c) => acc + Math.pow(c - media, 2), 0) / crescimentos.length;
+        return Math.sqrt(variancia);
+    }
+
+    gerarInsightComportamentais(fornecedores, clientes) {
+        const insights = [];
+
+        if (fornecedores.volatilidade > 10) {
+            insights.push({
+                tipo: 'risco',
+                categoria: 'Fornecedores',
+                insight: `Alta volatilidade nos gastos (${fornecedores.volatilidade.toFixed(1)}%). Revisar contratos para maior previsibilidade.`
+            });
+        }
+
+        if (clientes.crescimentoMedio > 15) {
+            insights.push({
+                tipo: 'oportunidade',
+                categoria: 'Clientes',
+                insight: `Crescimento médio de ${clientes.crescimentoMedio.toFixed(1)}% indica tendência positiva. Momento para expandir relacionamentos.`
+            });
+        }
+
+        if (fornecedores.ticketMedio > clientes.ticketMedio) {
+            insights.push({
+                tipo: 'alerta',
+                categoria: 'Eficiência',
+                insight: `Ticket médio de gastos (${this.formatCurrency(fornecedores.ticketMedio)}) superior ao de receitas (${this.formatCurrency(clientes.ticketMedio)}). Analisar rentabilidade.`
+            });
+        }
+
+        return insights;
+    }
+
+    calcularPrevisoesMachineLearning(fornecedores, clientes) {
+        // Simulação de algoritmo de Machine Learning
+        const historicoMeses = [
+            { mes: 'Jan', entradas: 42000, saidas: 35000 },
+            { mes: 'Fev', entradas: 38000, saidas: 32000 },
+            { mes: 'Mar', entradas: 45000, saidas: 38000 },
+            { mes: 'Abr', entradas: 48000, saidas: 40000 },
+            { mes: 'Mai', entradas: 44000, saidas: 37000 },
+            { mes: 'Jun', entradas: 52000, saidas: 42000 }
+        ];
+
+        // Algoritmo de regressão linear simples
+        const tendenciaEntradas = this.calcularTendenciaLinear(historicoMeses.map(h => h.entradas));
+        const tendenciaSaidas = this.calcularTendenciaLinear(historicoMeses.map(h => h.saidas));
+
+        // Projeções para próximos 6 meses
+        const projecoes = [];
+        for (let i = 1; i <= 6; i++) {
+            const entradaProjetada = tendenciaEntradas.intercept + (tendenciaEntradas.slope * (historicoMeses.length + i));
+            const saidaProjetada = tendenciaSaidas.intercept + (tendenciaSaidas.slope * (historicoMeses.length + i));
+            
+            projecoes.push({
+                mes: this.getProximoMes(i),
+                entradaProjetada: Math.max(0, entradaProjetada),
+                saidaProjetada: Math.max(0, saidaProjetada),
+                saldoProjetado: entradaProjetada - saidaProjetada,
+                confianca: Math.max(60, 95 - (i * 5)) // Confiança diminui com o tempo
+            });
+        }
+
+        return {
+            historico: historicoMeses,
+            tendencias: { entradas: tendenciaEntradas, saidas: tendenciaSaidas },
+            projecoes: projecoes,
+            cenarios: this.calcularCenarios(projecoes),
+            recomendacaoIA: this.gerarRecomendacaoIA(projecoes)
+        };
+    }
+
+    calcularTendenciaLinear(valores) {
+        const n = valores.length;
+        const x = Array.from({length: n}, (_, i) => i + 1);
+        
+        const somaX = x.reduce((acc, val) => acc + val, 0);
+        const somaY = valores.reduce((acc, val) => acc + val, 0);
+        const somaXY = x.reduce((acc, val, i) => acc + val * valores[i], 0);
+        const somaX2 = x.reduce((acc, val) => acc + val * val, 0);
+        
+        const slope = (n * somaXY - somaX * somaY) / (n * somaX2 - somaX * somaX);
+        const intercept = (somaY - slope * somaX) / n;
+        
+        return { slope, intercept };
+    }
+
+    getProximoMes(offset) {
+        const meses = ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
+        const mesAtual = new Date().getMonth() + 6; // Assumindo que estamos em junho
+        return meses[(mesAtual + offset) % 12];
+    }
+
+    calcularCenarios(projecoes) {
+        return {
+            otimista: projecoes.map(p => ({
+                ...p,
+                entradaProjetada: p.entradaProjetada * 1.2,
+                saidaProjetada: p.saidaProjetada * 0.9,
+                cenario: 'otimista'
+            })),
+            conservador: projecoes.map(p => ({
+                ...p,
+                entradaProjetada: p.entradaProjetada * 0.9,
+                saidaProjetada: p.saidaProjetada * 1.1,
+                cenario: 'conservador'
+            })),
+            pessimista: projecoes.map(p => ({
+                ...p,
+                entradaProjetada: p.entradaProjetada * 0.8,
+                saidaProjetada: p.saidaProjetada * 1.2,
+                cenario: 'pessimista'
+            }))
+        };
+    }
+
+    gerarRecomendacaoIA(projecoes) {
+        const saldoMedio = projecoes.reduce((acc, p) => acc + p.saldoProjetado, 0) / projecoes.length;
+        const tendencia = projecoes[5].saldoProjetado > projecoes[0].saldoProjetado ? 'crescente' : 'decrescente';
+        
+        if (saldoMedio > 10000 && tendencia === 'crescente') {
+            return {
+                tipo: 'investimento',
+                recomendacao: 'Cenário favorável para investimentos em expansão e novos projetos',
+                confianca: 85
+            };
+        } else if (saldoMedio < 0) {
+            return {
+                tipo: 'urgente',
+                recomendacao: 'Ações imediatas necessárias: revisar gastos e acelerar recebimentos',
+                confianca: 90
+            };
+        } else {
+            return {
+                tipo: 'monitoramento',
+                recomendacao: 'Manter monitoramento próximo e aplicar otimizações graduais',
+                confianca: 75
+            };
+        }
+    }
+
+    sugerirOtimizacoes(fornecedores, clientes) {
+        const otimizacoes = [];
+
+        // Otimizações baseadas em fornecedores
+        const fornecedorMaiorVolume = fornecedores.reduce((max, f) => f.valor > max.valor ? f : max);
+        otimizacoes.push({
+            tipo: 'negociacao',
+            categoria: 'Fornecedores',
+            alvo: fornecedorMaiorVolume.nome,
+            acao: 'Renegociar condições de pagamento',
+            impactoEstimado: fornecedorMaiorVolume.valor * 0.05,
+            prazo: '30 dias',
+            prioridade: 'alta'
+        });
+
+        // Otimizações baseadas em clientes
+        const clienteMaiorPotencial = clientes.reduce((max, c) => c.crescimento > max.crescimento ? c : max);
+        otimizacoes.push({
+            tipo: 'expansao',
+            categoria: 'Clientes',
+            alvo: clienteMaiorPotencial.nome,
+            acao: 'Propor aumento de escopo/serviços',
+            impactoEstimado: clienteMaiorPotencial.valor * 0.3,
+            prazo: '60 dias',
+            prioridade: 'media'
+        });
+
+        // Otimização de frequência
+        const fornecedorMaisFrequente = fornecedores.reduce((max, f) => f.transacoes > max.transacoes ? f : max);
+        otimizacoes.push({
+            tipo: 'automacao',
+            categoria: 'Processos',
+            alvo: fornecedorMaisFrequente.nome,
+            acao: 'Automatizar processo de compras recorrentes',
+            impactoEstimado: 1200, // Economia em tempo/custo administrativo
+            prazo: '45 dias',
+            prioridade: 'baixa'
+        });
+
+        return otimizacoes;
+    }
+
+    gerarAlertasInteligentes(fornecedores, clientes) {
+        const alertas = [];
+
+        // Alertas baseados em padrões anômalos
+        fornecedores.forEach(f => {
+            if (f.crescimento > 20) {
+                alertas.push({
+                    tipo: 'anomalia',
+                    urgencia: 'alta',
+                    entidade: f.nome,
+                    categoria: f.categoria,
+                    problema: `Crescimento anômalo de ${f.crescimento.toFixed(1)}%`,
+                    acao: 'Investigar causa e renegociar se necessário'
+                });
+            }
+        });
+
+        clientes.forEach(c => {
+            if (c.crescimento < -10) {
+                alertas.push({
+                    tipo: 'risco',
+                    urgencia: 'media',
+                    entidade: c.nome,
+                    categoria: c.categoria,
+                    problema: `Queda de ${Math.abs(c.crescimento).toFixed(1)}% nas receitas`,
+                    acao: 'Contato comercial para entender motivos'
+                });
+            }
+        });
+
+        return alertas;
+    }
+
+    gerarRecomendacoesIA(fornecedores, clientes) {
+        const recomendacoes = [];
+
+        // Análise de concentração de risco
+        const totalFornecedores = fornecedores.reduce((acc, f) => acc + f.valor, 0);
+        const maiorFornecedor = fornecedores.reduce((max, f) => f.valor > max.valor ? f : max);
+        const concentracao = (maiorFornecedor.valor / totalFornecedores) * 100;
+
+        if (concentracao > 30) {
+            recomendacoes.push({
+                tipo: 'diversificacao',
+                titulo: 'Diversificar Base de Fornecedores',
+                descricao: `${maiorFornecedor.nome} representa ${concentracao.toFixed(1)}% dos gastos. Risco de concentração alto.`,
+                impacto: 'Alto',
+                prazo: '90 dias',
+                acoes: [
+                    'Identificar fornecedores alternativos',
+                    'Dividir compras entre múltiplos fornecedores',
+                    'Renegociar dependência atual'
+                ]
+            });
+        }
+
+        // Análise de oportunidades de crescimento
+        const clienteAltoGrowth = clientes.filter(c => c.crescimento > 15);
+        if (clienteAltoGrowth.length > 0) {
+            recomendacoes.push({
+                tipo: 'crescimento',
+                titulo: 'Aproveitar Clientes em Crescimento',
+                descricao: `${clienteAltoGrowth.length} cliente(s) com crescimento >15%. Oportunidade de expansão.`,
+                impacto: 'Alto',
+                prazo: '60 dias',
+                acoes: [
+                    'Propor serviços adicionais',
+                    'Aumentar ticket médio',
+                    'Estabelecer parcerias estratégicas'
+                ]
+            });
+        }
+
+        return recomendacoes;
     }
 
     // === FASE 3: FLUXO DE CAIXA INTELIGENTE ===
@@ -4991,6 +5636,405 @@ class SistemaContasApp {
         `;
     }
 
+    renderAnaliseInteligente(data) {
+        const container = document.getElementById('inteligente-content');
+        if (!container) return;
+        
+        container.innerHTML = `
+            <div class="inteligente-dashboard">
+                <!-- Resumo Executivo IA -->
+                <div class="ia-resumo-executivo">
+                    <div class="ia-card principal">
+                        <div class="ia-header">
+                            <h4>🧠 Análise Inteligente - Resumo Executivo</h4>
+                            <span class="ia-status ativa">IA Ativa</span>
+                        </div>
+                        <div class="ia-insights">
+                            <div class="insight-item">
+                                <strong>Recomendação Principal:</strong>
+                                ${data.previsoesMachineLearning.recomendacaoIA.recomendacao}
+                                <span class="confianca">${data.previsoesMachineLearning.recomendacaoIA.confianca}% confiança</span>
+                            </div>
+                            <div class="insight-item">
+                                <strong>Tendência de Mercado:</strong>
+                                ${data.analiseComportamental.clientes.crescimentoMedio > 0 ? 'Expansão' : 'Contração'} 
+                                (${data.analiseComportamental.clientes.crescimentoMedio.toFixed(1)}% médio)
+                            </div>
+                            <div class="insight-item">
+                                <strong>Risco Operacional:</strong>
+                                ${data.analiseComportamental.fornecedores.volatilidade > 10 ? 'Alto' : 'Baixo'}
+                                (Volatilidade: ${data.analiseComportamental.fornecedores.volatilidade.toFixed(1)}%)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Machine Learning Predictions -->
+                <div class="ia-section">
+                    <h3>🤖 Previsões Machine Learning - Próximos 6 Meses</h3>
+                    <div class="ml-previsoes">
+                        <div class="cenarios-tabs">
+                            <button class="cenario-tab active" data-cenario="base">📊 Cenário Base</button>
+                            <button class="cenario-tab" data-cenario="otimista">📈 Otimista (+20%)</button>
+                            <button class="cenario-tab" data-cenario="conservador">📉 Conservador (-10%)</button>
+                            <button class="cenario-tab" data-cenario="pessimista">⚠️ Pessimista (-20%)</button>
+                        </div>
+                        
+                        <div class="previsoes-grid" id="previsoes-container">
+                            ${data.previsoesMachineLearning.projecoes.map((p, index) => `
+                                <div class="previsao-card ${index < 2 ? 'alta-confianca' : index < 4 ? 'media-confianca' : 'baixa-confianca'}">
+                                    <div class="previsao-mes">${p.mes}</div>
+                                    <div class="previsao-valores">
+                                        <div class="valor-entrada">
+                                            <span>Entradas:</span>
+                                            <strong class="positivo">${this.formatCurrency(p.entradaProjetada)}</strong>
+                                        </div>
+                                        <div class="valor-saida">
+                                            <span>Saídas:</span>
+                                            <strong class="negativo">${this.formatCurrency(p.saidaProjetada)}</strong>
+                                        </div>
+                                        <div class="valor-saldo">
+                                            <span>Saldo:</span>
+                                            <strong class="${p.saldoProjetado > 0 ? 'positivo' : 'negativo'}">
+                                                ${this.formatCurrency(p.saldoProjetado)}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                    <div class="confianca-ia">
+                                        <div class="confianca-bar">
+                                            <div class="confianca-fill" style="width: ${p.confianca}%"></div>
+                                        </div>
+                                        <span>${p.confianca}% confiança</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análise Comportamental -->
+                <div class="ia-section">
+                    <h3>📊 Análise Comportamental Transacional</h3>
+                    <div class="comportamental-grid">
+                        <div class="comportamento-card fornecedores">
+                            <h4>💸 Padrão de Gastos</h4>
+                            <div class="comportamento-metricas">
+                                <div class="metrica">
+                                    <span>Frequência Média:</span>
+                                    <strong>${data.analiseComportamental.fornecedores.frecuenciaMedia.toFixed(1)} transações/mês</strong>
+                                </div>
+                                <div class="metrica">
+                                    <span>Ticket Médio:</span>
+                                    <strong>${this.formatCurrency(data.analiseComportamental.fornecedores.ticketMedio)}</strong>
+                                </div>
+                                <div class="metrica">
+                                    <span>Crescimento Médio:</span>
+                                    <strong class="${data.analiseComportamental.fornecedores.crescimentoMedio >= 0 ? 'negativo' : 'positivo'}">
+                                        ${data.analiseComportamental.fornecedores.crescimentoMedio.toFixed(1)}%
+                                    </strong>
+                                </div>
+                                <div class="metrica">
+                                    <span>Volatilidade:</span>
+                                    <strong class="${data.analiseComportamental.fornecedores.volatilidade > 10 ? 'alta' : 'baixa'}">
+                                        ${data.analiseComportamental.fornecedores.volatilidade.toFixed(1)}%
+                                    </strong>
+                                </div>
+                            </div>
+                            <div class="extremos">
+                                <div class="extremo estavel">
+                                    <span>➕ Mais Estável:</span>
+                                    <strong>${data.analiseComportamental.fornecedores.fornecedorMaisEstavel.nome}</strong>
+                                    <small>${data.analiseComportamental.fornecedores.fornecedorMaisEstavel.crescimento.toFixed(1)}%</small>
+                                </div>
+                                <div class="extremo volatil">
+                                    <span>⚠️ Mais Volátil:</span>
+                                    <strong>${data.analiseComportamental.fornecedores.fornecedorMaisVolatil.nome}</strong>
+                                    <small>${data.analiseComportamental.fornecedores.fornecedorMaisVolatil.crescimento.toFixed(1)}%</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="comportamento-card clientes">
+                            <h4>💰 Padrão de Receitas</h4>
+                            <div class="comportamento-metricas">
+                                <div class="metrica">
+                                    <span>Frequência Média:</span>
+                                    <strong>${data.analiseComportamental.clientes.frecuenciaMedia.toFixed(1)} transações/mês</strong>
+                                </div>
+                                <div class="metrica">
+                                    <span>Ticket Médio:</span>
+                                    <strong>${this.formatCurrency(data.analiseComportamental.clientes.ticketMedio)}</strong>
+                                </div>
+                                <div class="metrica">
+                                    <span>Crescimento Médio:</span>
+                                    <strong class="${data.analiseComportamental.clientes.crescimentoMedio >= 0 ? 'positivo' : 'negativo'}">
+                                        ${data.analiseComportamental.clientes.crescimentoMedio.toFixed(1)}%
+                                    </strong>
+                                </div>
+                                <div class="metrica">
+                                    <span>Volatilidade:</span>
+                                    <strong class="${data.analiseComportamental.clientes.volatilidade > 10 ? 'alta' : 'baixa'}">
+                                        ${data.analiseComportamental.clientes.volatilidade.toFixed(1)}%
+                                    </strong>
+                                </div>
+                            </div>
+                            <div class="extremos">
+                                <div class="extremo estavel">
+                                    <span>➕ Mais Estável:</span>
+                                    <strong>${data.analiseComportamental.clientes.clienteMaisEstavel.nome}</strong>
+                                    <small>${data.analiseComportamental.clientes.clienteMaisEstavel.crescimento.toFixed(1)}%</small>
+                                </div>
+                                <div class="extremo volatil">
+                                    <span>📈 Maior Crescimento:</span>
+                                    <strong>${data.analiseComportamental.clientes.clienteMaisVolatil.nome}</strong>
+                                    <small>+${data.analiseComportamental.clientes.clienteMaisVolatil.crescimento.toFixed(1)}%</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Insights Comportamentais -->
+                    ${data.analiseComportamental.insights.length > 0 ? `
+                        <div class="insights-comportamentais">
+                            <h4>🔍 Insights Descobertos pela IA</h4>
+                            <div class="insights-list">
+                                ${data.analiseComportamental.insights.map(insight => `
+                                    <div class="insight-card ${insight.tipo}">
+                                        <div class="insight-header">
+                                            <span class="insight-tipo">${insight.categoria}</span>
+                                            <span class="insight-tag ${insight.tipo}">${insight.tipo.toUpperCase()}</span>
+                                        </div>
+                                        <p>${insight.insight}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Otimizações Automáticas -->
+                <div class="ia-section">
+                    <h3>⚡ Otimizações Inteligentes Sugeridas</h3>
+                    <div class="otimizacoes-grid">
+                        ${data.otimizacaoAutomatica.map(opt => `
+                            <div class="otimizacao-card prioridade-${opt.prioridade}">
+                                <div class="otimizacao-header">
+                                    <h5>${opt.acao}</h5>
+                                    <span class="prioridade-badge ${opt.prioridade}">${opt.prioridade.toUpperCase()}</span>
+                                </div>
+                                <div class="otimizacao-detalhes">
+                                    <div class="detalhe-item">
+                                        <span>🎯 Alvo:</span>
+                                        <strong>${opt.alvo}</strong>
+                                    </div>
+                                    <div class="detalhe-item">
+                                        <span>📈 Impacto:</span>
+                                        <strong class="positivo">${this.formatCurrency(opt.impactoEstimado)}</strong>
+                                    </div>
+                                    <div class="detalhe-item">
+                                        <span>⏱️ Prazo:</span>
+                                        <strong>${opt.prazo}</strong>
+                                    </div>
+                                    <div class="detalhe-item">
+                                        <span>📋 Categoria:</span>
+                                        <strong>${opt.categoria}</strong>
+                                    </div>
+                                </div>
+                                <div class="otimizacao-acoes">
+                                    <button class="btn btn-sm btn-primary" onclick="app.executarOtimizacao('${opt.tipo}', '${opt.alvo}')">
+                                        ⚡ Executar
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" onclick="app.agendarOtimizacao('${opt.tipo}', '${opt.alvo}')">
+                                        📅 Agendar
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Alertas Inteligentes -->
+                ${data.alertasInteligentes.length > 0 ? `
+                    <div class="ia-section">
+                        <h3>🚨 Alertas Inteligentes</h3>
+                        <div class="alertas-inteligentes">
+                            ${data.alertasInteligentes.map(alerta => `
+                                <div class="alerta-inteligente ${alerta.urgencia}">
+                                    <div class="alerta-header">
+                                        <span class="alerta-tipo">${alerta.tipo.toUpperCase()}</span>
+                                        <span class="urgencia-badge ${alerta.urgencia}">${alerta.urgencia.toUpperCase()}</span>
+                                    </div>
+                                    <div class="alerta-content">
+                                        <strong>${alerta.entidade}</strong> - ${alerta.categoria}
+                                        <p>${alerta.problema}</p>
+                                        <div class="acao-sugerida">
+                                            <strong>Ação:</strong> ${alerta.acao}
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Recomendações Estratégicas IA -->
+                ${data.recomendacoesStrategicas.length > 0 ? `
+                    <div class="ia-section">
+                        <h3>🎯 Recomendações Estratégicas IA</h3>
+                        <div class="recomendacoes-estrategicas">
+                            ${data.recomendacoesStrategicas.map(rec => `
+                                <div class="recomendacao-estrategica ${rec.tipo}">
+                                    <div class="rec-header">
+                                        <h4>${rec.titulo}</h4>
+                                        <div class="rec-badges">
+                                            <span class="impacto-badge ${rec.impacto.toLowerCase()}">${rec.impacto} Impacto</span>
+                                            <span class="prazo-badge">${rec.prazo}</span>
+                                        </div>
+                                    </div>
+                                    <p class="rec-descricao">${rec.descricao}</p>
+                                    <div class="rec-acoes-lista">
+                                        <strong>Ações Recomendadas:</strong>
+                                        <ul>
+                                            ${rec.acoes.map(acao => `<li>${acao}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    <div class="rec-botoes">
+                                        <button class="btn btn-primary" onclick="app.implementarRecomendacao('${rec.tipo}')">
+                                            🚀 Implementar
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="app.estudarRecomendacao('${rec.tipo}')">
+                                            📊 Estudar Impacto
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Fluxo de Caixa Inteligente (Integrado) -->
+                <div class="ia-section">
+                    <h3>💰 Fluxo de Caixa Inteligente</h3>
+                    <div id="fluxo-caixa-ia-container">
+                        <!-- Container será preenchido pela função existente -->
+                    </div>
+                </div>
+
+                <!-- Centro de Controle IA -->
+                <div class="ia-centro-controle">
+                    <h3>🎛️ Centro de Controle IA</h3>
+                    <div class="controle-grid">
+                        <button class="btn-controle principal" onclick="app.executarAnaliseCompleta()">
+                            🔄 Executar Análise Completa
+                        </button>
+                        <button class="btn-controle" onclick="app.configurarIA()">
+                            ⚙️ Configurar IA
+                        </button>
+                        <button class="btn-controle" onclick="app.exportarAnaliseIA()">
+                            📊 Exportar Análise IA
+                        </button>
+                        <button class="btn-controle" onclick="app.agendarAnaliseAutomatica()">
+                            ⏰ Análise Automática
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Configurar tabs de cenários
+        this.setupCenariosIA(data);
+        
+        // Renderizar fluxo de caixa integrado
+        const fluxoContainer = document.getElementById('fluxo-caixa-ia-container');
+        if (fluxoContainer) {
+            const fluxoInteligente = this.calcularFluxoCaixaInteligente();
+            fluxoContainer.innerHTML = this.renderFluxoCaixaInteligenteSimplificado(fluxoInteligente);
+        }
+    }
+
+    setupCenariosIA(data) {
+        const tabBtns = document.querySelectorAll('.cenario-tab');
+        const container = document.getElementById('previsoes-container');
+        
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active de todos
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const cenario = btn.dataset.cenario;
+                let dadosCenario = data.previsoesMachineLearning.projecoes;
+                
+                if (cenario !== 'base') {
+                    dadosCenario = data.previsoesMachineLearning.cenarios[cenario];
+                }
+                
+                // Atualizar container com dados do cenário selecionado
+                container.innerHTML = dadosCenario.map((p, index) => `
+                    <div class="previsao-card ${index < 2 ? 'alta-confianca' : index < 4 ? 'media-confianca' : 'baixa-confianca'}">
+                        <div class="previsao-mes">${p.mes}</div>
+                        <div class="previsao-valores">
+                            <div class="valor-entrada">
+                                <span>Entradas:</span>
+                                <strong class="positivo">${this.formatCurrency(p.entradaProjetada)}</strong>
+                            </div>
+                            <div class="valor-saida">
+                                <span>Saídas:</span>
+                                <strong class="negativo">${this.formatCurrency(p.saidaProjetada)}</strong>
+                            </div>
+                            <div class="valor-saldo">
+                                <span>Saldo:</span>
+                                <strong class="${(p.entradaProjetada - p.saidaProjetada) > 0 ? 'positivo' : 'negativo'}">
+                                    ${this.formatCurrency(p.entradaProjetada - p.saidaProjetada)}
+                                </strong>
+                            </div>
+                        </div>
+                        <div class="confianca-ia">
+                            <div class="confianca-bar">
+                                <div class="confianca-fill" style="width: ${p.confianca || 85}%"></div>
+                            </div>
+                            <span>${p.confianca || 85}% confiança</span>
+                            ${cenario !== 'base' ? `<small class="cenario-label">${cenario}</small>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            });
+        });
+    }
+
+    renderFluxoCaixaInteligenteSimplificado(fluxoData) {
+        return `
+            <div class="fluxo-ia-resumo">
+                <div class="fluxo-card">
+                    <h5>💰 Saldo Atual</h5>
+                    <div class="valor-principal">${this.formatCurrency(fluxoData.saldoAtual)}</div>
+                </div>
+                <div class="fluxo-card">
+                    <h5>📊 Menor Saldo (30 dias)</h5>
+                    <div class="valor-principal ${Math.min(...fluxoData.proximosDias.map(d => d.saldoAcumulado)) > 0 ? 'positivo' : 'negativo'}">
+                        ${this.formatCurrency(Math.min(...fluxoData.proximosDias.map(d => d.saldoAcumulado)))}
+                    </div>
+                </div>
+                <div class="fluxo-card">
+                    <h5>🎯 Projeção (30 dias)</h5>
+                    <div class="valor-principal ${fluxoData.proximosDias[29].saldoAcumulado > 0 ? 'positivo' : 'negativo'}">
+                        ${this.formatCurrency(fluxoData.proximosDias[29].saldoAcumulado)}
+                    </div>
+                </div>
+            </div>
+            ${fluxoData.recomendacoes.length > 0 ? `
+                <div class="fluxo-recomendacoes-rapidas">
+                    <strong>💡 Recomendações Rápidas:</strong>
+                    ${fluxoData.recomendacoes.slice(0, 2).map(rec => `
+                        <div class="rec-rapida ${rec.tipo}">
+                            ${rec.descricao}
+                        </div>
+                    `).join('')}
+                </div>
+            ` : ''}
+        `;
+    }
+
     createInadimplenciaContainer() {
         const container = document.createElement('div');
         container.id = 'analise-inadimplencia';
@@ -5093,6 +6137,233 @@ class SistemaContasApp {
 
     async executarAcao(tituloAcao) {
         this.showInfo(`Executando ação: ${tituloAcao}`);
+    }
+
+    // === MÉTODOS PARA ORÇAMENTO ===
+    async editarOrcamentoDetalhado() {
+        this.showInfo('Editor de orçamento detalhado será implementado em breve');
+    }
+
+    async exportarOrcamento() {
+        this.showInfo('Exportando relatório orçamentário...');
+        // Simular exportação
+        setTimeout(() => {
+            this.showSuccess('Relatório orçamentário exportado com sucesso!');
+        }, 2000);
+    }
+
+    async configurarAlertasOrcamento() {
+        const result = await Swal.fire({
+            title: 'Configurar Alertas de Orçamento',
+            html: `
+                <div class="swal-form">
+                    <div class="swal-form-group">
+                        <label>Limite de alerta (%)</label>
+                        <input id="limite-alerta" type="number" value="90" min="50" max="100" class="swal2-input">
+                    </div>
+                    <div class="swal-form-group">
+                        <label>Notificação por email</label>
+                        <select id="email-alerta" class="swal2-input">
+                            <option value="diario">Diário</option>
+                            <option value="semanal" selected>Semanal</option>
+                            <option value="mensal">Mensal</option>
+                        </select>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Salvar Configurações',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
+
+        if (result.isConfirmed) {
+            this.showSuccess('Alertas de orçamento configurados com sucesso!');
+        }
+    }
+
+    // === MÉTODOS PARA IA ===
+    async executarOtimizacao(tipo, alvo) {
+        this.showInfo(`Executando otimização ${tipo} para ${alvo}...`);
+        
+        // Simular execução
+        setTimeout(() => {
+            this.showSuccess(`Otimização ${tipo} iniciada para ${alvo}!`);
+        }, 1500);
+    }
+
+    async agendarOtimizacao(tipo, alvo) {
+        const result = await Swal.fire({
+            title: `Agendar Otimização - ${alvo}`,
+            html: `
+                <div class="swal-form">
+                    <div class="swal-form-group">
+                        <label>Data para execução:</label>
+                        <input id="data-otimizacao" type="date" class="swal2-input" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div class="swal-form-group">
+                        <label>Observações:</label>
+                        <textarea id="obs-otimizacao" class="swal2-textarea" placeholder="Adicione observações sobre a otimização..."></textarea>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Agendar',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
+
+        if (result.isConfirmed) {
+            this.showSuccess(`Otimização ${tipo} agendada para ${alvo}!`);
+        }
+    }
+
+    async implementarRecomendacao(tipo) {
+        this.showInfo(`Implementando recomendação ${tipo}...`);
+        
+        // Simular implementação
+        setTimeout(() => {
+            this.showSuccess(`Recomendação ${tipo} implementada com sucesso!`);
+        }, 2000);
+    }
+
+    async estudarRecomendacao(tipo) {
+        await Swal.fire({
+            title: `Estudo de Impacto - ${tipo}`,
+            html: `
+                <div class="estudo-impacto">
+                    <h4>📊 Análise de Viabilidade</h4>
+                    <div class="impacto-grid">
+                        <div class="impacto-item positivo">
+                            <strong>Benefícios Esperados:</strong>
+                            <ul>
+                                <li>Redução de custos operacionais</li>
+                                <li>Melhoria na eficiência</li>
+                                <li>Maior previsibilidade financeira</li>
+                            </ul>
+                        </div>
+                        <div class="impacto-item neutro">
+                            <strong>Recursos Necessários:</strong>
+                            <ul>
+                                <li>Tempo de implementação: 30-60 dias</li>
+                                <li>Equipe: 2-3 pessoas</li>
+                                <li>Orçamento: R$ 5.000 - R$ 15.000</li>
+                            </ul>
+                        </div>
+                        <div class="impacto-item negativo">
+                            <strong>Riscos Identificados:</strong>
+                            <ul>
+                                <li>Resistência à mudança</li>
+                                <li>Período de adaptação</li>
+                                <li>Custos iniciais de transição</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `,
+            width: '80%',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            confirmButtonText: 'Fechar Estudo'
+        });
+    }
+
+    async executarAnaliseCompleta() {
+        this.showInfo('Executando análise completa da IA...');
+        
+        // Simular análise completa
+        setTimeout(() => {
+            this.showSuccess('Análise completa finalizada! Novos insights disponíveis.');
+            // Recarregar dados da aba inteligente
+            this.loadAnaliseInteligente();
+        }, 3000);
+    }
+
+    async configurarIA() {
+        const result = await Swal.fire({
+            title: 'Configurações da IA',
+            html: `
+                <div class="swal-form">
+                    <div class="swal-form-group">
+                        <label>Frequência de análise automática:</label>
+                        <select id="freq-ia" class="swal2-input">
+                            <option value="diario">Diário</option>
+                            <option value="semanal" selected>Semanal</option>
+                            <option value="mensal">Mensal</option>
+                        </select>
+                    </div>
+                    <div class="swal-form-group">
+                        <label>Nível de sensibilidade dos alertas:</label>
+                        <select id="sensibilidade-ia" class="swal2-input">
+                            <option value="baixa">Baixa</option>
+                            <option value="media" selected>Média</option>
+                            <option value="alta">Alta</option>
+                        </select>
+                    </div>
+                    <div class="swal-form-group">
+                        <label>
+                            <input type="checkbox" id="auto-otimizacao" checked>
+                            Permitir otimizações automáticas
+                        </label>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Salvar Configurações',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
+
+        if (result.isConfirmed) {
+            this.showSuccess('Configurações da IA atualizadas com sucesso!');
+        }
+    }
+
+    async exportarAnaliseIA() {
+        this.showInfo('Gerando relatório completo da análise IA...');
+        
+        // Simular exportação
+        setTimeout(() => {
+            this.showSuccess('Relatório de análise IA exportado com sucesso!');
+        }, 2500);
+    }
+
+    async agendarAnaliseAutomatica() {
+        const result = await Swal.fire({
+            title: 'Análise Automática IA',
+            html: `
+                <div class="swal-form">
+                    <div class="swal-form-group">
+                        <label>Horário para análise diária:</label>
+                        <input id="horario-ia" type="time" value="09:00" class="swal2-input">
+                    </div>
+                    <div class="swal-form-group">
+                        <label>Dias da semana:</label>
+                        <div style="text-align: left;">
+                            <label><input type="checkbox" checked> Segunda</label><br>
+                            <label><input type="checkbox" checked> Terça</label><br>
+                            <label><input type="checkbox" checked> Quarta</label><br>
+                            <label><input type="checkbox" checked> Quinta</label><br>
+                            <label><input type="checkbox" checked> Sexta</label><br>
+                            <label><input type="checkbox"> Sábado</label><br>
+                            <label><input type="checkbox"> Domingo</label>
+                        </div>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Ativar Análise Automática',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
+
+        if (result.isConfirmed) {
+            this.showSuccess('Análise automática da IA configurada com sucesso!');
+        }
     }
 
     // === NOTIFICAÇÕES COM SWEETALERT2 ===
