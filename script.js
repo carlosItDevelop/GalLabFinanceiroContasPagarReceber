@@ -322,15 +322,26 @@ class SistemaContasApp {
             };
 
             // Atualizar cards
-            document.getElementById('total-pagar').textContent = this.formatCurrency(dashboardData.totalPagar);
-            document.getElementById('total-receber').textContent = this.formatCurrency(dashboardData.totalReceber);
-            document.getElementById('saldo-projetado').textContent = this.formatCurrency(dashboardData.totalReceber - dashboardData.totalPagar);
-            document.getElementById('vencidas-pagar').textContent = `${dashboardData.vencidasPagar} vencidas`;
-            document.getElementById('vencidas-receber').textContent = `${dashboardData.vencidasReceber} vencidas`;
-            document.getElementById('total-alertas').textContent = dashboardData.alertas;
+            const updateElement = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            };
 
-            // Carregar gráficos
-            this.loadCharts();
+            updateElement('total-pagar', this.formatCurrency(dashboardData.totalPagar));
+            updateElement('total-receber', this.formatCurrency(dashboardData.totalReceber));
+            updateElement('saldo-projetado', this.formatCurrency(dashboardData.totalReceber - dashboardData.totalPagar));
+            updateElement('vencidas-pagar', `${dashboardData.vencidasPagar} vencidas`);
+            updateElement('vencidas-receber', `${dashboardData.vencidasReceber} vencidas`);
+            updateElement('total-alertas', dashboardData.alertas);
+
+            // Carregar gráficos com delay para garantir que os elementos existam
+            setTimeout(() => {
+                this.loadCharts();
+            }, 200);
+
+            console.log('Dashboard carregado com dados:', dashboardData);
 
         } catch (error) {
             console.error('Erro ao carregar dashboard:', error);
@@ -339,68 +350,161 @@ class SistemaContasApp {
 
     // === GRÁFICOS ===
     loadCharts() {
-        // Gráfico de Fluxo de Caixa
-        const fluxoOptions = {
-            series: [{
-                name: 'A Receber',
-                data: [31000, 28000, 35000, 42000, 38000, 45000]
-            }, {
-                name: 'A Pagar',
-                data: [22000, 25000, 28000, 31000, 29000, 35000]
-            }],
-            chart: {
-                type: 'area',
-                height: 350,
-                background: 'transparent',
-                toolbar: { show: false }
-            },
-            colors: ['#28a745', '#dc3545'],
-            xaxis: {
-                categories: ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-                labels: { style: { colors: 'var(--text-secondary)' } }
-            },
-            yaxis: {
-                labels: { 
-                    style: { colors: 'var(--text-secondary)' },
-                    formatter: (val) => this.formatCurrency(val)
-                }
-            },
-            legend: {
-                labels: { colors: 'var(--text-primary)' }
-            },
-            grid: {
-                borderColor: 'var(--border-color)'
-            },
-            theme: {
-                mode: this.theme
-            }
-        };
+        // Aguardar um pouco para garantir que os elementos existam
+        setTimeout(() => {
+            this.renderDashboardCharts();
+        }, 100);
+    }
 
-        if (this.charts.fluxo) this.charts.fluxo.destroy();
-        this.charts.fluxo = new ApexCharts(document.querySelector("#chart-fluxo-caixa"), fluxoOptions);
-        this.charts.fluxo.render();
+    renderDashboardCharts() {
+        // Verificar se ApexCharts está disponível
+        if (typeof ApexCharts === 'undefined') {
+            console.warn('ApexCharts não está carregado. Tentando novamente em 1 segundo...');
+            setTimeout(() => this.renderDashboardCharts(), 1000);
+            return;
+        }
+
+        // Gráfico de Fluxo de Caixa
+        const fluxoEl = document.querySelector("#chart-fluxo-caixa");
+        if (fluxoEl) {
+            const fluxoOptions = {
+                series: [{
+                    name: 'A Receber',
+                    data: [31000, 28000, 35000, 42000, 38000, 45000]
+                }, {
+                    name: 'A Pagar',
+                    data: [22000, 25000, 28000, 31000, 29000, 35000]
+                }],
+                chart: {
+                    type: 'area',
+                    height: 350,
+                    background: 'transparent',
+                    toolbar: { show: false }
+                },
+                colors: ['#28a745', '#dc3545'],
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    curve: 'smooth'
+                },
+                xaxis: {
+                    categories: ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    labels: { 
+                        style: { 
+                            colors: ['#6c757d', '#6c757d', '#6c757d', '#6c757d', '#6c757d', '#6c757d']
+                        } 
+                    }
+                },
+                yaxis: {
+                    labels: { 
+                        style: { 
+                            colors: ['#6c757d']
+                        },
+                        formatter: (val) => {
+                            return new Intl.NumberFormat('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL',
+                                minimumFractionDigits: 0
+                            }).format(val);
+                        }
+                    }
+                },
+                legend: {
+                    labels: { 
+                        colors: ['#495057', '#495057']
+                    }
+                },
+                grid: {
+                    borderColor: '#e9ecef'
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.3
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: (val) => {
+                            return new Intl.NumberFormat('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            }).format(val);
+                        }
+                    }
+                }
+            };
+
+            if (this.charts.fluxo) this.charts.fluxo.destroy();
+            this.charts.fluxo = new ApexCharts(fluxoEl, fluxoOptions);
+            this.charts.fluxo.render();
+        }
 
         // Gráfico de Categorias
-        const categoriaOptions = {
-            series: [44, 35, 21],
-            chart: {
-                type: 'donut',
-                height: 350,
-                background: 'transparent'
-            },
-            labels: ['Fornecedores', 'Utilidades', 'Escritório'],
-            colors: ['#007bff', '#ffc107', '#28a745'],
-            legend: {
-                labels: { colors: 'var(--text-primary)' }
-            },
-            theme: {
-                mode: this.theme
-            }
-        };
+        const categoriaEl = document.querySelector("#chart-categorias");
+        if (categoriaEl) {
+            const categoriaOptions = {
+                series: [44, 35, 21, 15, 8],
+                chart: {
+                    type: 'donut',
+                    height: 350,
+                    background: 'transparent'
+                },
+                labels: ['Fornecedores', 'Utilidades', 'Escritório', 'Serviços', 'Outros'],
+                colors: ['#007bff', '#28a745', '#ffc107', '#17a2b8', '#6c757d'],
+                legend: {
+                    labels: { 
+                        colors: ['#495057']
+                    },
+                    position: 'bottom'
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '65%',
+                            labels: {
+                                show: true,
+                                name: {
+                                    show: true,
+                                    fontSize: '16px',
+                                    color: '#495057'
+                                },
+                                value: {
+                                    show: true,
+                                    fontSize: '14px',
+                                    color: '#495057',
+                                    formatter: function (val) {
+                                        return val + '%';
+                                    }
+                                },
+                                total: {
+                                    show: true,
+                                    label: 'Total',
+                                    color: '#495057',
+                                    formatter: function () {
+                                        return '100%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function (val) {
+                            return val + '%';
+                        }
+                    }
+                }
+            };
 
-        if (this.charts.categorias) this.charts.categorias.destroy();
-        this.charts.categorias = new ApexCharts(document.querySelector("#chart-categorias"), categoriaOptions);
-        this.charts.categorias.render();
+            if (this.charts.categorias) this.charts.categorias.destroy();
+            this.charts.categorias = new ApexCharts(categoriaEl, categoriaOptions);
+            this.charts.categorias.render();
+        }
     }
 
     async loadContasPagar() {
