@@ -3386,95 +3386,1043 @@ class SistemaContasApp {
         }
     }
 
-    // === ARQUIVOS ===
+    // === SISTEMA COMPLETO DE ARQUIVOS ===
     loadArquivos() {
+        this.currentArquivoView = 'grid'; // 'grid' ou 'list'
+        this.currentFolder = null; // Pasta atual
+        this.arquivoFilters = {
+            search: '',
+            category: '',
+            dateRange: '',
+            sortBy: 'name'
+        };
+        
+        this.setupArquivosEventListeners();
+        this.loadSampleFiles();
         this.renderArquivos();
+        this.updateArquivosStats();
+        
+        console.log('Sistema de arquivos inicializado!');
+    }
+
+    setupArquivosEventListeners() {
+        // Upload por drag & drop
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-arquivo');
+
+        if (uploadArea && fileInput) {
+            // Eventos de drag and drop
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                this.handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                this.handleFiles(e.target.files);
+            });
+        }
+
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', () => fileInput.click());
+        }
+
+        // Filtros e busca
+        const searchInput = document.getElementById('arquivos-search');
+        const categoryFilter = document.getElementById('arquivos-category-filter');
+        const sortSelect = document.getElementById('arquivos-sort');
+        const viewToggle = document.querySelectorAll('.view-toggle');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.arquivoFilters.search = e.target.value;
+                this.renderArquivos();
+            });
+        }
+
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', (e) => {
+                this.arquivoFilters.category = e.target.value;
+                this.renderArquivos();
+            });
+        }
+
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                this.arquivoFilters.sortBy = e.target.value;
+                this.renderArquivos();
+            });
+        }
+
+        // Toggle de visualização
+        viewToggle.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const view = e.target.dataset.view;
+                this.currentArquivoView = view;
+                
+                // Atualizar botões ativos
+                viewToggle.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                this.renderArquivos();
+            });
+        });
+
+        // Botões de ação
+        const newFolderBtn = document.getElementById('nova-pasta');
+        const bulkDeleteBtn = document.getElementById('excluir-selecionados');
+
+        if (newFolderBtn) {
+            newFolderBtn.addEventListener('click', () => this.createNewFolder());
+        }
+
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.addEventListener('click', () => this.bulkDeleteFiles());
+        }
+    }
+
+    loadSampleFiles() {
+        // Dados de exemplo realísticos
+        this.arquivos = [
+            {
+                id: 'file_001',
+                name: 'Contrato_Fornecedor_ABC.pdf',
+                originalName: 'Contrato_Fornecedor_ABC.pdf',
+                size: 2847392, // ~2.8MB
+                type: 'application/pdf',
+                category: 'Contratos',
+                uploadDate: new Date('2024-12-10T10:30:00'),
+                modifiedDate: new Date('2024-12-10T10:30:00'),
+                folder: null,
+                tags: ['contrato', 'fornecedor', 'abc'],
+                version: 1,
+                versions: [
+                    { version: 1, date: new Date('2024-12-10T10:30:00'), size: 2847392, note: 'Versão inicial' }
+                ],
+                preview: true,
+                shareLink: null,
+                createdBy: 'Usuário Sistema',
+                lastModifiedBy: 'Usuário Sistema'
+            },
+            {
+                id: 'file_002',
+                name: 'Nota_Fiscal_Energia_Jan24.pdf',
+                originalName: 'Nota_Fiscal_Energia_Jan24.pdf',
+                size: 1245678,
+                type: 'application/pdf',
+                category: 'Notas Fiscais',
+                uploadDate: new Date('2024-12-08T14:20:00'),
+                modifiedDate: new Date('2024-12-08T14:20:00'),
+                folder: 'Notas Fiscais 2024',
+                tags: ['nota fiscal', 'energia', 'janeiro'],
+                version: 1,
+                versions: [
+                    { version: 1, date: new Date('2024-12-08T14:20:00'), size: 1245678, note: 'Upload inicial' }
+                ],
+                preview: true,
+                shareLink: 'https://files.replit.com/share/nota-fiscal-energia-jan24-xyz123',
+                createdBy: 'Usuário Sistema',
+                lastModifiedBy: 'Usuário Sistema'
+            },
+            {
+                id: 'file_003',
+                name: 'Planilha_Fluxo_Caixa_Dez24.xlsx',
+                originalName: 'Planilha_Fluxo_Caixa_Dez24.xlsx',
+                size: 834512,
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                category: 'Planilhas',
+                uploadDate: new Date('2024-12-05T09:15:00'),
+                modifiedDate: new Date('2024-12-12T16:45:00'),
+                folder: 'Relatórios Mensais',
+                tags: ['fluxo de caixa', 'dezembro', 'planilha'],
+                version: 3,
+                versions: [
+                    { version: 1, date: new Date('2024-12-05T09:15:00'), size: 756432, note: 'Versão inicial' },
+                    { version: 2, date: new Date('2024-12-10T11:30:00'), size: 789234, note: 'Adicionadas projeções' },
+                    { version: 3, date: new Date('2024-12-12T16:45:00'), size: 834512, note: 'Dados finais dezembro' }
+                ],
+                preview: false,
+                shareLink: null,
+                createdBy: 'Usuário Sistema',
+                lastModifiedBy: 'Usuário Sistema'
+            },
+            {
+                id: 'file_004',
+                name: 'Logo_Empresa_Principal.png',
+                originalName: 'Logo_Empresa_Principal.png',
+                size: 156789,
+                type: 'image/png',
+                category: 'Imagens',
+                uploadDate: new Date('2024-11-28T13:45:00'),
+                modifiedDate: new Date('2024-11-28T13:45:00'),
+                folder: 'Branding',
+                tags: ['logo', 'empresa', 'branding'],
+                version: 1,
+                versions: [
+                    { version: 1, date: new Date('2024-11-28T13:45:00'), size: 156789, note: 'Logo oficial atualizado' }
+                ],
+                preview: true,
+                shareLink: 'https://files.replit.com/share/logo-empresa-abc789',
+                createdBy: 'Usuário Sistema',
+                lastModifiedBy: 'Usuário Sistema'
+            },
+            {
+                id: 'file_005',
+                name: 'Backup_Database_20241213.sql',
+                originalName: 'Backup_Database_20241213.sql',
+                size: 5672344, // ~5.7MB
+                type: 'application/sql',
+                category: 'Backups',
+                uploadDate: new Date('2024-12-13T02:00:00'),
+                modifiedDate: new Date('2024-12-13T02:00:00'),
+                folder: 'Backups Sistema',
+                tags: ['backup', 'database', 'sistema'],
+                version: 1,
+                versions: [
+                    { version: 1, date: new Date('2024-12-13T02:00:00'), size: 5672344, note: 'Backup automático noturno' }
+                ],
+                preview: false,
+                shareLink: null,
+                createdBy: 'Sistema Automático',
+                lastModifiedBy: 'Sistema Automático'
+            },
+            {
+                id: 'file_006',
+                name: 'Relatório_Anual_2024.docx',
+                originalName: 'Relatório_Anual_2024.docx',
+                size: 3456789,
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                category: 'Relatórios',
+                uploadDate: new Date('2024-12-01T08:30:00'),
+                modifiedDate: new Date('2024-12-11T17:20:00'),
+                folder: 'Relatórios Anuais',
+                tags: ['relatório', 'anual', '2024'],
+                version: 5,
+                versions: [
+                    { version: 1, date: new Date('2024-12-01T08:30:00'), size: 2890123, note: 'Rascunho inicial' },
+                    { version: 2, date: new Date('2024-12-03T14:15:00'), size: 3123456, note: 'Adicionados gráficos' },
+                    { version: 3, date: new Date('2024-12-06T10:45:00'), size: 3234567, note: 'Revisão da diretoria' },
+                    { version: 4, date: new Date('2024-12-09T16:30:00'), size: 3345678, note: 'Correções finais' },
+                    { version: 5, date: new Date('2024-12-11T17:20:00'), size: 3456789, note: 'Versão final aprovada' }
+                ],
+                preview: false,
+                shareLink: 'https://files.replit.com/share/relatorio-anual-2024-def456',
+                createdBy: 'Usuário Sistema',
+                lastModifiedBy: 'Usuário Sistema'
+            }
+        ];
+
+        // Criar estrutura de pastas
+        this.folders = [
+            { id: 'folder_001', name: 'Contratos', parent: null, created: new Date('2024-11-15') },
+            { id: 'folder_002', name: 'Notas Fiscais 2024', parent: null, created: new Date('2024-01-01') },
+            { id: 'folder_003', name: 'Relatórios Mensais', parent: null, created: new Date('2024-01-01') },
+            { id: 'folder_004', name: 'Branding', parent: null, created: new Date('2024-11-28') },
+            { id: 'folder_005', name: 'Backups Sistema', parent: null, created: new Date('2024-01-01') },
+            { id: 'folder_006', name: 'Relatórios Anuais', parent: null, created: new Date('2024-01-01') }
+        ];
     }
 
     handleFiles(files) {
+        const validFiles = [];
+        const errors = [];
+
         Array.from(files).forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB
-                this.showError('Arquivo muito grande (máx. 10MB)');
+            // Validações
+            if (file.size > 50 * 1024 * 1024) { // 50MB máximo
+                errors.push(`${file.name}: Arquivo muito grande (máx. 50MB)`);
                 return;
             }
 
-            const arquivo = {
-                id: Date.now() + Math.random(),
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                uploadDate: new Date()
-            };
+            // Tipos de arquivo permitidos
+            const allowedTypes = [
+                'application/pdf',
+                'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel',
+                'text/plain', 'text/csv',
+                'application/zip', 'application/x-rar-compressed'
+            ];
 
-            this.arquivos.push(arquivo);
-            this.showSuccess(`Arquivo "${file.name}" adicionado!`);
+            if (!allowedTypes.includes(file.type) && !file.type.startsWith('text/')) {
+                errors.push(`${file.name}: Tipo de arquivo não permitido`);
+                return;
+            }
+
+            validFiles.push(file);
         });
 
-        this.renderArquivos();
+        // Mostrar erros se houver
+        if (errors.length > 0) {
+            this.showError(`Alguns arquivos não puderam ser enviados:\n${errors.join('\n')}`);
+        }
+
+        // Processar arquivos válidos
+        if (validFiles.length > 0) {
+            this.processFileUploads(validFiles);
+        }
+    }
+
+    async processFileUploads(files) {
+        let successCount = 0;
+        
+        for (const file of files) {
+            try {
+                const arquivo = {
+                    id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    name: file.name,
+                    originalName: file.name,
+                    size: file.size,
+                    type: file.type,
+                    category: this.detectFileCategory(file.type),
+                    uploadDate: new Date(),
+                    modifiedDate: new Date(),
+                    folder: this.currentFolder,
+                    tags: this.generateFileTags(file.name),
+                    version: 1,
+                    versions: [
+                        { 
+                            version: 1, 
+                            date: new Date(), 
+                            size: file.size, 
+                            note: 'Upload inicial' 
+                        }
+                    ],
+                    preview: this.canPreview(file.type),
+                    shareLink: null,
+                    createdBy: 'Usuário Sistema',
+                    lastModifiedBy: 'Usuário Sistema'
+                };
+
+                this.arquivos.push(arquivo);
+                successCount++;
+
+                // Adicionar log
+                this.addLog(
+                    'create',
+                    'Arquivo enviado',
+                    `Arquivo "${file.name}" foi enviado com sucesso`,
+                    'arquivos',
+                    {
+                        arquivo_id: arquivo.id,
+                        nome: file.name,
+                        tamanho: file.size,
+                        tipo: file.type
+                    }
+                );
+
+            } catch (error) {
+                console.error(`Erro ao processar arquivo ${file.name}:`, error);
+            }
+        }
+
+        if (successCount > 0) {
+            this.showSuccess(`${successCount} arquivo(s) enviado(s) com sucesso!`);
+            this.renderArquivos();
+            this.updateArquivosStats();
+        }
+    }
+
+    detectFileCategory(mimeType) {
+        if (mimeType.includes('pdf')) return 'Documentos';
+        if (mimeType.startsWith('image/')) return 'Imagens';
+        if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'Planilhas';
+        if (mimeType.includes('word') || mimeType.includes('document')) return 'Documentos';
+        if (mimeType.includes('zip') || mimeType.includes('rar')) return 'Arquivos Comprimidos';
+        if (mimeType.includes('sql')) return 'Backups';
+        if (mimeType.startsWith('text/')) return 'Textos';
+        return 'Outros';
+    }
+
+    generateFileTags(filename) {
+        const tags = [];
+        const nameLower = filename.toLowerCase();
+        
+        // Tags baseadas no nome do arquivo
+        if (nameLower.includes('contrato')) tags.push('contrato');
+        if (nameLower.includes('nota') && nameLower.includes('fiscal')) tags.push('nota fiscal');
+        if (nameLower.includes('relatório') || nameLower.includes('relatorio')) tags.push('relatório');
+        if (nameLower.includes('backup')) tags.push('backup');
+        if (nameLower.includes('fluxo')) tags.push('fluxo de caixa');
+        if (nameLower.includes('logo')) tags.push('logo', 'branding');
+        
+        // Tags baseadas na data
+        const year = new Date().getFullYear();
+        if (nameLower.includes(year.toString())) tags.push(year.toString());
+        
+        return tags;
+    }
+
+    canPreview(mimeType) {
+        return mimeType.startsWith('image/') || 
+               mimeType === 'application/pdf' || 
+               mimeType.startsWith('text/');
     }
 
     renderArquivos() {
-        const grid = document.getElementById('arquivos-grid');
-        if (!grid) return;
+        const container = document.getElementById('arquivos-container');
+        if (!container) return;
 
-        grid.innerHTML = this.arquivos.map(arquivo => `
-            <div class="arquivo-item">
-                <div class="arquivo-icon">${this.getFileIcon(arquivo.type)}</div>
-                <div class="arquivo-name">${arquivo.name}</div>
-                <div class="arquivo-info">
-                    ${this.formatFileSize(arquivo.size)} • ${this.formatDate(arquivo.uploadDate)}
+        // Filtrar arquivos
+        let filteredFiles = this.getFilteredFiles();
+
+        // Aplicar ordenação
+        filteredFiles = this.sortFiles(filteredFiles);
+
+        // Renderizar baseado na visualização atual
+        if (this.currentArquivoView === 'grid') {
+            this.renderGridView(container, filteredFiles);
+        } else {
+            this.renderListView(container, filteredFiles);
+        }
+
+        // Atualizar contador
+        this.updateFileCount(filteredFiles.length);
+    }
+
+    getFilteredFiles() {
+        let filtered = [...this.arquivos];
+
+        // Filtro por pasta atual
+        if (this.currentFolder) {
+            filtered = filtered.filter(file => file.folder === this.currentFolder);
+        } else {
+            // Se não há pasta selecionada, mostrar arquivos sem pasta
+            filtered = filtered.filter(file => !file.folder);
+        }
+
+        // Filtro por busca
+        if (this.arquivoFilters.search) {
+            const search = this.arquivoFilters.search.toLowerCase();
+            filtered = filtered.filter(file => 
+                file.name.toLowerCase().includes(search) ||
+                file.tags.some(tag => tag.toLowerCase().includes(search))
+            );
+        }
+
+        // Filtro por categoria
+        if (this.arquivoFilters.category) {
+            filtered = filtered.filter(file => file.category === this.arquivoFilters.category);
+        }
+
+        return filtered;
+    }
+
+    sortFiles(files) {
+        const sortBy = this.arquivoFilters.sortBy;
+        
+        return files.sort((a, b) => {
+            switch (sortBy) {
+                case 'name':
+                    return a.name.localeCompare(b.name);
+                case 'date':
+                    return new Date(b.uploadDate) - new Date(a.uploadDate);
+                case 'size':
+                    return b.size - a.size;
+                case 'type':
+                    return a.category.localeCompare(b.category);
+                default:
+                    return 0;
+            }
+        });
+    }
+
+    renderGridView(container, files) {
+        if (files.length === 0) {
+            container.innerHTML = `
+                <div class="arquivos-empty">
+                    <div class="empty-icon">📁</div>
+                    <h3>Nenhum arquivo encontrado</h3>
+                    <p>Não há arquivos que correspondam aos filtros aplicados.</p>
+                    <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                        📤 Enviar Primeiro Arquivo
+                    </button>
                 </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="arquivos-grid">
+                ${files.map(arquivo => this.renderFileCard(arquivo)).join('')}
+            </div>
+        `;
+    }
+
+    renderListView(container, files) {
+        if (files.length === 0) {
+            container.innerHTML = `
+                <div class="arquivos-empty">
+                    <div class="empty-icon">📁</div>
+                    <h3>Nenhum arquivo encontrado</h3>
+                    <p>Não há arquivos que correspondam aos filtros aplicados.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="arquivos-table">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="select-all-files" onchange="app.toggleSelectAllFiles(this.checked)">
+                            </th>
+                            <th>Nome</th>
+                            <th>Categoria</th>
+                            <th>Tamanho</th>
+                            <th>Modificado</th>
+                            <th>Versão</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${files.map(arquivo => this.renderFileRow(arquivo)).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    renderFileCard(arquivo) {
+        const isShared = arquivo.shareLink ? 'shared' : '';
+        const hasVersions = arquivo.versions.length > 1 ? 'versioned' : '';
+        
+        return `
+            <div class="arquivo-card ${isShared} ${hasVersions}" data-id="${arquivo.id}">
+                <div class="arquivo-card-header">
+                    <input type="checkbox" class="file-select" value="${arquivo.id}">
+                    <div class="arquivo-type-icon">${this.getFileIcon(arquivo.type)}</div>
+                    ${arquivo.shareLink ? '<div class="share-indicator">🔗</div>' : ''}
+                    ${arquivo.versions.length > 1 ? `<div class="version-indicator">v${arquivo.version}</div>` : ''}
+                </div>
+                
+                <div class="arquivo-preview" onclick="app.previewFile('${arquivo.id}')">
+                    ${arquivo.preview && arquivo.type.startsWith('image/') ? 
+                        `<img src="data:${arquivo.type};base64,placeholder" alt="${arquivo.name}" class="image-preview">` :
+                        `<div class="file-icon-large">${this.getFileIcon(arquivo.type)}</div>`
+                    }
+                </div>
+                
+                <div class="arquivo-info">
+                    <div class="arquivo-name" title="${arquivo.name}">${this.truncateFileName(arquivo.name, 25)}</div>
+                    <div class="arquivo-meta">
+                        <span class="arquivo-size">${this.formatFileSize(arquivo.size)}</span>
+                        <span class="arquivo-date">${this.formatRelativeDate(arquivo.modifiedDate)}</span>
+                    </div>
+                    <div class="arquivo-category">${arquivo.category}</div>
+                    ${arquivo.tags.length > 0 ? `
+                        <div class="arquivo-tags">
+                            ${arquivo.tags.slice(0, 2).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            ${arquivo.tags.length > 2 ? `<span class="tag-more">+${arquivo.tags.length - 2}</span>` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+                
                 <div class="arquivo-actions">
-                    <button class="btn btn-sm btn-primary" onclick="app.downloadFile('${arquivo.id}')">
-                        📥 Download
+                    <button class="btn-icon" onclick="app.downloadFile('${arquivo.id}')" title="Download">
+                        📥
                     </button>
-                    <button class="btn btn-sm btn-danger" onclick="app.deleteFile('${arquivo.id}')">
-                        🗑️
+                    <button class="btn-icon" onclick="app.shareFile('${arquivo.id}')" title="Compartilhar">
+                        🔗
                     </button>
+                    <button class="btn-icon" onclick="app.showFileVersions('${arquivo.id}')" title="Versões">
+                        📝
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn-icon dropdown-toggle" title="Mais opções">⋮</button>
+                        <div class="dropdown-menu">
+                            <a href="#" onclick="app.renameFile('${arquivo.id}')">✏️ Renomear</a>
+                            <a href="#" onclick="app.moveFile('${arquivo.id}')">📁 Mover</a>
+                            <a href="#" onclick="app.duplicateFile('${arquivo.id}')">📋 Duplicar</a>
+                            <a href="#" onclick="app.showFileInfo('${arquivo.id}')">ℹ️ Propriedades</a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" onclick="app.deleteFile('${arquivo.id}')" class="text-danger">🗑️ Excluir</a>
+                        </div>
+                    </div>
                 </div>
             </div>
-        `).join('');
+        `;
+    }
+
+    renderFileRow(arquivo) {
+        return `
+            <tr data-id="${arquivo.id}">
+                <td>
+                    <input type="checkbox" class="file-select" value="${arquivo.id}">
+                </td>
+                <td>
+                    <div class="file-cell">
+                        <div class="file-icon-small">${this.getFileIcon(arquivo.type)}</div>
+                        <div class="file-info">
+                            <div class="file-name" onclick="app.previewFile('${arquivo.id}')">${arquivo.name}</div>
+                            ${arquivo.shareLink ? '<div class="file-shared">🔗 Compartilhado</div>' : ''}
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="category-badge ${arquivo.category.toLowerCase().replace(' ', '-')}">${arquivo.category}</span>
+                </td>
+                <td>${this.formatFileSize(arquivo.size)}</td>
+                <td>${this.formatRelativeDate(arquivo.modifiedDate)}</td>
+                <td>
+                    <span class="version-badge" onclick="app.showFileVersions('${arquivo.id}')">
+                        v${arquivo.version}
+                        ${arquivo.versions.length > 1 ? ` (${arquivo.versions.length})` : ''}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons-compact">
+                        <button class="btn-icon" onclick="app.downloadFile('${arquivo.id}')" title="Download">📥</button>
+                        <button class="btn-icon" onclick="app.shareFile('${arquivo.id}')" title="Compartilhar">🔗</button>
+                        <button class="btn-icon" onclick="app.deleteFile('${arquivo.id}')" title="Excluir">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    // Métodos auxiliares para formatação
+    truncateFileName(name, maxLength) {
+        if (name.length <= maxLength) return name;
+        
+        const ext = name.split('.').pop();
+        const nameWithoutExt = name.substring(0, name.lastIndexOf('.'));
+        const truncated = nameWithoutExt.substring(0, maxLength - ext.length - 4) + '...';
+        
+        return `${truncated}.${ext}`;
+    }
+
+    formatRelativeDate(date) {
+        const now = new Date();
+        const diffTime = Math.abs(now - new Date(date));
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 1) return 'Hoje';
+        if (diffDays === 2) return 'Ontem';
+        if (diffDays <= 7) return `${diffDays - 1} dias atrás`;
+        if (diffDays <= 30) return `${Math.floor(diffDays / 7)} semanas atrás`;
+        if (diffDays <= 365) return `${Math.floor(diffDays / 30)} meses atrás`;
+        
+        return this.formatDate(date);
     }
 
     getFileIcon(type) {
         if (type.includes('pdf')) return '📄';
-        if (type.includes('image')) return '🖼️';
-        if (type.includes('word')) return '📝';
-        if (type.includes('excel')) return '📊';
+        if (type.startsWith('image/')) return '🖼️';
+        if (type.includes('word') || type.includes('document')) return '📝';
+        if (type.includes('excel') || type.includes('spreadsheet')) return '📊';
+        if (type.includes('zip') || type.includes('rar')) return '📦';
+        if (type.includes('sql')) return '🗄️';
+        if (type.startsWith('text/')) return '📄';
+        if (type.startsWith('video/')) return '🎥';
+        if (type.startsWith('audio/')) return '🎵';
         return '📎';
     }
 
     formatFileSize(size) {
         const units = ['B', 'KB', 'MB', 'GB'];
         let unitIndex = 0;
-        while (size >= 1024 && unitIndex < units.length - 1) {
-            size /= 1024;
+        let fileSize = size;
+        
+        while (fileSize >= 1024 && unitIndex < units.length - 1) {
+            fileSize /= 1024;
             unitIndex++;
         }
-        return `${size.toFixed(1)} ${units[unitIndex]}`;
+        
+        return `${fileSize.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    }
+
+    updateFileCount(count) {
+        const counter = document.getElementById('files-count');
+        if (counter) {
+            counter.textContent = `${count} arquivo(s)`;
+        }
+    }
+
+    updateArquivosStats() {
+        const totalFiles = this.arquivos.length;
+        const totalSize = this.arquivos.reduce((sum, file) => sum + file.size, 0);
+        const categories = [...new Set(this.arquivos.map(file => file.category))];
+        
+        // Atualizar estatísticas na interface
+        const statsContainer = document.getElementById('arquivos-stats');
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <div class="stat-item">
+                    <span class="stat-value">${totalFiles}</span>
+                    <span class="stat-label">Arquivos</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${this.formatFileSize(totalSize)}</span>
+                    <span class="stat-label">Espaço Usado</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${categories.length}</span>
+                    <span class="stat-label">Categorias</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">${this.folders.length}</span>
+                    <span class="stat-label">Pastas</span>
+                </div>
+            `;
+        }
+    }
+
+    // Ações dos arquivos
+    async previewFile(id) {
+        const arquivo = this.arquivos.find(f => f.id === id);
+        if (!arquivo) return;
+
+        let previewContent = '';
+        
+        if (arquivo.type.startsWith('image/')) {
+            previewContent = `
+                <div class="file-preview-image">
+                    <img src="data:${arquivo.type};base64,placeholder" alt="${arquivo.name}" style="max-width: 100%; max-height: 400px;">
+                </div>
+            `;
+        } else if (arquivo.type === 'application/pdf') {
+            previewContent = `
+                <div class="file-preview-pdf">
+                    <div class="pdf-placeholder">
+                        <div class="pdf-icon">📄</div>
+                        <p>Visualização de PDF</p>
+                        <p class="text-muted">Em uma implementação real, aqui seria exibido o conteúdo do PDF</p>
+                    </div>
+                </div>
+            `;
+        } else if (arquivo.type.startsWith('text/')) {
+            previewContent = `
+                <div class="file-preview-text">
+                    <pre>Conteúdo do arquivo de texto seria exibido aqui...</pre>
+                </div>
+            `;
+        } else {
+            previewContent = `
+                <div class="file-preview-generic">
+                    <div class="generic-icon">${this.getFileIcon(arquivo.type)}</div>
+                    <p>Preview não disponível para este tipo de arquivo</p>
+                    <p class="text-muted">${arquivo.name}</p>
+                </div>
+            `;
+        }
+
+        await Swal.fire({
+            title: arquivo.name,
+            html: `
+                <div class="file-preview-container">
+                    ${previewContent}
+                    <div class="file-preview-info">
+                        <div class="info-row">
+                            <strong>Tamanho:</strong> ${this.formatFileSize(arquivo.size)}
+                        </div>
+                        <div class="info-row">
+                            <strong>Categoria:</strong> ${arquivo.category}
+                        </div>
+                        <div class="info-row">
+                            <strong>Modificado:</strong> ${this.formatDate(arquivo.modifiedDate)}
+                        </div>
+                        <div class="info-row">
+                            <strong>Versão:</strong> ${arquivo.version}
+                        </div>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '📥 Download',
+            cancelButtonText: 'Fechar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            width: '600px'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.downloadFile(id);
+            }
+        });
     }
 
     downloadFile(id) {
-        this.showInfo('Download iniciado!');
+        const arquivo = this.arquivos.find(f => f.id === id);
+        if (!arquivo) return;
+
+        // Simular download
+        this.showSuccess(`Download de "${arquivo.name}" iniciado!`);
+        
+        // Adicionar log
+        this.addLog(
+            'export',
+            'Arquivo baixado',
+            `Arquivo "${arquivo.name}" foi baixado`,
+            'arquivos',
+            { arquivo_id: id, nome: arquivo.name }
+        );
     }
 
-    deleteFile(id) {
-        Swal.fire({
-            title: 'Excluir arquivo?',
-            text: 'Esta ação não pode ser desfeita.',
-            icon: 'warning',
+    async shareFile(id) {
+        const arquivo = this.arquivos.find(f => f.id === id);
+        if (!arquivo) return;
+
+        const { value: action } = await Swal.fire({
+            title: `Compartilhar: ${arquivo.name}`,
+            html: `
+                <div class="share-options">
+                    ${arquivo.shareLink ? `
+                        <div class="current-share">
+                            <h4>🔗 Link Ativo</h4>
+                            <div class="share-link-container">
+                                <input type="text" value="${arquivo.shareLink}" readonly class="share-link-input" id="shareLink">
+                                <button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText('${arquivo.shareLink}')">
+                                    📋 Copiar
+                                </button>
+                            </div>
+                            <p class="text-muted">Este arquivo já está sendo compartilhado</p>
+                        </div>
+                    ` : `
+                        <div class="create-share">
+                            <h4>📤 Criar Link de Compartilhamento</h4>
+                            <p>Gerar um link público para compartilhar este arquivo?</p>
+                        </div>
+                    `}
+                </div>
+            `,
             showCancelButton: true,
-            confirmButtonText: 'Sim, excluir',
+            confirmButtonText: arquivo.shareLink ? '🗑️ Remover Link' : '🔗 Gerar Link',
             cancelButtonText: 'Cancelar',
             background: 'var(--bg-secondary)',
             color: 'var(--text-primary)'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                this.arquivos = this.arquivos.filter(arquivo => arquivo.id !== id);
-                this.renderArquivos();
-                this.showSuccess('Arquivo excluído!');
-            }
         });
+
+        if (action) {
+            if (arquivo.shareLink) {
+                // Remover compartilhamento
+                arquivo.shareLink = null;
+                this.showSuccess('Link de compartilhamento removido!');
+            } else {
+                // Criar novo link
+                arquivo.shareLink = `https://files.replit.com/share/${arquivo.id}-${Date.now()}`;
+                this.showSuccess('Link de compartilhamento criado!');
+                
+                // Copiar para clipboard
+                navigator.clipboard.writeText(arquivo.shareLink);
+                this.showInfo('Link copiado para a área de transferência!');
+            }
+            
+            this.renderArquivos();
+        }
+    }
+
+    async showFileVersions(id) {
+        const arquivo = this.arquivos.find(f => f.id === id);
+        if (!arquivo) return;
+
+        const versionsHtml = arquivo.versions.map((version, index) => `
+            <div class="version-item ${index === 0 ? 'current-version' : ''}">
+                <div class="version-header">
+                    <span class="version-number">v${version.version}</span>
+                    ${index === 0 ? '<span class="current-badge">Atual</span>' : ''}
+                    <span class="version-date">${this.formatDate(version.date)}</span>
+                </div>
+                <div class="version-info">
+                    <div class="version-size">${this.formatFileSize(version.size)}</div>
+                    <div class="version-note">${version.note}</div>
+                </div>
+                <div class="version-actions">
+                    ${index > 0 ? `
+                        <button class="btn btn-sm btn-secondary" onclick="app.downloadFileVersion('${id}', ${version.version})">
+                            📥 Baixar
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="app.restoreFileVersion('${id}', ${version.version})">
+                            ↩️ Restaurar
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+
+        await Swal.fire({
+            title: `📝 Versões: ${arquivo.name}`,
+            html: `
+                <div class="versions-container">
+                    <div class="versions-summary">
+                        <p>Este arquivo possui <strong>${arquivo.versions.length} versão(ões)</strong></p>
+                        <p class="text-muted">Versão atual: v${arquivo.version}</p>
+                    </div>
+                    <div class="versions-list">
+                        ${versionsHtml}
+                    </div>
+                    <div class="versions-actions">
+                        <button class="btn btn-primary" onclick="app.uploadNewVersion('${id}')">
+                            📤 Enviar Nova Versão
+                        </button>
+                    </div>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCancelButton: true,
+            cancelButtonText: 'Fechar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            width: '700px'
+        });
+    }
+
+    downloadFileVersion(fileId, version) {
+        const arquivo = this.arquivos.find(f => f.id === fileId);
+        if (!arquivo) return;
+
+        this.showSuccess(`Download da versão ${version} de "${arquivo.name}" iniciado!`);
+    }
+
+    async restoreFileVersion(fileId, version) {
+        const arquivo = this.arquivos.find(f => f.id === fileId);
+        if (!arquivo) return;
+
+        const result = await Swal.fire({
+            title: 'Restaurar Versão?',
+            text: `Isso criará uma nova versão com o conteúdo da versão ${version}. A versão atual será preservada.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, restaurar',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
+
+        if (result.isConfirmed) {
+            const oldVersion = arquivo.versions.find(v => v.version === version);
+            const newVersion = arquivo.version + 1;
+            
+            arquivo.versions.unshift({
+                version: newVersion,
+                date: new Date(),
+                size: oldVersion.size,
+                note: `Restaurado da versão ${version}`
+            });
+            
+            arquivo.version = newVersion;
+            arquivo.modifiedDate = new Date();
+            
+            this.showSuccess(`Versão ${version} restaurada como v${newVersion}!`);
+            this.renderArquivos();
+            
+            // Fechar o modal atual
+            Swal.close();
+        }
+    }
+
+    async deleteFile(id) {
+        const arquivo = this.arquivos.find(f => f.id === id);
+        if (!arquivo) return;
+
+        const result = await Swal.fire({
+            title: 'Excluir arquivo?',
+            html: `
+                <div class="delete-confirmation">
+                    <p>Você está prestes a excluir:</p>
+                    <div class="file-to-delete">
+                        <div class="file-icon">${this.getFileIcon(arquivo.type)}</div>
+                        <div class="file-details">
+                            <strong>${arquivo.name}</strong>
+                            <div class="text-muted">${this.formatFileSize(arquivo.size)} • ${arquivo.category}</div>
+                        </div>
+                    </div>
+                    <p class="text-danger"><strong>Esta ação não pode ser desfeita!</strong></p>
+                    ${arquivo.versions.length > 1 ? `<p class="text-warning">Este arquivo possui ${arquivo.versions.length} versões que também serão perdidas.</p>` : ''}
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '🗑️ Sim, excluir',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
+
+        if (result.isConfirmed) {
+            this.arquivos = this.arquivos.filter(f => f.id !== id);
+            this.renderArquivos();
+            this.updateArquivosStats();
+            this.showSuccess(`Arquivo "${arquivo.name}" excluído!`);
+            
+            // Adicionar log
+            this.addLog(
+                'delete',
+                'Arquivo excluído',
+                `Arquivo "${arquivo.name}" foi excluído permanentemente`,
+                'arquivos',
+                { arquivo_id: id, nome: arquivo.name }
+            );
+        }
+    }
+
+    // Métodos auxiliares
+    toggleSelectAllFiles(checked) {
+        const checkboxes = document.querySelectorAll('.file-select');
+        checkboxes.forEach(cb => cb.checked = checked);
+        this.updateBulkActions();
+    }
+
+    updateBulkActions() {
+        const checkedBoxes = document.querySelectorAll('.file-select:checked');
+        const bulkActions = document.getElementById('bulk-actions');
+        
+        if (bulkActions) {
+            if (checkedBoxes.length > 0) {
+                bulkActions.style.display = 'flex';
+                bulkActions.querySelector('.selected-count').textContent = `${checkedBoxes.length} selecionado(s)`;
+            } else {
+                bulkActions.style.display = 'none';
+            }
+        }
+    }
+
+    async createNewFolder() {
+        const { value: folderName } = await Swal.fire({
+            title: 'Nova Pasta',
+            input: 'text',
+            inputPlaceholder: 'Nome da pasta',
+            inputValidator: (value) => {
+                if (!value || value.trim() === '') {
+                    return 'Nome da pasta é obrigatório';
+                }
+                if (this.folders.some(f => f.name === value.trim())) {
+                    return 'Já existe uma pasta com este nome';
+                }
+                return null;
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Criar',
+            cancelButtonText: 'Cancelar',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)'
+        });
+
+        if (folderName) {
+            const newFolder = {
+                id: `folder_${Date.now()}`,
+                name: folderName.trim(),
+                parent: this.currentFolder,
+                created: new Date()
+            };
+            
+            this.folders.push(newFolder);
+            this.showSuccess(`Pasta "${folderName}" criada!`);
+            this.renderFolders();
+        }
     }
 
     // === CONSOLIDADOS ===

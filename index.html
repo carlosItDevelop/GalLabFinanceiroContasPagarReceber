@@ -730,12 +730,181 @@
             <!-- Arquivos -->
             <div id="arquivos" class="tab-panel">
                 <div class="panel-header">
-                    <h2>📁 Arquivos</h2>
-                    <p>Gerenciamento de documentos</p>
+                    <h2>📁 Gerenciamento de Arquivos</h2>
+                    <p>Sistema completo para organizar, compartilhar e versionar seus documentos</p>
+                    <div class="panel-actions">
+                        <button class="btn btn-secondary" id="nova-pasta">📁 Nova Pasta</button>
+                        <button class="btn btn-primary" id="upload-arquivo">📤 Enviar Arquivos</button>
+                    </div>
                 </div>
-                <div class="coming-soon">
-                    <h3>🚧 Em desenvolvimento</h3>
-                    <p>Esta funcionalidade será implementada em breve</p>
+
+                <!-- Área de Upload -->
+                <div class="upload-section">
+                    <div class="upload-area" id="upload-area">
+                        <input type="file" id="file-input" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.csv,.zip,.rar" style="display: none;">
+                        <div class="upload-content">
+                            <div class="upload-icon">📤</div>
+                            <h3>Arraste arquivos aqui ou clique para selecionar</h3>
+                            <p>Suporte para PDF, DOC, XLS, imagens, texto e arquivos comprimidos</p>
+                            <small>Tamanho máximo: 50MB por arquivo</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de Ferramentas -->
+                <div class="arquivos-toolbar">
+                    <div class="toolbar-left">
+                        <!-- Navegação de Pastas -->
+                        <div class="breadcrumb">
+                            <span class="breadcrumb-item active" onclick="app.navigateToFolder(null)">🏠 Início</span>
+                            <span id="breadcrumb-path"></span>
+                        </div>
+                    </div>
+
+                    <div class="toolbar-center">
+                        <!-- Busca -->
+                        <div class="search-container">
+                            <input type="text" id="arquivos-search" placeholder="🔍 Buscar arquivos..." class="search-input">
+                        </div>
+                    </div>
+
+                    <div class="toolbar-right">
+                        <!-- Filtros -->
+                        <select id="arquivos-category-filter" class="filter-select">
+                            <option value="">Todas as categorias</option>
+                            <option value="Documentos">📄 Documentos</option>
+                            <option value="Imagens">🖼️ Imagens</option>
+                            <option value="Planilhas">📊 Planilhas</option>
+                            <option value="Contratos">📋 Contratos</option>
+                            <option value="Notas Fiscais">🧾 Notas Fiscais</option>
+                            <option value="Relatórios">📈 Relatórios</option>
+                            <option value="Backups">🗄️ Backups</option>
+                            <option value="Outros">📎 Outros</option>
+                        </select>
+
+                        <select id="arquivos-sort" class="filter-select">
+                            <option value="name">📝 Nome</option>
+                            <option value="date">📅 Data</option>
+                            <option value="size">📏 Tamanho</option>
+                            <option value="type">📂 Tipo</option>
+                        </select>
+
+                        <!-- Toggle de Visualização -->
+                        <div class="view-toggles">
+                            <button class="view-toggle active" data-view="grid" title="Visualização em Grade">
+                                ⊞
+                            </button>
+                            <button class="view-toggle" data-view="list" title="Visualização em Lista">
+                                ☰
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estatísticas -->
+                <div class="arquivos-stats-bar">
+                    <div id="arquivos-stats" class="stats-container">
+                        <div class="stat-item">
+                            <span class="stat-value">0</span>
+                            <span class="stat-label">Arquivos</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">0 B</span>
+                            <span class="stat-label">Espaço Usado</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">0</span>
+                            <span class="stat-label">Categorias</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">0</span>
+                            <span class="stat-label">Pastas</span>
+                        </div>
+                    </div>
+                    <div class="files-count">
+                        <span id="files-count">0 arquivo(s)</span>
+                    </div>
+                </div>
+
+                <!-- Ações em Lote (inicialmente oculto) -->
+                <div id="bulk-actions" class="bulk-actions" style="display: none;">
+                    <div class="bulk-info">
+                        <span class="selected-count">0 selecionado(s)</span>
+                    </div>
+                    <div class="bulk-buttons">
+                        <button class="btn btn-sm btn-secondary" onclick="app.bulkDownload()">📥 Baixar</button>
+                        <button class="btn btn-sm btn-primary" onclick="app.bulkMove()">📁 Mover</button>
+                        <button class="btn btn-sm btn-danger" id="excluir-selecionados">🗑️ Excluir</button>
+                    </div>
+                </div>
+
+                <!-- Container Principal dos Arquivos -->
+                <div class="arquivos-main">
+                    <!-- Sidebar com Pastas -->
+                    <div class="arquivos-sidebar">
+                        <div class="sidebar-section">
+                            <h4>📁 Pastas</h4>
+                            <div id="folders-tree" class="folders-tree">
+                                <!-- Árvore de pastas será carregada dinamicamente -->
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <h4>🏷️ Filtros Rápidos</h4>
+                            <div class="quick-filters">
+                                <div class="filter-item" onclick="app.filterByRecent()">
+                                    <span class="filter-icon">🕒</span>
+                                    <span>Recentes</span>
+                                </div>
+                                <div class="filter-item" onclick="app.filterByShared()">
+                                    <span class="filter-icon">🔗</span>
+                                    <span>Compartilhados</span>
+                                </div>
+                                <div class="filter-item" onclick="app.filterByLarge()">
+                                    <span class="filter-icon">📏</span>
+                                    <span>Arquivos Grandes</span>
+                                </div>
+                                <div class="filter-item" onclick="app.filterByVersioned()">
+                                    <span class="filter-icon">📝</span>
+                                    <span>Versionados</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <h4>📊 Espaço em Disco</h4>
+                            <div class="storage-info">
+                                <div class="storage-bar">
+                                    <div class="storage-used" style="width: 35%;"></div>
+                                </div>
+                                <div class="storage-text">
+                                    <small>15.2 GB de 50 GB utilizados</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Área de Conteúdo -->
+                    <div class="arquivos-content">
+                        <div id="arquivos-container">
+                            <!-- Arquivos serão carregados dinamicamente -->
+                            <div class="arquivos-loading">
+                                <div class="loading-spinner">⏳</div>
+                                <p>Carregando arquivos...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions Floating Button -->
+                <div class="floating-actions">
+                    <button class="fab" id="fab-main" title="Ações Rápidas">+</button>
+                    <div class="fab-menu" id="fab-menu" style="display: none;">
+                        <button class="fab-item" onclick="document.getElementById('file-input').click()">📤 Upload</button>
+                        <button class="fab-item" onclick="app.createNewFolder()">📁 Pasta</button>
+                        <button class="fab-item" onclick="app.importFromUrl()">🔗 URL</button>
+                        <button class="fab-item" onclick="app.scanDocument()">📱 Scan</button>
+                    </div>
                 </div>
             </div>
         </div>
