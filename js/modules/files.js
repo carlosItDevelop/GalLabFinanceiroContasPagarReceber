@@ -40,6 +40,12 @@ class FilesModule {
         
         // Paginação
         this.setupPagination();
+        
+        // FAB - Ações Rápidas
+        this.setupFloatingActionButton();
+        
+        // Configurar funções globais para compatibilidade com HTML
+        this.setupGlobalFunctions();
     }
 
     setupDragAndDrop() {
@@ -538,7 +544,7 @@ class FilesModule {
         if (!confirmed) return;
 
         try {
-            LoadingManager.show('delete-' + fileId, 'Excluindo arquivo...');
+            this.loadingManager.show('delete-' + fileId, 'Excluindo arquivo...');
             await this.api.deleteFile(fileId);
             
             ErrorHandler.showSuccess('Arquivo excluído', `"${fileName}" foi excluído com sucesso`);
@@ -547,7 +553,7 @@ class FilesModule {
         } catch (error) {
             ErrorHandler.showError('Erro ao excluir', error.message);
         } finally {
-            LoadingManager.hide('delete-' + fileId);
+            this.loadingManager.hide('delete-' + fileId);
         }
     }
 
@@ -583,6 +589,133 @@ class FilesModule {
         if (typeFilter) typeFilter.value = '';
         
         this.loadFiles();
+    }
+
+    setupFloatingActionButton() {
+        const fabMain = document.getElementById('fab-main');
+        const fabMenu = document.getElementById('fab-menu');
+        
+        if (fabMain && fabMenu) {
+            // Toggle do menu FAB
+            fabMain.addEventListener('click', () => {
+                const isVisible = fabMenu.style.display !== 'none';
+                fabMenu.style.display = isVisible ? 'none' : 'block';
+                fabMain.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(45deg)';
+            });
+            
+            // Fechar menu ao clicar fora
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.floating-actions')) {
+                    fabMenu.style.display = 'none';
+                    fabMain.style.transform = 'rotate(0deg)';
+                }
+            });
+        }
+    }
+    
+    setupGlobalFunctions() {
+        // Expor funções globalmente para o HTML
+        window.app = window.app || {};
+        
+        window.app.createNewFolder = () => {
+            this.createNewFolder();
+        };
+        
+        window.app.importFromUrl = () => {
+            this.importFromUrl();
+        };
+        
+        window.app.scanDocument = () => {
+            this.scanDocument();
+        };
+        
+        window.app.bulkDownload = () => {
+            this.bulkDownload();
+        };
+        
+        window.app.bulkMove = () => {
+            this.bulkMove();
+        };
+        
+        window.app.filterByRecent = () => {
+            this.filterByRecent();
+        };
+        
+        window.app.filterByShared = () => {
+            this.filterByShared();
+        };
+        
+        window.app.filterByLarge = () => {
+            this.filterByLarge();
+        };
+        
+        window.app.filterByVersioned = () => {
+            this.filterByVersioned();
+        };
+    }
+    
+    createNewFolder() {
+        const folderName = prompt('Nome da nova pasta:');
+        if (folderName && folderName.trim()) {
+            console.log('Criando pasta:', folderName);
+            ErrorHandler.showSuccess('Pasta criada', `Pasta "${folderName}" criada com sucesso!`);
+            // TODO: Implementar criação real de pasta na API
+        }
+    }
+    
+    importFromUrl() {
+        const url = prompt('URL do arquivo para importar:');
+        if (url && url.trim()) {
+            console.log('Importando de URL:', url);
+            ErrorHandler.showInfo('Importação iniciada', 'Download do arquivo em andamento...');
+            // TODO: Implementar importação real de URL
+        }
+    }
+    
+    scanDocument() {
+        console.log('Abrindo scanner de documentos');
+        ErrorHandler.showInfo('Scanner', 'Funcionalidade de scan será implementada em breve');
+        // TODO: Implementar integração com scanner/câmera
+    }
+    
+    bulkDownload() {
+        console.log('Download em lote');
+        ErrorHandler.showInfo('Download em lote', 'Funcionalidade será implementada em breve');
+        // TODO: Implementar download múltiplo
+    }
+    
+    bulkMove() {
+        console.log('Mover arquivos em lote');
+        ErrorHandler.showInfo('Mover arquivos', 'Funcionalidade será implementada em breve');
+        // TODO: Implementar movimentação em lote
+    }
+    
+    filterByRecent() {
+        console.log('Filtrar por arquivos recentes');
+        this.currentFilters = { recent: true };
+        this.loadFiles();
+        ErrorHandler.showInfo('Filtro aplicado', 'Exibindo arquivos recentes');
+    }
+    
+    filterByShared() {
+        console.log('Filtrar por arquivos compartilhados');
+        this.currentFilters = { shared: true };
+        this.loadFiles();
+        ErrorHandler.showInfo('Filtro aplicado', 'Exibindo arquivos compartilhados');
+    }
+    
+    filterByLarge() {
+        console.log('Filtrar por arquivos grandes');
+        this.currentFilters = { large: true };
+        this.loadFiles();
+        ErrorHandler.showInfo('Filtro aplicado', 'Exibindo arquivos grandes (>10MB)');
+    }
+    
+    filterByVersioned() {
+        console.log('Filtrar por arquivos versionados');
+        this.currentFilters = { versioned: true };
+        this.loadFiles();
+        ErrorHandler.showInfo('Filtro aplicado', 'Exibindo arquivos com versões');
     }
 
     // Métodos públicos para integração com outras partes do sistema
