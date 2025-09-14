@@ -11,6 +11,7 @@ class ConsolidadosModule {
         this.currentSubTab = 'visao-geral';
         this.currentPeriod = 'mes-atual';
         this.charts = {};
+        this.loadingManager = new LoadingManager();
         
         this.init();
     }
@@ -148,14 +149,14 @@ class ConsolidadosModule {
     }
 
     async updateData() {
-        LoadingManager.show('consolidados-update', 'Atualizando dados...');
+        this.loadingManager.show('consolidados-update', 'Atualizando dados...');
         try {
             await this.loadCurrentData();
             ErrorHandler.showSuccess('Dados atualizados', 'Relatórios consolidados atualizados com sucesso');
         } catch (error) {
             ErrorHandler.showError('Erro na atualização', error.message);
         } finally {
-            LoadingManager.hide('consolidados-update');
+            this.loadingManager.hide('consolidados-update');
         }
     }
 
@@ -341,7 +342,7 @@ class ConsolidadosModule {
     }
 
     async exportReport(formato, tipo) {
-        LoadingManager.show(`export-${formato}-${tipo}`, `Exportando ${formato.toUpperCase()}...`);
+        this.loadingManager.show(`export-${formato}-${tipo}`, `Exportando ${formato.toUpperCase()}...`);
         
         try {
             console.log(`Exportando relatório: ${tipo} em formato ${formato}`);
@@ -357,7 +358,7 @@ class ConsolidadosModule {
         } catch (error) {
             ErrorHandler.showError('Erro na exportação', error.message);
         } finally {
-            LoadingManager.hide(`export-${formato}-${tipo}`);
+            this.loadingManager.hide(`export-${formato}-${tipo}`);
         }
     }
 

@@ -1,9 +1,13 @@
 // Módulo para gestão de tabs
 export class TabManager {
-    constructor(dashboard, accountsManager) {
+    constructor(dashboard, accountsManager, consolidadosModule, agendaModule, logsModule, filesModule) {
         this.currentTab = 'dashboard';
         this.dashboard = dashboard;
         this.accountsManager = accountsManager;
+        this.consolidadosModule = consolidadosModule;
+        this.agendaModule = agendaModule;
+        this.logsModule = logsModule;
+        this.filesModule = filesModule;
     }
 
     init() {
@@ -47,20 +51,24 @@ export class TabManager {
                     await this.accountsManager.loadContasReceber();
                     break;
                 case 'agenda':
-                    // TODO: Implementar módulo de agenda
-                    console.log('Carregando agenda...');
+                    if (this.agendaModule) {
+                        await this.agendaModule.load();
+                    }
                     break;
                 case 'arquivos':
-                    // TODO: Implementar módulo de arquivos
-                    console.log('Carregando arquivos...');
+                    if (this.filesModule) {
+                        await this.filesModule.load();
+                    }
                     break;
                 case 'logs':
-                    // TODO: Implementar módulo de logs
-                    console.log('Carregando logs...');
+                    if (this.logsModule) {
+                        await this.logsModule.load();
+                    }
                     break;
                 case 'consolidados':
-                    // TODO: Implementar módulo de relatórios
-                    console.log('Carregando relatórios consolidados...');
+                    if (this.consolidadosModule) {
+                        await this.consolidadosModule.load();
+                    }
                     break;
             }
         } catch (error) {

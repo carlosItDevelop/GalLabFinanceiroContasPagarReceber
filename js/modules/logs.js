@@ -12,6 +12,7 @@ class LogsModule {
         this.itemsPerPage = 20;
         this.currentFilters = {};
         this.logs = [];
+        this.loadingManager = new LoadingManager();
         
         this.init();
     }
@@ -155,7 +156,7 @@ class LogsModule {
     }
 
     async loadLogs() {
-        LoadingManager.show('logs-table-container', 'Carregando logs...');
+        this.loadingManager.show('logs-table-container', 'Carregando logs...');
         
         try {
             // Tentar carregar logs do servidor
@@ -183,7 +184,7 @@ class LogsModule {
             this.renderLogsTable();
             this.updateStats();
         } finally {
-            LoadingManager.hide('logs-table-container');
+            this.loadingManager.hide('logs-table-container');
         }
     }
 
@@ -431,7 +432,7 @@ class LogsModule {
 
         if (!confirmed) return;
 
-        LoadingManager.show('logs-clear', 'Limpando logs...');
+        this.loadingManager.show('logs-clear', 'Limpando logs...');
         
         try {
             // TODO: Implementar limpeza no servidor
@@ -446,12 +447,12 @@ class LogsModule {
         } catch (error) {
             ErrorHandler.showError('Erro ao limpar logs', error.message);
         } finally {
-            LoadingManager.hide('logs-clear');
+            this.loadingManager.hide('logs-clear');
         }
     }
 
     async exportLogs() {
-        LoadingManager.show('logs-export', 'Exportando logs...');
+        this.loadingManager.show('logs-export', 'Exportando logs...');
         
         try {
             // TODO: Implementar exportação real
@@ -462,7 +463,7 @@ class LogsModule {
         } catch (error) {
             ErrorHandler.showError('Erro na exportação', error.message);
         } finally {
-            LoadingManager.hide('logs-export');
+            this.loadingManager.hide('logs-export');
         }
     }
 

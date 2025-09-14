@@ -10,6 +10,7 @@ class AgendaModule {
     constructor() {
         this.calendar = null;
         this.events = [];
+        this.loadingManager = new LoadingManager();
         
         this.init();
     }
@@ -345,7 +346,7 @@ class AgendaModule {
 
     // Método público para sincronizar eventos
     async syncEvents() {
-        LoadingManager.show('sync-eventos', 'Sincronizando eventos...');
+        this.loadingManager.show('sync-eventos', 'Sincronizando eventos...');
         
         try {
             await this.loadEvents();
@@ -353,7 +354,7 @@ class AgendaModule {
         } catch (error) {
             ErrorHandler.showError('Erro na sincronização', error.message);
         } finally {
-            LoadingManager.hide('sync-eventos');
+            this.loadingManager.hide('sync-eventos');
         }
     }
 }

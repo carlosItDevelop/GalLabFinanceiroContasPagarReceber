@@ -15,6 +15,7 @@ class FilesModule {
         this.currentFilters = {};
         this.uploadQueue = [];
         this.isUploading = false;
+        this.loadingManager = new LoadingManager();
         
         this.init();
     }
@@ -183,7 +184,7 @@ class FilesModule {
         }
 
         this.isUploading = true;
-        LoadingManager.show('upload-progress', 'Preparando upload...');
+        this.loadingManager.show('upload-progress', 'Preparando upload...');
 
         try {
             // Validar arquivos
@@ -228,7 +229,7 @@ class FilesModule {
             ErrorHandler.showError('Erro no upload', error.message);
         } finally {
             this.isUploading = false;
-            LoadingManager.hide('upload-progress');
+            this.loadingManager.hide('upload-progress');
             this.hideUploadProgressContainer();
         }
     }
@@ -329,7 +330,7 @@ class FilesModule {
 
     async loadFiles() {
         try {
-            LoadingManager.showSkeleton('files-list', 'table');
+            this.loadingManager.showSkeleton('files-list', 3);
 
             const params = {
                 page: this.currentPage,
@@ -346,7 +347,7 @@ class FilesModule {
             ErrorHandler.showError('Erro ao carregar arquivos', error.message);
             this.renderEmptyState();
         } finally {
-            LoadingManager.hide('files-list');
+            this.loadingManager.hideSkeleton('files-list');
         }
     }
 
@@ -517,12 +518,12 @@ class FilesModule {
 
     async downloadFile(fileId, fileName) {
         try {
-            LoadingManager.show('download-' + fileId, 'Baixando arquivo...');
+            this.loadingManager.show('download-' + fileId, 'Baixando arquivo...');
             await this.api.downloadFile(fileId, fileName);
         } catch (error) {
             ErrorHandler.showError('Erro no download', error.message);
         } finally {
-            LoadingManager.hide('download-' + fileId);
+            this.loadingManager.hide('download-' + fileId);
         }
     }
 

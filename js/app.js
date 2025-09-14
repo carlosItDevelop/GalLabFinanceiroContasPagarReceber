@@ -4,6 +4,10 @@ import { FinancialAPI } from './api/financial-api.js';
 import { Dashboard } from './modules/dashboard.js';
 import { AccountsManager } from './modules/accounts.js';
 import { TabManager } from './modules/tab-manager.js';
+import { ConsolidadosModule } from './modules/consolidados.js';
+import { AgendaModule } from './modules/agenda.js';
+import { LogsModule } from './modules/logs.js';
+import { FilesModule } from './modules/files.js';
 
 class ModularFinancialApp {
     constructor() {
@@ -12,10 +16,28 @@ class ModularFinancialApp {
         this.api = new FinancialAPI();
         this.dashboard = new Dashboard(this.api, this.themeManager);
         this.accountsManager = new AccountsManager(this.api);
-        this.tabManager = new TabManager(this.dashboard, this.accountsManager);
+        
+        // Inicializar novos módulos
+        this.consolidadosModule = new ConsolidadosModule();
+        this.agendaModule = new AgendaModule();
+        this.logsModule = new LogsModule();
+        this.filesModule = new FilesModule();
+        
+        this.tabManager = new TabManager(
+            this.dashboard, 
+            this.accountsManager, 
+            this.consolidadosModule, 
+            this.agendaModule, 
+            this.logsModule, 
+            this.filesModule
+        );
 
-        // Expor accountsManager globalmente para compatibilidade com HTML
+        // Expor módulos globalmente para compatibilidade com HTML
         window.accountsManager = this.accountsManager;
+        window.consolidadosModule = this.consolidadosModule;
+        window.agendaModule = this.agendaModule;
+        window.logsModule = this.logsModule;
+        window.filesModule = this.filesModule;
     }
 
     async init() {
@@ -23,6 +45,13 @@ class ModularFinancialApp {
             // Inicializar todos os módulos
             this.themeManager.init();
             this.accountsManager.init();
+            
+            // Inicializar novos módulos
+            this.consolidadosModule.init();
+            this.agendaModule.init();
+            this.logsModule.init();
+            this.filesModule.init();
+            
             this.tabManager.init();
             
             // Carregar dados iniciais
