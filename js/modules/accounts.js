@@ -40,8 +40,9 @@ export class AccountsManager {
 
     setupActionButtons() {
         // Botões para adicionar nova conta
-        const btnNovaPagar = document.querySelector('[data-action="nova-pagar"]');
-        const btnNovaReceber = document.querySelector('[data-action="nova-receber"]');
+        // Corrigir seletores para os IDs reais no HTML
+        const btnNovaPagar = document.getElementById('nova-conta-pagar');
+        const btnNovaReceber = document.getElementById('nova-conta-receber');
 
         if (btnNovaPagar) {
             btnNovaPagar.addEventListener('click', () => this.openModal('pagar'));
