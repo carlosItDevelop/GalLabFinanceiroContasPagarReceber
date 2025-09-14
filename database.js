@@ -530,6 +530,45 @@ class Database {
         }
     }
 
+    // === MÉTODOS FALTANTES PARA API ===
+    async createLog(logData) {
+        const query = `
+            INSERT INTO logs_sistema (tabela, registro_id, acao, dados_novos, usuario, ip_address)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+        `;
+        const params = [
+            logData.tabela,
+            logData.registro_id,
+            logData.acao,
+            JSON.stringify(logData.detalhes || logData.dados_novos || {}),
+            logData.usuario || 'sistema',
+            logData.ip_address || '127.0.0.1'
+        ];
+        
+        return await this.query(query, params);
+    }
+
+    async deleteContaPagar(id) {
+        const query = 'DELETE FROM contas_pagar WHERE id = $1 RETURNING *';
+        return await this.query(query, [id]);
+    }
+
+    async deleteContaReceber(id) {
+        const query = 'DELETE FROM contas_receber WHERE id = $1 RETURNING *';
+        return await this.query(query, [id]);
+    }
+
+    async getLogs(page = 1, limit = 10) {
+        const offset = (page - 1) * limit;
+        const query = `
+            SELECT * FROM logs_sistema 
+            ORDER BY created_at DESC 
+            LIMIT $1 OFFSET $2
+        `;
+        return await this.query(query, [limit, offset]);
+    }
+
     // Fechar todas as conexões
     async close() {
         await this.pool.end();

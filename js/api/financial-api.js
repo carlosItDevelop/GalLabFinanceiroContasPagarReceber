@@ -60,9 +60,12 @@ export class FinancialAPI {
 
     // === DASHBOARD ===
     async getDashboardData() {
-        // TODO: Substituir por dados reais do banco
-        // Por enquanto mantém dados simulados mas estruturados
-        return this.generateMockDashboardData();
+        try {
+            return await this.get('/dashboard');
+        } catch (error) {
+            console.warn('Fallback para dados simulados devido a erro na API:', error);
+            return this.generateMockDashboardData();
+        }
     }
 
     generateMockDashboardData() {
@@ -100,59 +103,48 @@ export class FinancialAPI {
 
     // === CONTAS A PAGAR ===
     async getContasPagar(filtros = {}) {
-        // TODO: Implementar chamada real
         return this.get('/contas-pagar', filtros);
     }
 
     async createContaPagar(conta) {
-        // TODO: Implementar chamada real
         return this.post('/contas-pagar', conta);
     }
 
     async updateContaPagar(id, conta) {
-        // TODO: Implementar chamada real
         return this.put(`/contas-pagar/${id}`, conta);
     }
 
     async deleteContaPagar(id) {
-        // TODO: Implementar chamada real
         return this.delete(`/contas-pagar/${id}`);
     }
 
     // === CONTAS A RECEBER ===
     async getContasReceber(filtros = {}) {
-        // TODO: Implementar chamada real
         return this.get('/contas-receber', filtros);
     }
 
     async createContaReceber(conta) {
-        // TODO: Implementar chamada real
         return this.post('/contas-receber', conta);
     }
 
     async updateContaReceber(id, conta) {
-        // TODO: Implementar chamada real
         return this.put(`/contas-receber/${id}`, conta);
     }
 
     async deleteContaReceber(id) {
-        // TODO: Implementar chamada real
         return this.delete(`/contas-receber/${id}`);
     }
 
     // === FORNECEDORES E CLIENTES ===
     async getFornecedores() {
-        // TODO: Implementar chamada real
         return this.get('/fornecedores');
     }
 
     async getClientes() {
-        // TODO: Implementar chamada real
         return this.get('/clientes');
     }
 
     async getCategorias(tipo = null) {
-        // TODO: Implementar chamada real
         const params = tipo ? { tipo } : {};
         return this.get('/categorias', params);
     }
