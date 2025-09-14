@@ -5,6 +5,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const Joi = require('joi');
+const multer = require('multer');
+const fs = require('fs').promises;
+const crypto = require('crypto');
+const { fileTypeFromBuffer } = require('file-type');
 const db = require('./database.js');
 
 // Schemas de validação
@@ -84,6 +88,22 @@ const schemas = {
         categoria_id: Joi.string().guid({ version: 'uuidv4' }),
         page: Joi.number().integer().min(1),
         limit: Joi.number().integer().min(1).max(100)
+    }),
+
+    upload: Joi.object({
+        entity_type: Joi.string().optional().max(50),
+        entity_id: Joi.string().uuid().optional(),
+        access_scope: Joi.string().valid('private', 'public', 'signed').default('private')
+    }),
+
+    filesQuery: Joi.object({
+        page: Joi.number().integer().min(1).default(1),
+        limit: Joi.number().integer().min(1).max(100).default(20),
+        q: Joi.string().optional(),
+        type: Joi.string().optional(),
+        ext: Joi.string().optional(),
+        entity_type: Joi.string().optional(),
+        entity_id: Joi.string().uuid().optional()
     })
 };
 
@@ -174,6 +194,70 @@ app.use(cors({
 // Middleware para parsing JSON
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Configuração do multer para upload de arquivos com streaming
+const storage = multer.diskStorage({
+    destination: async (req, file, cb) => {
+        try {
+            const uploadPath = createDirectoryPath();
+            const fullPath = path.join('wwwroot', uploadPath);
+            await fs.mkdir(fullPath, { recursive: true });
+            cb(null, fullPath);
+        } catch (error) {
+            cb(error);
+        }
+    },
+    filename: (req, file, cb) => {
+        const fileId = crypto.randomUUID();
+        const ext = path.extname(file.originalname).toLowerCase().substring(1);
+        const fileName = `${fileId}.${ext}`;
+        
+        // Store metadata for later use
+        if (!req.fileMetadata) req.fileMetadata = [];
+        req.fileMetadata.push({
+            fieldname: file.fieldname,
+            originalname: file.originalname,
+            fileId: fileId,
+            fileName: fileName,
+            ext: ext
+        });
+        
+        cb(null, fileName);
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 200 * 1024 * 1024, // 200MB limit
+        files: 10 // Max 10 files per request
+    },
+    fileFilter: async (req, file, cb) => {
+        try {
+            const ext = path.extname(file.originalname).toLowerCase().substring(1);
+            if (!ext) {
+                return cb(new Error('Arquivo deve ter uma extensão válida'));
+            }
+            
+            // Quick validation against allowed extensions from database
+            const allowedTypesResult = await db.query(
+                'SELECT extension, mime_type, max_size_mb FROM allowed_file_types WHERE extension = $1 AND is_active = true',
+                [ext]
+            );
+            
+            if (allowedTypesResult.rows.length === 0) {
+                return cb(new Error(`Tipo de arquivo não permitido: .${ext}`));
+            }
+            
+            cb(null, true);
+        } catch (error) {
+            cb(new Error('Erro ao validar arquivo: ' + error.message));
+        }
+    }
+});
+
+// Servir arquivos estáticos da pasta wwwroot
+app.use('/static', express.static(path.join(__dirname, 'wwwroot')));
 
 // Middleware de log
 app.use((req, res, next) => {
@@ -418,6 +502,443 @@ app.get('/api/logs', validateQuery(schemas.filtros), async (req, res) => {
         res.json(result.rows);
     } catch (error) {
         handleDatabaseError(error, req, res);
+    }
+});
+
+// ===== ARQUIVOS API =====
+
+// Helper functions para gerenciamento de arquivos
+const createDirectoryPath = (date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `files/upload/${year}/${month}`;
+};
+
+const calculateSHA256 = async (filePath) => {
+    return new Promise((resolve, reject) => {
+        const hash = crypto.createHash('sha256');
+        const stream = require('fs').createReadStream(filePath);
+        
+        stream.on('data', (chunk) => hash.update(chunk));
+        stream.on('end', () => resolve(hash.digest('hex')));
+        stream.on('error', reject);
+    });
+};
+
+const validateFileType = async (filePath, originalName, fileSizeBytes) => {
+    try {
+        // Read only first few bytes for magic number detection
+        const buffer = Buffer.alloc(4100); // Enough for most magic numbers
+        const fd = await fs.open(filePath, 'r');
+        try {
+            await fd.read(buffer, 0, 4100, 0);
+        } finally {
+            await fd.close();
+        }
+        
+        const detectedType = await fileTypeFromBuffer(buffer);
+        const ext = path.extname(originalName).toLowerCase().substring(1);
+        
+        // Query allowed types from database
+        const allowedTypesResult = await db.query(
+            'SELECT extension, mime_type, max_size_mb FROM allowed_file_types WHERE extension = $1 AND is_active = true',
+            [ext]
+        );
+        
+        if (allowedTypesResult.rows.length === 0) {
+            throw new Error(`Tipo de arquivo não permitido: .${ext}`);
+        }
+        
+        const allowedType = allowedTypesResult.rows[0];
+        
+        // CRITICAL SECURITY: Validate magic number matches expected MIME type
+        if (detectedType) {
+            const expectedMimes = allowedType.mime_type.split(',').map(m => m.trim());
+            if (!expectedMimes.includes(detectedType.mime)) {
+                throw new Error(
+                    `Arquivo suspeito: extensão .${ext} não corresponde ao conteúdo real (${detectedType.mime}). ` +
+                    `Esperado: ${allowedType.mime_type}`
+                );
+            }
+        } else {
+            // For files without detectable magic numbers (like .txt), allow but log
+            console.warn(`Magic number não detectado para arquivo: ${originalName} (.${ext})`);
+        }
+        
+        const maxSizeBytes = allowedType.max_size_mb * 1024 * 1024;
+        if (fileSizeBytes > maxSizeBytes) {
+            throw new Error(`Arquivo muito grande. Máximo permitido: ${allowedType.max_size_mb}MB`);
+        }
+        
+        return {
+            extension: ext,
+            mimeType: allowedType.mime_type,
+            maxSizeMb: allowedType.max_size_mb,
+            detectedMime: detectedType?.mime || null
+        };
+    } catch (error) {
+        throw new Error(`Erro na validação do arquivo: ${error.message}`);
+    }
+};
+
+// Function to get relative storage path from absolute file path
+const getRelativeStoragePath = (absolutePath) => {
+    const wwwrootPath = path.join(__dirname, 'wwwroot');
+    return path.relative(wwwrootPath, absolutePath);
+};
+
+const checkDuplicateFile = async (sha256, sizeBytes) => {
+    try {
+        const result = await db.query(
+            'SELECT id, original_name, storage_path, ext, mime_type FROM files WHERE sha256 = $1 AND size_bytes = $2 AND deleted_at IS NULL',
+            [sha256, sizeBytes]
+        );
+        return result.rows[0] || null;
+    } catch (error) {
+        console.error('Error checking duplicate file:', error);
+        return null;
+    }
+};
+
+// Function to safely delete uploaded file on error
+const cleanupUploadedFile = async (filePath) => {
+    try {
+        await fs.unlink(filePath);
+    } catch (error) {
+        console.error('Error cleaning up file:', filePath, error);
+    }
+};
+
+// Upload de arquivos
+app.post('/api/files', upload.array('files', 10), async (req, res) => {
+    
+    try {
+        const { error: validationError, value: validatedBody } = schemas.upload.validate(req.body);
+        if (validationError) {
+            return res.status(400).json({
+                success: false,
+                message: 'Dados inválidos',
+                errors: validationError.details.map(d => d.message)
+            });
+        }
+        
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nenhum arquivo enviado'
+            });
+        }
+        
+        const uploadedFiles = [];
+        const errors = [];
+        
+        // Begin transaction
+        await db.query('BEGIN');
+        
+        try {
+            for (let i = 0; i < req.files.length; i++) {
+                const file = req.files[i];
+                const fileMetadata = req.fileMetadata[i];
+                
+                try {
+                    // Validate file type and content (magic numbers)
+                    const fileValidation = await validateFileType(file.path, file.originalname, file.size);
+                    
+                    // Calculate SHA-256 hash from saved file
+                    const sha256 = await calculateSHA256(file.path);
+                    
+                    // Check for duplicates
+                    const duplicateFile = await checkDuplicateFile(sha256, file.size);
+                    if (duplicateFile) {
+                        // File is duplicate - remove uploaded file and link to existing
+                        await cleanupUploadedFile(file.path);
+                        
+                        if (validatedBody.entity_type && validatedBody.entity_id) {
+                            await db.query(
+                                'INSERT INTO file_links (file_id, entity_type, entity_id) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+                                [duplicateFile.id, validatedBody.entity_type, validatedBody.entity_id]
+                            );
+                        }
+                        
+                        uploadedFiles.push({
+                            id: duplicateFile.id,
+                            original_name: file.originalname,
+                            message: 'Arquivo já existe - vinculado ao existente',
+                            duplicate: true
+                        });
+                        continue;
+                    }
+                    
+                    // File is unique - get storage path and insert into database
+                    const storagePath = getRelativeStoragePath(file.path);
+                    
+                    const insertResult = await db.query(`
+                        INSERT INTO files (
+                            id, original_name, ext, mime_type, size_bytes, sha256, 
+                            storage_path, is_private, access_scope, uploader_user_id
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                        RETURNING id, original_name, ext, mime_type, size_bytes, created_at
+                    `, [
+                        fileMetadata.fileId, file.originalname, fileValidation.extension, fileValidation.mimeType,
+                        file.size, sha256, storagePath, true, validatedBody.access_scope, null
+                    ]);
+                    
+                    const savedFile = insertResult.rows[0];
+                    
+                    // Link to entity if provided
+                    if (validatedBody.entity_type && validatedBody.entity_id) {
+                        await db.query(
+                            'INSERT INTO file_links (file_id, entity_type, entity_id) VALUES ($1, $2, $3)',
+                            [fileMetadata.fileId, validatedBody.entity_type, validatedBody.entity_id]
+                        );
+                    }
+                    
+                    uploadedFiles.push({
+                        ...savedFile,
+                        message: 'Arquivo enviado com sucesso',
+                        duplicate: false
+                    });
+                    
+                } catch (fileError) {
+                    console.error(`Error processing file ${file.originalname}:`, fileError);
+                    
+                    // Clean up uploaded file on error
+                    await cleanupUploadedFile(file.path);
+                    
+                    errors.push({
+                        filename: file.originalname,
+                        error: fileError.message
+                    });
+                }
+            }
+            
+            await db.query('COMMIT');
+        
+        const response = {
+            success: uploadedFiles.length > 0,
+            message: `${uploadedFiles.length} arquivo(s) processado(s)`,
+            files: uploadedFiles
+        };
+        
+        if (errors.length > 0) {
+            response.errors = errors;
+        }
+        
+            res.status(uploadedFiles.length > 0 ? 201 : 400).json(response);
+            
+        } catch (transactionError) {
+            await db.query('ROLLBACK');
+            throw transactionError;
+        }
+        
+    } catch (error) {
+        console.error('Upload error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno no servidor ao fazer upload',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// Listagem de arquivos
+app.get('/api/files', validateQuery(schemas.filesQuery), async (req, res) => {
+    try {
+        const { page, limit, q, type, ext, entity_type, entity_id } = req.validatedQuery;
+        const offset = (page - 1) * limit;
+        
+        let baseQuery = `
+            SELECT f.*, 
+                   COUNT(*) OVER() as total_count,
+                   CASE WHEN fl.file_id IS NOT NULL THEN true ELSE false END as has_links
+            FROM files f
+            LEFT JOIN file_links fl ON f.id = fl.file_id
+            WHERE f.deleted_at IS NULL
+        `;
+        
+        const queryParams = [];
+        let paramIndex = 1;
+        
+        if (q) {
+            baseQuery += ` AND f.original_name ILIKE $${paramIndex}`;
+            queryParams.push(`%${q}%`);
+            paramIndex++;
+        }
+        
+        if (ext) {
+            baseQuery += ` AND f.ext = $${paramIndex}`;
+            queryParams.push(ext);
+            paramIndex++;
+        }
+        
+        if (entity_type && entity_id) {
+            baseQuery += ` AND fl.entity_type = $${paramIndex} AND fl.entity_id = $${paramIndex + 1}`;
+            queryParams.push(entity_type, entity_id);
+            paramIndex += 2;
+        } else if (entity_type) {
+            baseQuery += ` AND fl.entity_type = $${paramIndex}`;
+            queryParams.push(entity_type);
+            paramIndex++;
+        }
+        
+        baseQuery += ` ORDER BY f.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        queryParams.push(limit, offset);
+        
+        const result = await db.query(baseQuery, queryParams);
+        
+        const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
+        const files = result.rows.map(row => {
+            const { total_count, ...file } = row;
+            return file;
+        });
+        
+        res.json({
+            files,
+            pagination: {
+                page,
+                limit,
+                total: totalCount,
+                pages: Math.ceil(totalCount / limit)
+            }
+        });
+        
+    } catch (error) {
+        console.error('Files listing error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao listar arquivos'
+        });
+    }
+});
+
+// Download de arquivo
+app.get('/api/files/:id/download', validateUUID, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const fileResult = await db.query(
+            'SELECT * FROM files WHERE id = $1 AND deleted_at IS NULL',
+            [id]
+        );
+        
+        if (fileResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Arquivo não encontrado'
+            });
+        }
+        
+        const fileData = fileResult.rows[0];
+        const fullPath = path.join('wwwroot', fileData.storage_path);
+        
+        // Check if file exists on disk
+        try {
+            await fs.access(fullPath);
+        } catch (error) {
+            console.error(`File not found on disk: ${fullPath}`);
+            return res.status(404).json({
+                success: false,
+                message: 'Arquivo não encontrado no disco'
+            });
+        }
+        
+        // Update download count
+        await db.query(
+            'UPDATE files SET download_count = download_count + 1, updated_at = NOW() WHERE id = $1',
+            [id]
+        );
+        
+        // Set proper headers
+        res.setHeader('Content-Type', fileData.mime_type);
+        res.setHeader('Content-Disposition', `attachment; filename="${fileData.original_name}"`);
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Cache-Control', 'private, no-cache');
+        res.setHeader('ETag', `"${fileData.sha256}"`);
+        
+        // Stream file
+        const fileBuffer = await fs.readFile(fullPath);
+        res.send(fileBuffer);
+        
+    } catch (error) {
+        console.error('Download error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno no servidor ao fazer download'
+        });
+    }
+});
+
+// Deletar arquivo (soft delete)
+app.delete('/api/files/:id', validateUUID, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await db.query(
+            'UPDATE files SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING original_name',
+            [id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Arquivo não encontrado'
+            });
+        }
+        
+        // Remove all file links
+        await db.query('DELETE FROM file_links WHERE file_id = $1', [id]);
+        
+        res.json({
+            success: true,
+            message: `Arquivo ${result.rows[0].original_name} excluído com sucesso`
+        });
+        
+    } catch (error) {
+        console.error('Delete error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao excluir arquivo'
+        });
+    }
+});
+
+// Obter metadados de um arquivo
+app.get('/api/files/:id', validateUUID, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const fileResult = await db.query(`
+            SELECT f.*, 
+                   array_agg(
+                       json_build_object(
+                           'entity_type', fl.entity_type,
+                           'entity_id', fl.entity_id
+                       )
+                   ) FILTER (WHERE fl.file_id IS NOT NULL) as links
+            FROM files f
+            LEFT JOIN file_links fl ON f.id = fl.file_id
+            WHERE f.id = $1 AND f.deleted_at IS NULL
+            GROUP BY f.id
+        `, [id]);
+        
+        if (fileResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Arquivo não encontrado'
+            });
+        }
+        
+        res.json({
+            success: true,
+            file: fileResult.rows[0]
+        });
+        
+    } catch (error) {
+        console.error('Get file error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar arquivo'
+        });
     }
 });
 
