@@ -1,15 +1,21 @@
 // Módulo para gestão de contas a pagar e receber
 import { Formatters } from '../utils/formatters.js';
+import { ErrorHandler } from '../utils/error-handler.js';
+import { LoadingManager } from '../utils/loading-manager.js';
+import { FormValidator } from '../utils/form-validator.js';
 
 export class AccountsManager {
     constructor(api) {
         this.api = api;
         this.editingType = null;
         this.editingId = null;
+        this.loadingManager = new LoadingManager();
+        this.formValidator = null;
     }
 
     init() {
         this.setupEventListeners();
+        this.setupFormValidation();
     }
 
     setupEventListeners() {
@@ -66,31 +72,47 @@ export class AccountsManager {
                     break;
             }
         });
+        
+        // Event listener para formulário será gerenciado pelo FormValidator
     }
 
     async loadContasPagar(filtros = {}) {
         try {
-            this.showLoading('tabela-contas-pagar');
-            const contas = await this.api.getContasPagar(filtros);
+            this.loadingManager.showTable('tabela-contas-pagar', 'Carregando contas a pagar...');
+            
+            const contas = await ErrorHandler.withRetry(
+                () => this.api.getContasPagar(filtros),
+                3,
+                1000
+            );
+            
             this.renderContasPagar(contas);
+            ErrorHandler.showSuccess(`${contas.length} contas a pagar carregadas`);
         } catch (error) {
-            console.error('Erro ao carregar contas a pagar:', error);
-            this.showError('Erro ao carregar contas a pagar');
+            await ErrorHandler.handleApiError(error, 'contas a pagar');
+            this.showTableError('tabela-contas-pagar', 'Erro ao carregar contas a pagar');
         } finally {
-            this.hideLoading('tabela-contas-pagar');
+            this.loadingManager.hideTable('tabela-contas-pagar');
         }
     }
 
     async loadContasReceber(filtros = {}) {
         try {
-            this.showLoading('tabela-contas-receber');
-            const contas = await this.api.getContasReceber(filtros);
+            this.loadingManager.showTable('tabela-contas-receber', 'Carregando contas a receber...');
+            
+            const contas = await ErrorHandler.withRetry(
+                () => this.api.getContasReceber(filtros),
+                3,
+                1000
+            );
+            
             this.renderContasReceber(contas);
+            ErrorHandler.showSuccess(`${contas.length} contas a receber carregadas`);
         } catch (error) {
-            console.error('Erro ao carregar contas a receber:', error);
-            this.showError('Erro ao carregar contas a receber');
+            await ErrorHandler.handleApiError(error, 'contas a receber');
+            this.showTableError('tabela-contas-receber', 'Erro ao carregar contas a receber');
         } finally {
-            this.hideLoading('tabela-contas-receber');
+            this.loadingManager.hideTable('tabela-contas-receber');
         }
     }
 
@@ -241,6 +263,9 @@ export class AccountsManager {
         await this.loadModalData(tipo);
         
         modal.classList.add('active');
+        
+        // Inicializar validação para nova conta
+        this.initFormValidator();
     }
 
     clearForm() {
@@ -297,37 +322,258 @@ export class AccountsManager {
         }
     }
 
-    showError(message) {
-        console.error(message);
-        // TODO: Implementar sistema de notificações mais robusto
-        alert(message);
+    showTableError(tableId, message) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        
+        const tbody = table.querySelector('tbody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr class="error-row">
+                    <td colspan="100%" class="text-center">
+                        <div class="table-error">
+                            <div class="error-icon">⚠️</div>
+                            <div class="error-message">${message}</div>
+                            <button class="btn btn-sm btn-primary" onclick="location.reload()">
+                                Tentar Novamente
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+    
+    async showConfirmation(title, text, icon = 'question') {
+        if (typeof Swal !== 'undefined') {
+            const result = await Swal.fire({
+                title,
+                text,
+                icon,
+                showCancelButton: true,
+                confirmButtonText: 'Sim, confirmar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: 'var(--danger-color)',
+                cancelButtonColor: 'var(--text-secondary)'
+            });
+            return result.isConfirmed;
+        } else {
+            return confirm(`${title}\n\n${text}`);
+        }
     }
 
-    showSuccess(message) {
-        console.log(message);
-        // TODO: Implementar sistema de notificações mais robusto
-        alert(message);
+    setupFormValidation() {
+        // Validação será configurada quando o modal for aberto
+    }
+
+    initFormValidator() {
+        const form = document.getElementById('form-conta');
+        if (!form) return;
+
+        // Evitar múltiplas inicializações
+        if (this.formValidator) {
+            this.formValidator.reset();
+            return;
+        }
+
+        this.formValidator = new FormValidator(form);
+        
+        this.formValidator
+            .addRequiredRule('conta-descricao', 'Descrição da conta é obrigatória')
+            .addCustomRule('conta-descricao', 
+                (value) => value && value.length >= 3, 
+                'Descrição deve ter pelo menos 3 caracteres'
+            )
+            .addRequiredRule('conta-valor', 'Valor é obrigatório')
+            .addNumberRule('conta-valor', 0.01, null, 'Valor deve ser maior que zero')
+            .addRequiredRule('conta-data-vencimento', 'Data de vencimento é obrigatória')
+            .addDateRule('conta-data-vencimento', 
+                new Date().toISOString().split('T')[0], 
+                null, 
+                'Data deve ser hoje ou futura'
+            );
+
+        // Configurar callback de sucesso
+        this.formValidator.onValidationSuccess = () => {
+            this.processFormSubmission();
+        };
+        
+        // Configurar callback de erro para debug
+        this.formValidator.onValidationError = () => {
+            console.log('Formulário com erros de validação');
+        };
+    }
+
+    // Método removido - validação gerenciada pelo FormValidator
+
+    async processFormSubmission() {
+        if (!this.formValidator || !this.editingType) return;
+
+        const formData = this.formValidator.getFormData();
+        
+        const conta = {
+            descricao: formData['conta-descricao'],
+            valor_original: parseFloat(formData['conta-valor']),
+            data_vencimento: formData['conta-data-vencimento'],
+            observacoes: formData['conta-observacoes'] || ''
+        };
+        
+        // Adicionar campos específicos
+        if (this.editingType === 'pagar') {
+            conta.fornecedor_id = formData['conta-fornecedor-cliente'] || null;
+        } else {
+            conta.cliente_id = formData['conta-fornecedor-cliente'] || null;
+        }
+
+        try {
+            const submitBtn = document.querySelector('#form-conta button[type="submit"]');
+            this.loadingManager.showElement(submitBtn, 'Salvando...');
+            
+            if (this.editingId) {
+                // Edição
+                if (this.editingType === 'pagar') {
+                    await this.api.updateContaPagar(this.editingId, conta);
+                    ErrorHandler.showSuccess('Conta a pagar atualizada com sucesso!');
+                } else {
+                    await this.api.updateContaReceber(this.editingId, conta);
+                    ErrorHandler.showSuccess('Conta a receber atualizada com sucesso!');
+                }
+            } else {
+                // Criação
+                if (this.editingType === 'pagar') {
+                    await this.api.createContaPagar(conta);
+                    ErrorHandler.showSuccess('Conta a pagar criada com sucesso!');
+                } else {
+                    await this.api.createContaReceber(conta);
+                    ErrorHandler.showSuccess('Conta a receber criada com sucesso!');
+                }
+            }
+            
+            this.closeModal();
+            
+            // Recarregar lista
+            if (this.editingType === 'pagar') {
+                await this.loadContasPagar();
+            } else {
+                await this.loadContasReceber();
+            }
+        } catch (error) {
+            await ErrorHandler.handleApiError(error, `salvar conta a ${this.editingType}`);
+        } finally {
+            const submitBtn = document.querySelector('#form-conta button[type="submit"]');
+            this.loadingManager.hideElement(submitBtn);
+        }
+    }
+
+    closeModal() {
+        const modal = document.getElementById('modal-conta');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+        
+        // Limpar estado
+        this.editingType = null;
+        this.editingId = null;
+        
+        // Limpar validação
+        if (this.formValidator) {
+            this.formValidator.reset();
+        }
     }
 
     // Métodos que serão chamados pelo HTML
     async editConta(id, tipo) {
-        // TODO: Implementar edição
-        console.log('Editar conta:', id, tipo);
+        try {
+            this.loadingManager.show('edit-conta', 'Carregando dados...');
+            
+            // Buscar dados da conta
+            let conta;
+            if (tipo === 'pagar') {
+                conta = await this.api.getContaPagar(id);
+            } else {
+                conta = await this.api.getContaReceber(id);
+            }
+            
+            if (!conta) {
+                ErrorHandler.showError('Conta não encontrada');
+                return;
+            }
+            
+            // Configurar modal para edição
+            this.editingType = tipo;
+            this.editingId = id;
+            
+            // Abrir modal
+            const modal = document.getElementById('modal-conta');
+            if (!modal) return;
+
+            const title = document.getElementById('modal-title');
+            const labelFornecedorCliente = document.querySelector('label[for="conta-fornecedor-cliente"]');
+            
+            if (title) {
+                title.textContent = tipo === 'pagar' ? 'Editar Conta a Pagar' : 'Editar Conta a Receber';
+            }
+            
+            if (labelFornecedorCliente) {
+                labelFornecedorCliente.textContent = tipo === 'pagar' ? 'Fornecedor' : 'Cliente';
+            }
+            
+            // Carregar dados do modal
+            await this.loadModalData(tipo);
+            
+            // Preencher formulário
+            this.populateForm(conta);
+            
+            modal.classList.add('active');
+            
+            // Inicializar validação
+            this.initFormValidator();
+            
+        } catch (error) {
+            await ErrorHandler.handleApiError(error, 'carregar dados da conta');
+        } finally {
+            this.loadingManager.hide('edit-conta');
+        }
+    }
+
+    populateForm(conta) {
+        const fields = {
+            'conta-descricao': conta.descricao,
+            'conta-valor': conta.valor_original,
+            'conta-data-vencimento': conta.data_vencimento,
+            'conta-observacoes': conta.observacoes || '',
+            'conta-fornecedor-cliente': conta.fornecedor_id || conta.cliente_id || '',
+            'conta-categoria': conta.categoria_id || ''
+        };
+        
+        Object.entries(fields).forEach(([fieldId, value]) => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.value = value;
+            }
+        });
     }
 
     async deleteConta(id, tipo) {
-        if (!confirm('Tem certeza que deseja excluir esta conta?')) {
-            return;
-        }
+        // Usar SweetAlert para confirmação se disponível
+        const confirmed = await this.showConfirmation(
+            'Tem certeza que deseja excluir esta conta?',
+            'Esta ação não pode ser desfeita.',
+            'warning'
+        );
+        
+        if (!confirmed) return;
 
         try {
+            this.loadingManager.show('delete-conta', 'Excluindo conta...');
+            
             if (tipo === 'pagar') {
                 await this.api.deleteContaPagar(id);
             } else {
                 await this.api.deleteContaReceber(id);
             }
             
-            this.showSuccess('Conta excluída com sucesso!');
+            ErrorHandler.showSuccess('Conta excluída com sucesso!');
             
             // Recarregar lista
             if (tipo === 'pagar') {
@@ -336,13 +582,16 @@ export class AccountsManager {
                 await this.loadContasReceber();
             }
         } catch (error) {
-            console.error('Erro ao excluir conta:', error);
-            this.showError('Erro ao excluir conta');
+            await ErrorHandler.handleApiError(error, 'exclusão de conta');
+        } finally {
+            this.loadingManager.hide('delete-conta');
         }
     }
 
     async markAsPaid(id, tipo) {
         try {
+            this.loadingManager.show('update-conta', `Marcando como ${tipo === 'pagar' ? 'paga' : 'recebida'}...`);
+            
             const updateData = {
                 status: tipo === 'pagar' ? 'pago' : 'recebido',
                 data_pagamento: new Date().toISOString().split('T')[0]
@@ -354,7 +603,7 @@ export class AccountsManager {
                 await this.api.updateContaReceber(id, updateData);
             }
             
-            this.showSuccess(`Conta marcada como ${tipo === 'pagar' ? 'paga' : 'recebida'}!`);
+            ErrorHandler.showSuccess(`Conta marcada como ${tipo === 'pagar' ? 'paga' : 'recebida'}!`);
             
             // Recarregar lista
             if (tipo === 'pagar') {
@@ -363,8 +612,9 @@ export class AccountsManager {
                 await this.loadContasReceber();
             }
         } catch (error) {
-            console.error('Erro ao atualizar conta:', error);
-            this.showError('Erro ao atualizar conta');
+            await ErrorHandler.handleApiError(error, 'atualização de conta');
+        } finally {
+            this.loadingManager.hide('update-conta');
         }
     }
 }

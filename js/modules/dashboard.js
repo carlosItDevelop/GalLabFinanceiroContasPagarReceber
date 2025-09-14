@@ -1,5 +1,7 @@
 // Módulo do Dashboard
 import { Formatters } from '../utils/formatters.js';
+import { ErrorHandler } from '../utils/error-handler.js';
+import { LoadingManager } from '../utils/loading-manager.js';
 
 export class Dashboard {
     constructor(api, themeManager) {
@@ -9,14 +11,27 @@ export class Dashboard {
     }
 
     async load() {
+        this.loadingManager = new LoadingManager();
+        
         try {
-            const dashboardData = await this.api.getDashboardData();
+            // Mostrar loading nos cards
+            this.showCardsLoading();
+            
+            const dashboardData = await ErrorHandler.withRetry(
+                () => this.api.getDashboardData(),
+                3,
+                1000
+            );
+            
             this.updateCards(dashboardData);
             this.loadCharts(dashboardData);
+            
             console.log('Dashboard carregado com dados:', dashboardData);
         } catch (error) {
-            console.error('Erro ao carregar dashboard:', error);
-            this.showError('Erro ao carregar dados do dashboard');
+            await ErrorHandler.handleApiError(error, 'dashboard');
+            this.showErrorState();
+        } finally {
+            this.hideCardsLoading();
         }
     }
 
@@ -267,9 +282,38 @@ export class Dashboard {
         console.log('Gráfico de categorias carregado com dados:', categoriaData);
     }
 
-    showError(message) {
-        // TODO: Implementar sistema de notificações mais robusto
-        console.error(message);
-        alert(message);
+    showCardsLoading() {
+        if (!this.loadingManager) this.loadingManager = new LoadingManager();
+        
+        ['total-pagar', 'total-receber', 'saldo-projetado'].forEach(cardId => {
+            const card = document.getElementById(cardId);
+            if (card) {
+                this.loadingManager.showCard(cardId, '...');
+            }
+        });
+    }
+    
+    hideCardsLoading() {
+        if (!this.loadingManager) return;
+        
+        ['total-pagar', 'total-receber', 'saldo-projetado'].forEach(cardId => {
+            this.loadingManager.hideCard(cardId);
+        });
+    }
+    
+    showErrorState() {
+        const elements = {
+            'total-pagar': 'Erro',
+            'total-receber': 'Erro', 
+            'saldo-projetado': 'Erro'
+        };
+        
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+                element.style.color = 'var(--danger-color)';
+            }
+        });
     }
 }

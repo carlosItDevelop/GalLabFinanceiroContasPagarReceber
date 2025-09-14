@@ -4,31 +4,68 @@ const { Pool } = require('pg');
 
 class Database {
     constructor() {
-        // Configuração da conexão com pool
+        // Configuração da conexão com pool otimizada
         this.pool = new Pool({
             connectionString: process.env.DATABASE_URL,
             max: 10, // máximo de 10 conexões no pool
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 2000,
+            idleTimeoutMillis: 60000, // 60 segundos antes de fechar conexões inativas
+            connectionTimeoutMillis: 10000, // 10 segundos para estabelecer conexão
+            ssl: process.env.DB_SSL === 'true' ? { 
+                rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' 
+            } : false,
+            // Configurações de keepalive
+            keepAlive: true,
+            keepAliveInitialDelayMillis: 10000,
         });
 
         // Event listeners para monitoramento
         this.pool.on('error', (err) => {
             console.error('Erro inesperado no pool de conexões:', err);
         });
+
+        this.pool.on('connect', (client) => {
+            console.log('Nova conexão estabelecida com o banco');
+        });
+
+        // Testar conexão inicial
+        this.testConnection();
     }
 
-    // Método genérico para executar queries
-    async query(text, params) {
-        const client = await this.pool.connect();
+    // Teste de conexão inicial
+    async testConnection() {
         try {
-            const result = await client.query(text, params);
-            return result;
-        } catch (error) {
-            console.error('Erro na query:', error);
-            throw error;
-        } finally {
+            const client = await this.pool.connect();
+            await client.query('SELECT NOW()');
             client.release();
+            console.log('Conexão com PostgreSQL estabelecida com sucesso');
+        } catch (error) {
+            console.error('Falha ao conectar com PostgreSQL:', error);
+            // Tentar reconectar após 5 segundos
+            setTimeout(() => this.testConnection(), 5000);
+        }
+    }
+
+    // Método genérico para executar queries com retry
+    async query(text, params, retries = 3) {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                const client = await this.pool.connect();
+                try {
+                    const result = await client.query(text, params);
+                    return result;
+                } finally {
+                    client.release();
+                }
+            } catch (error) {
+                console.error(`Erro na query (tentativa ${attempt}/${retries}):`, error);
+                
+                if (attempt === retries) {
+                    throw error;
+                }
+                
+                // Aguardar antes da próxima tentativa
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            }
         }
     }
 
