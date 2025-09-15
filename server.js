@@ -942,6 +942,87 @@ app.get('/api/files/:id', validateUUID, async (req, res) => {
     }
 });
 
+// Agenda API endpoints
+app.get('/api/agenda/eventos', async (req, res) => {
+    try {
+        // Retornar eventos mock para demonstração
+        const mockEvents = [
+            {
+                id: '1',
+                title: 'Vencimento Conta de Luz',
+                start: new Date().toISOString().split('T')[0] + 'T10:00:00',
+                end: new Date().toISOString().split('T')[0] + 'T11:00:00',
+                type: 'vencimento-pagar',
+                description: 'Pagamento da conta de energia elétrica',
+                backgroundColor: '#dc3545',
+                borderColor: '#dc3545'
+            },
+            {
+                id: '2', 
+                title: 'Recebimento Cliente ABC',
+                start: new Date(Date.now() + 86400000).toISOString().split('T')[0] + 'T14:00:00',
+                end: new Date(Date.now() + 86400000).toISOString().split('T')[0] + 'T15:00:00',
+                type: 'vencimento-receber',
+                description: 'Recebimento de fatura do cliente ABC Ltda',
+                backgroundColor: '#28a745',
+                borderColor: '#28a745'
+            },
+            {
+                id: '3',
+                title: 'Reunião Financeira',
+                start: new Date(Date.now() + 172800000).toISOString().split('T')[0] + 'T09:00:00',
+                end: new Date(Date.now() + 172800000).toISOString().split('T')[0] + 'T10:30:00',
+                type: 'reuniao-interna',
+                description: 'Reunião de planejamento financeiro mensal',
+                backgroundColor: '#007bff',
+                borderColor: '#007bff'
+            }
+        ];
+        
+        res.json(mockEvents);
+        
+    } catch (error) {
+        console.error('Agenda events error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao carregar eventos da agenda'
+        });
+    }
+});
+
+app.post('/api/agenda/eventos', async (req, res) => {
+    try {
+        const { title, start, end, type, description } = req.body;
+        
+        // Simular criação de evento
+        const newEvent = {
+            id: Date.now().toString(),
+            title,
+            start,
+            end,
+            type,
+            description,
+            backgroundColor: type === 'vencimento-pagar' ? '#dc3545' : 
+                           type === 'vencimento-receber' ? '#28a745' : '#007bff',
+            borderColor: type === 'vencimento-pagar' ? '#dc3545' : 
+                        type === 'vencimento-receber' ? '#28a745' : '#007bff'
+        };
+        
+        res.json({
+            success: true,
+            event: newEvent,
+            message: 'Evento criado com sucesso'
+        });
+        
+    } catch (error) {
+        console.error('Create event error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao criar evento'
+        });
+    }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ 
