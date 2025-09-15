@@ -243,7 +243,7 @@ export class AccountsManager {
         this.editingType = tipo;
         this.editingId = null;
 
-        const modal = document.getElementById('modal-conta');
+        const modal = document.getElementById('modal-nova-conta');
         if (!modal) return;
 
         const title = document.getElementById('modal-title');
@@ -467,7 +467,7 @@ export class AccountsManager {
     }
 
     closeModal() {
-        const modal = document.getElementById('modal-conta');
+        const modal = document.getElementById('modal-nova-conta');
         if (modal) {
             modal.classList.remove('active');
         }
@@ -505,7 +505,7 @@ export class AccountsManager {
             this.editingId = id;
             
             // Abrir modal
-            const modal = document.getElementById('modal-conta');
+            const modal = document.getElementById('modal-nova-conta');
             if (!modal) return;
 
             const title = document.getElementById('modal-title');
