@@ -7354,3 +7354,4 @@ class SistemaContasApp {
 
 // Inicializar aplicação
 const app = new SistemaContasApp();
+app.init();
