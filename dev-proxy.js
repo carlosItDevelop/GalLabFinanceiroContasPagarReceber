@@ -20,7 +20,7 @@ proxy.on('error', (err, req, res) => {
 const server = http.createServer((req, res) => {
     // Proxy HTTP requests para Vite na 5174
     proxy.web(req, res, { 
-        target: 'http://127.0.0.1:5174',
+        target: 'http://127.0.0.1:5175',
         changeOrigin: true 
     });
 });
@@ -29,13 +29,13 @@ const server = http.createServer((req, res) => {
 server.on('upgrade', (req, socket, head) => {
     // Proxy WebSocket connections para Vite
     proxy.ws(req, socket, head, { 
-        target: 'ws://127.0.0.1:5174' 
+        target: 'ws://127.0.0.1:5175' 
     });
 });
 
 // Iniciar Vite como processo filho na porta 5174
-console.log('🔧 Iniciando Vite na porta 5174...');
-const viteProcess = spawn('npx', ['vite', '--port', '5174', '--host', '0.0.0.0'], {
+console.log('🔧 Iniciando Vite na porta 5175...');
+const viteProcess = spawn('npx', ['vite', '--port', '5175', '--host', '0.0.0.0'], {
     stdio: 'inherit',
     env: { ...process.env }
 });
@@ -57,6 +57,6 @@ process.on('SIGINT', () => {
 
 // Iniciar server proxy na porta 5000
 server.listen(5000, '0.0.0.0', () => {
-    console.log('✅ Proxy ativo na porta 5000 -> Vite 5173');
+    console.log('✅ Proxy ativo na porta 5000 -> Vite 5175');
     console.log('📡 Sistema disponível em http://localhost:5000');
 });
