@@ -4,68 +4,31 @@ const { Pool } = require('pg');
 
 class Database {
     constructor() {
-        // Configuração da conexão com pool otimizada
+        // Configuração da conexão com pool
         this.pool = new Pool({
             connectionString: process.env.DATABASE_URL,
             max: 10, // máximo de 10 conexões no pool
-            idleTimeoutMillis: 60000, // 60 segundos antes de fechar conexões inativas
-            connectionTimeoutMillis: 10000, // 10 segundos para estabelecer conexão
-            ssl: process.env.DB_SSL === 'true' ? { 
-                rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' 
-            } : false,
-            // Configurações de keepalive
-            keepAlive: true,
-            keepAliveInitialDelayMillis: 10000,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 2000,
         });
 
         // Event listeners para monitoramento
         this.pool.on('error', (err) => {
             console.error('Erro inesperado no pool de conexões:', err);
         });
-
-        this.pool.on('connect', (client) => {
-            console.log('Nova conexão estabelecida com o banco');
-        });
-
-        // Testar conexão inicial
-        this.testConnection();
     }
 
-    // Teste de conexão inicial
-    async testConnection() {
+    // Método genérico para executar queries
+    async query(text, params) {
+        const client = await this.pool.connect();
         try {
-            const client = await this.pool.connect();
-            await client.query('SELECT NOW()');
-            client.release();
-            console.log('Conexão com PostgreSQL estabelecida com sucesso');
+            const result = await client.query(text, params);
+            return result;
         } catch (error) {
-            console.error('Falha ao conectar com PostgreSQL:', error);
-            // Tentar reconectar após 5 segundos
-            setTimeout(() => this.testConnection(), 5000);
-        }
-    }
-
-    // Método genérico para executar queries com retry
-    async query(text, params, retries = 3) {
-        for (let attempt = 1; attempt <= retries; attempt++) {
-            try {
-                const client = await this.pool.connect();
-                try {
-                    const result = await client.query(text, params);
-                    return result;
-                } finally {
-                    client.release();
-                }
-            } catch (error) {
-                console.error(`Erro na query (tentativa ${attempt}/${retries}):`, error);
-                
-                if (attempt === retries) {
-                    throw error;
-                }
-                
-                // Aguardar antes da próxima tentativa
-                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-            }
+            console.error('Erro na query:', error);
+            throw error;
+        } finally {
+            client.release();
         }
     }
 
@@ -565,45 +528,6 @@ class Database {
             console.error('Erro ao criar tabelas:', error);
             throw error;
         }
-    }
-
-    // === MÉTODOS FALTANTES PARA API ===
-    async createLog(logData) {
-        const query = `
-            INSERT INTO logs_sistema (tabela, registro_id, acao, dados_novos, usuario, ip_address)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING *
-        `;
-        const params = [
-            logData.tabela,
-            logData.registro_id,
-            logData.acao,
-            JSON.stringify(logData.detalhes || logData.dados_novos || {}),
-            logData.usuario || 'sistema',
-            logData.ip_address || '127.0.0.1'
-        ];
-        
-        return await this.query(query, params);
-    }
-
-    async deleteContaPagar(id) {
-        const query = 'DELETE FROM contas_pagar WHERE id = $1 RETURNING *';
-        return await this.query(query, [id]);
-    }
-
-    async deleteContaReceber(id) {
-        const query = 'DELETE FROM contas_receber WHERE id = $1 RETURNING *';
-        return await this.query(query, [id]);
-    }
-
-    async getLogs(page = 1, limit = 10) {
-        const offset = (page - 1) * limit;
-        const query = `
-            SELECT * FROM logs_sistema 
-            ORDER BY created_at DESC 
-            LIMIT $1 OFFSET $2
-        `;
-        return await this.query(query, [limit, offset]);
     }
 
     // Fechar todas as conexões
