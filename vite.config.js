@@ -5,6 +5,11 @@ export default defineConfig({
   plugins: [],
   server: {
     host: '0.0.0.0',
-    hmr: true, // Change this line to false disable auto-refreshing.
+    port: 5174,
+    strictPort: true, // Roda na 5174 (livre), proxy encaminha da 5000
+    hmr: {
+      port: 5174,
+      clientPort: 5000 // Cliente conecta via proxy na 5000
+    }
   }
 })

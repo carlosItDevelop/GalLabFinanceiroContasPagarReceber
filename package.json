@@ -3,13 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
+    "predev": "kill-port 5000 || true",
+    "dev": "node dev-proxy.js",
+    "vite:direct": "vite --port 5173 --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "apexcharts": "^4.7.0",
     "fullcalendar": "^6.1.17",
+    "http-proxy": "^1.18.1",
+    "kill-port": "^2.0.1",
     "pg": "^8.16.0",
     "sortablejs": "^1.15.6",
     "sweetalert2": "^11.22.0",
