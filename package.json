@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "scripts": {
     "predev": "kill-port 5000 || true",
-    "dev": "node dev-proxy.js",
+    "dev": "vite --host 0.0.0.0 --port 5000",
+    "dev-proxy": "node dev-proxy.js",
     "vite:direct": "vite --port 5173 --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview"
