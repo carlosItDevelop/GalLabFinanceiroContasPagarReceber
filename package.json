@@ -3,10 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "predev": "kill-port 5000 || true",
-    "dev": "vite --host 0.0.0.0 --port 5000",
+    "predev": "kill-port 5000 3000 || true",
+    "dev": "node -e \"const { spawn } = require('child_process'); const backend = spawn('node', ['server.js'], { stdio: 'inherit' }); const frontend = spawn('vite', ['--host', '0.0.0.0', '--port', '5000'], { stdio: 'inherit', shell: true }); process.on('SIGINT', () => { backend.kill(); frontend.kill(); process.exit(); });\"",
     "dev-proxy": "node dev-proxy.js",
     "vite:direct": "vite --port 5173 --host 0.0.0.0",
+    "backend": "node server.js",
+    "frontend": "vite --host 0.0.0.0 --port 5000",
     "build": "vite build",
     "preview": "vite preview"
   },
