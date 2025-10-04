@@ -2691,38 +2691,6 @@ class SistemaContasApp {
         }, 30000);
     }
 
-    showEventDetails(event) {
-        const props = event.extendedProps;
-        
-        Swal.fire({
-            title: event.title,
-            html: `
-                <div class="event-details" style="text-align: left;">
-                    <p><strong>📅 Data:</strong> ${event.start.toLocaleDateString('pt-BR')}</p>
-                    <p><strong>🕐 Horário:</strong> ${event.start.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} - ${event.end.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</p>
-                    ${props.prioridade ? `<p><strong>⚡ Prioridade:</strong> ${props.prioridade.charAt(0).toUpperCase() + props.prioridade.slice(1)}</p>` : ''}
-                    ${props.participantes ? `<p><strong>👥 Participantes:</strong> ${props.participantes}</p>` : ''}
-                    ${props.local ? `<p><strong>📍 Local:</strong> ${props.local}</p>` : ''}
-                    ${props.valor > 0 ? `<p><strong>💰 Valor:</strong> ${this.formatCurrency(props.valor)}</p>` : ''}
-                    ${props.descricao ? `<p><strong>📝 Descrição:</strong> ${props.descricao}</p>` : ''}
-                </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: '✏️ Editar',
-            cancelButtonText: '🗑️ Excluir',
-            showDenyButton: true,
-            denyButtonText: '✅ Fechar',
-            background: 'var(--bg-secondary)',
-            color: 'var(--text-primary)'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                this.editEvent(event);
-            } else if (result.isDismissed && result.dismiss === 'cancel') {
-                this.deleteEvent(event);
-            }
-        });
-    }
-
     // === SISTEMA DE LOGS ===
     loadLogs() {
         this.setupLogsEventListeners();
