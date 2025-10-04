@@ -1694,6 +1694,10 @@ class SistemaContasApp {
         const modal = document.getElementById('modal-novo-evento');
         const dataInput = document.getElementById('evento-data');
         
+        // Resetar editingEventId ao abrir modal para NOVO evento
+        this.editingEventId = null;
+        document.getElementById('modal-evento-title').textContent = 'Novo Evento';
+        
         if (date) {
             dataInput.value = date;
         } else {
@@ -1721,8 +1725,7 @@ class SistemaContasApp {
                 // Atualizar evento existente
                 const eventoIndex = this.eventos.findIndex(e => e.id === this.editingEventId);
                 if (eventoIndex !== -1) {
-                    const evento = this.createEventObject(formData);
-                    evento.id = this.editingEventId; // Manter o ID original
+                    const evento = this.createEventObject(formData, this.editingEventId);
                     
                     // Atualizar no array
                     this.eventos[eventoIndex] = evento;
@@ -1814,7 +1817,7 @@ class SistemaContasApp {
         return true;
     }
 
-    createEventObject(data) {
+    createEventObject(data, existingId = null) {
         const startDateTime = new Date(`${data.data}T${data.hora}:00`);
         const endDateTime = new Date(startDateTime.getTime() + (data.duracao * 60000));
         
@@ -1830,7 +1833,7 @@ class SistemaContasApp {
         };
 
         return {
-            id: `evento-${this.eventIdCounter++}`,
+            id: existingId || `evento-${this.eventIdCounter++}`,
             title: `${tipoIcons[data.tipo] || '📅'} ${data.titulo}`,
             start: startDateTime.toISOString(),
             end: endDateTime.toISOString(),
