@@ -12,9 +12,12 @@
   },
   "dependencies": {
     "apexcharts": "^4.7.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "fullcalendar": "^6.1.17",
     "http-proxy": "^1.18.1",
     "kill-port": "^2.0.1",
+    "multer": "^2.0.2",
     "pg": "^8.16.0",
     "sortablejs": "^1.15.6",
     "sweetalert2": "^11.22.0",
