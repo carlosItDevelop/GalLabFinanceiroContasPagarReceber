@@ -1730,11 +1730,24 @@ class SistemaContasApp {
                     // Atualizar no array
                     this.eventos[eventoIndex] = evento;
                     
-                    // Atualizar no calendário
+                    // Atualizar no calendário - método correto sem remover/adicionar
                     if (this.calendarAgenda) {
                         const calendarEvent = this.calendarAgenda.getEventById(this.editingEventId);
                         if (calendarEvent) {
-                            calendarEvent.remove();
+                            // Atualizar propriedades in-place sem criar duplicata
+                            calendarEvent.setProp('title', evento.title);
+                            calendarEvent.setStart(evento.start);
+                            calendarEvent.setEnd(evento.end);
+                            calendarEvent.setExtendedProp('tipo', evento.extendedProps.tipo);
+                            calendarEvent.setExtendedProp('prioridade', evento.extendedProps.prioridade);
+                            calendarEvent.setExtendedProp('participantes', evento.extendedProps.participantes);
+                            calendarEvent.setExtendedProp('local', evento.extendedProps.local);
+                            calendarEvent.setExtendedProp('valor', evento.extendedProps.valor);
+                            calendarEvent.setExtendedProp('lembrete', evento.extendedProps.lembrete);
+                            calendarEvent.setExtendedProp('descricao', evento.extendedProps.descricao);
+                            calendarEvent.setExtendedProp('duracao', evento.extendedProps.duracao);
+                        } else {
+                            // Se não encontrar (caso raro), adicionar
                             this.calendarAgenda.addEvent(evento);
                         }
                     }
