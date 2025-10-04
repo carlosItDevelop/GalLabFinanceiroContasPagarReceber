@@ -3659,62 +3659,84 @@ class SistemaContasApp {
     }
 
     async processFileUploads(files) {
-        let successCount = 0;
-        
-        for (const file of files) {
-            try {
-                const arquivo = {
-                    id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    name: file.name,
-                    originalName: file.name,
-                    size: file.size,
-                    type: file.type,
-                    category: this.detectFileCategory(file.type),
-                    uploadDate: new Date(),
-                    modifiedDate: new Date(),
-                    folder: this.currentFolder,
-                    tags: this.generateFileTags(file.name),
-                    version: 1,
-                    versions: [
-                        { 
-                            version: 1, 
-                            date: new Date(), 
-                            size: file.size, 
-                            note: 'Upload inicial' 
-                        }
-                    ],
-                    preview: this.canPreview(file.type),
-                    shareLink: null,
-                    createdBy: 'Usuário Sistema',
-                    lastModifiedBy: 'Usuário Sistema'
-                };
-
-                this.arquivos.push(arquivo);
-                successCount++;
-
-                // Adicionar log
-                this.addLog(
-                    'create',
-                    'Arquivo enviado',
-                    `Arquivo "${file.name}" foi enviado com sucesso`,
-                    'arquivos',
-                    {
-                        arquivo_id: arquivo.id,
-                        nome: file.name,
-                        tamanho: file.size,
-                        tipo: file.type
-                    }
-                );
-
-            } catch (error) {
-                console.error(`Erro ao processar arquivo ${file.name}:`, error);
+        try {
+            const formData = new FormData();
+            
+            for (const file of files) {
+                formData.append('files', file);
             }
-        }
 
-        if (successCount > 0) {
-            this.showSuccess(`${successCount} arquivo(s) enviado(s) com sucesso!`);
-            this.renderArquivos();
-            this.updateArquivosStats();
+            this.showInfo('Enviando arquivo(s)...');
+
+            const response = await fetch('http://localhost:3000/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro no upload');
+            }
+
+            const result = await response.json();
+            
+            if (result.success && result.files) {
+                let successCount = 0;
+                
+                for (const uploadedFile of result.files) {
+                    const arquivo = {
+                        id: uploadedFile.id,
+                        name: uploadedFile.name,
+                        originalName: uploadedFile.originalName,
+                        size: uploadedFile.size,
+                        type: uploadedFile.type,
+                        path: uploadedFile.path,
+                        category: this.detectFileCategory(uploadedFile.type),
+                        uploadDate: new Date(uploadedFile.uploadDate),
+                        modifiedDate: new Date(uploadedFile.uploadDate),
+                        folder: this.currentFolder,
+                        tags: this.generateFileTags(uploadedFile.originalName),
+                        version: 1,
+                        versions: [
+                            { 
+                                version: 1, 
+                                date: new Date(uploadedFile.uploadDate), 
+                                size: uploadedFile.size, 
+                                note: 'Upload inicial' 
+                            }
+                        ],
+                        preview: this.canPreview(uploadedFile.type),
+                        shareLink: null,
+                        createdBy: 'Usuário Sistema',
+                        lastModifiedBy: 'Usuário Sistema'
+                    };
+
+                    this.arquivos.push(arquivo);
+                    successCount++;
+
+                    this.addLog(
+                        'create',
+                        'Arquivo enviado',
+                        `Arquivo "${uploadedFile.originalName}" foi enviado com sucesso para /wwwroot/files`,
+                        'arquivos',
+                        {
+                            arquivo_id: arquivo.id,
+                            nome: uploadedFile.originalName,
+                            tamanho: uploadedFile.size,
+                            tipo: uploadedFile.type,
+                            caminho: uploadedFile.path
+                        }
+                    );
+                }
+
+                if (successCount > 0) {
+                    this.showSuccess(`${successCount} arquivo(s) enviado(s) com sucesso para /wwwroot/files!`);
+                    this.renderArquivos();
+                    this.updateArquivosStats();
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao fazer upload:', error);
+            this.showError('Erro ao enviar arquivo(s). Verifique se o servidor está rodando.');
         }
     }
 
